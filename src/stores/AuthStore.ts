@@ -42,6 +42,8 @@ class AuthStore {
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
+        console.log("error" +error);
+        
         this.error = error.response?.data?.message || 'Ошибка входа';
       });
       throw error;

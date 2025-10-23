@@ -3,10 +3,7 @@ import { View, Text, StyleSheet, Alert, TouchableOpacity, Dimensions } from 'rea
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-// @ts-expect-error - Camera types might not be available
-import { Camera, CameraType } from 'expo-camera';
-// @ts-expect-error - BarCodeScanner types might not be available
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
 import { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
@@ -24,20 +21,11 @@ const ScannerScreen: React.FC = observer(() => {
   const route = useRoute<ScannerScreenRouteProp>();
   const { productStore } = useStores();
   
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
+  const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    getCameraPermissions();
-  }, []);
-
-  const getCameraPermissions = async () => {
-    const { status } = await Camera.requestCameraPermissionsAsync();
-    setHasPermission(status === 'granted');
-  };
-
-  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
+  const handleBarCodeScanned = async ({ data }: BarcodeScanningResult) => {
     if (scanned) return;
     
     setScanned(true);
@@ -103,11 +91,11 @@ const ScannerScreen: React.FC = observer(() => {
     setScanned(false);
   };
 
-  if (hasPermission === null) {
+  if (!permission) {
     return <Loading message="Запрос разрешений..." />;
   }
 
-  if (hasPermission === false) {
+  if (!permission.granted) {
     return (
       <View style={styles.container}>
         <Header title="Сканер штрихкодов" showBackButton onBackPress={handleBack} />
@@ -119,7 +107,7 @@ const ScannerScreen: React.FC = observer(() => {
           </Text>
           <Button
             title="Разрешить доступ"
-            onPress={getCameraPermissions}
+            onPress={requestPermission}
             style={styles.permissionButton}
           />
         </View>
@@ -132,10 +120,12 @@ const ScannerScreen: React.FC = observer(() => {
       <Header title="Сканер штрихкодов" showBackButton onBackPress={handleBack} />
       
       <View style={styles.cameraContainer}>
-        <BarCodeScanner
-          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+        <CameraView
+          onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
           style={styles.camera}
-          barCodeTypes={[BarCodeScanner.Constants.BarCodeType.ean13, BarCodeScanner.Constants.BarCodeType.ean8]}
+          barcodeScannerSettings={{
+            barcodeTypes: ['ean13', 'ean8', 'qr', 'code128'],
+          }}
         />
         
         {/* Overlay */}
