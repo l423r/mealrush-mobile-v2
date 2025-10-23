@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { authService } from '../api/services/auth.service';
-import { RootStore } from './RootStore';
+import RootStore from './RootStore';
 import { User, LoginRequest, RegisterRequest } from '../types/api.types';
 import { saveToken, deleteToken } from '../api/axios.config';
 

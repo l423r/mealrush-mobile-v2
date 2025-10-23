@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { profileService } from '../api/services/profile.service';
-import { RootStore } from './RootStore';
+import RootStore from './RootStore';
 import { UserProfile, UserProfileCreate, UserProfileUpdate } from '../types/api.types';
 import { calculateRecommendedCalories, calculateAge, calculateBMI } from '../utils/calculations';
 

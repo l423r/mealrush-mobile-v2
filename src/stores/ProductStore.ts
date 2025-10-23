@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { productService } from '../api/services/product.service';
-import { RootStore } from './RootStore';
+import RootStore from './RootStore';
 import { Product, ProductCreate, ProductUpdate, ProductCategory, PaginatedResponse } from '../types/api.types';
 
 class ProductStore {

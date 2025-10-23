@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { mealService } from '../api/services/meal.service';
-import { RootStore } from './RootStore';
+import RootStore from './RootStore';
 import { Meal, MealCreate, MealElement, MealElementCreate, MealElementUpdate, PaginatedResponse } from '../types/api.types';
 import { formatDateForAPI } from '../utils/formatting';
 

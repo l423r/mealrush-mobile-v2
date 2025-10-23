@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { Appearance } from 'react-native';
-import { RootStore } from './RootStore';
+import RootStore from './RootStore';
 
 class UIStore {
   rootStore: RootStore;
