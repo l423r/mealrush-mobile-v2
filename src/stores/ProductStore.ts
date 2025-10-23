@@ -74,6 +74,41 @@ class ProductStore {
     }
   }
 
+  async getAll(page: number = 0) {
+    this.loading = true;
+    this.error = null;
+    
+    try {
+      const response = await productService.getAll(page, this.pagination.size);
+      
+      runInAction(() => {
+        if (page === 0) {
+          this.products = response.data.content;
+        } else {
+          this.products = [...this.products, ...response.data.content];
+        }
+        
+        this.pagination = {
+          page: response.data.page,
+          size: response.data.size,
+          totalElements: response.data.totalElements,
+          totalPages: response.data.totalPages,
+          hasMore: !response.data.last,
+        };
+        
+        this.loading = false;
+        this.error = null;
+      });
+      
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error = error.response?.data?.message || 'Ошибка загрузки продуктов';
+      });
+      throw error;
+    }
+  }
+
   async searchByBarcode(barcode: string) {
     this.loading = true;
     this.error = null;

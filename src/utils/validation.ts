@@ -21,6 +21,10 @@ export const registerSchema = yup.object().shape({
     .string()
     .min(8, 'Пароль должен содержать минимум 8 символов')
     .required('Пароль обязателен'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Пароли должны совпадать')
+    .required('Подтверждение пароля обязательно'),
   name: yup
     .string()
     .min(2, 'Имя должно содержать минимум 2 символа')

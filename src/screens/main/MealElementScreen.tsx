@@ -77,6 +77,7 @@ const MealElementScreen: React.FC = observer(() => {
   const watchedProteins = watch('proteins');
   const watchedFats = watch('fats');
   const watchedCarbohydrates = watch('carbohydrates');
+  const watchedCalories = watch('calories');
 
   useEffect(() => {
     if (item && 'proteins' in item) {
@@ -162,6 +163,7 @@ const MealElementScreen: React.FC = observer(() => {
           fats: data.fats,
           carbohydrates: data.carbohydrates,
           calories: data.calories,
+          measurement_type: 'GRAM' as const,
           default_proteins: item?.proteins || data.proteins,
           default_fats: item?.fats || data.fats,
           default_carbohydrates: item?.carbohydrates || data.carbohydrates,

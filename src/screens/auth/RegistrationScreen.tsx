@@ -34,7 +34,7 @@ const RegistrationScreen: React.FC = () => {
 
   const password = watch('password');
 
-  const onSubmit = async (data: { email: string; password: string; name: string }) => {
+  const onSubmit = async (data: { email: string; password: string; confirmPassword: string; name: string }) => {
     try {
       // Register user
       await authStore.register(data);
@@ -43,11 +43,11 @@ const RegistrationScreen: React.FC = () => {
       const profileData = {
         height: route.params?.height || 170,
         weight: route.params?.weight || 70,
-        gender: route.params?.gender || 'MALE',
+        gender: (route.params?.gender || 'MALE') as 'MALE' | 'FEMALE',
         birthday: route.params?.birthday || new Date().toISOString().split('T')[0],
-        target_weight_type: route.params?.target || 'SAVE',
+        target_weight_type: (route.params?.target || 'SAVE') as 'LOSE' | 'SAVE' | 'GAIN',
         target_weight: route.params?.targetWeight || route.params?.weight || 70,
-        physical_activity_level: route.params?.activity || 'SECOND',
+        physical_activity_level: (route.params?.activity || 'SECOND') as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH',
         day_limit_cal: 2000, // Will be calculated by backend
       };
 

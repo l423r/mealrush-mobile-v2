@@ -11,13 +11,48 @@ export type RootStackParamList = {
 export type AuthStackParamList = {
   SignIn: undefined;
   GetGender: undefined;
-  GetTarget: undefined;
-  GetWeight: undefined;
-  GetTargetWeight: undefined;
-  GetHeight: undefined;
-  GetBirthday: undefined;
-  GetActivity: undefined;
-  Registration: undefined;
+  GetTarget: {
+    gender?: string;
+  };
+  GetWeight: {
+    gender?: string;
+    target?: string;
+  };
+  GetTargetWeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+  };
+  GetHeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+  };
+  GetBirthday: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+  };
+  GetActivity: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+  };
+  Registration: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+    activity?: string;
+  };
 };
 
 // Main Stack
@@ -33,6 +68,7 @@ export type MainStackParamList = {
   };
   Product: {
     product?: Product;
+    barcode?: string;
   };
   Meal: {
     meal: Meal;

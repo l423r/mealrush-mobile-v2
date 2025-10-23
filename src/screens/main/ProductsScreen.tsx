@@ -52,11 +52,11 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const handleAddProduct = () => {
-    navigation.navigate('Product');
+    navigation.navigate('Product', {});
   };
 
   const handleSearch = () => {
-    navigation.navigate('Search');
+    navigation.navigate('Search', {});
   };
 
   const renderProductItem = ({ item: product }: { item: any }) => {

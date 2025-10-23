@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
 import { API_BASE_URL, AUTH_BASE_URL, REQUEST_TIMEOUT } from './endpoints';
 import * as SecureStore from 'expo-secure-store';
 
@@ -49,7 +49,7 @@ export const deleteToken = async (): Promise<void> => {
 
 // Request interceptor for API client
 apiClient.interceptors.request.use(
-  async (config: AxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
     const token = await getToken();
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

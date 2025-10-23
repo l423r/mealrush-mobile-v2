@@ -11,7 +11,6 @@ import { formatCalories, formatWeight } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
-import { Product } from '../../types/api.types';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Search'>;
 type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
@@ -78,7 +77,7 @@ const SearchScreen: React.FC = observer(() => {
   };
 
   const handleCreateProductPress = () => {
-    navigation.navigate('Product');
+    navigation.navigate('Product', {});
   };
 
   const handleFavoriteToggle = async (product: Product) => {

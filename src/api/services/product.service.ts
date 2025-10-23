@@ -27,6 +27,16 @@ export const productService = {
   delete: (id: number) =>
     apiClient.delete(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`),
   
+  // Aliases for backward compatibility
+  createProduct: (productData: ProductCreate) =>
+    apiClient.post<Product>(MY_FOOD_ENDPOINTS.PRODUCTS, productData),
+  
+  updateProduct: (productData: ProductUpdate) =>
+    apiClient.put<Product>(MY_FOOD_ENDPOINTS.PRODUCTS, productData),
+  
+  deleteProduct: (id: number) =>
+    apiClient.delete(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`),
+  
   getCategories: (page: number = 0, size: number = 100) =>
     apiClient.get<PaginatedResponse<ProductCategory>>(MY_FOOD_ENDPOINTS.PRODUCT_CATEGORIES, {
       params: { page, size }

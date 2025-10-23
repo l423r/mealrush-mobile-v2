@@ -30,15 +30,15 @@ const Input: React.FC<InputProps> = ({
 
   const inputContainerStyle = [
     styles.inputContainer,
-    isFocused && styles.focusedInputContainer,
-    error && styles.errorInputContainer,
+    isFocused ? styles.focusedInputContainer : undefined,
+    error ? styles.errorInputContainer : undefined,
     containerStyle,
   ];
 
   const inputStyleCombined = [
     styles.input,
-    leftIcon && styles.inputWithLeftIcon,
-    rightIcon && styles.inputWithRightIcon,
+    leftIcon ? styles.inputWithLeftIcon : undefined,
+    rightIcon ? styles.inputWithRightIcon : undefined,
     inputStyle,
   ];
 
