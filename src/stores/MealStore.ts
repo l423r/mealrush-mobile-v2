@@ -22,7 +22,7 @@ class MealStore {
   // Computed
   get mealsForSelectedDate(): Meal[] {
     return this.meals.filter(meal => {
-      const mealDate = new Date(meal.date_time);
+      const mealDate = new Date(meal.dateTime);
       return mealDate.toDateString() === this.selectedDate.toDateString();
     });
   }

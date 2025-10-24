@@ -17,7 +17,7 @@ if (__DEV__) {
 }
 
 // Token management
-const TOKEN_KEY = 'jwt_token';
+const TOKEN_KEY = 'jwtToken';
 
 export const getToken = async (): Promise<string | null> => {
   try {
@@ -30,6 +30,7 @@ export const getToken = async (): Promise<string | null> => {
 
 export const saveToken = async (token: string): Promise<void> => {
   try {
+    console.log('Saving token:', typeof token, token);
     await SecureStore.setItemAsync(TOKEN_KEY, token);
   } catch (error) {
     console.error('Error saving token:', error);
@@ -58,6 +59,9 @@ apiClient.interceptors.request.use(
       const token = await getToken();
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
+        console.log('Adding token to request:', config.url);
+      } else {
+        console.log('No token available for request:', config.url);
       }
     }
     return config;

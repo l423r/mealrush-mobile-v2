@@ -48,7 +48,7 @@ const MealElementScreen: React.FC = observer(() => {
   const { mealStore, productStore } = useStores();
   
   const item = route.params?.item;
-  const isEditing = !!item && 'meal_id' in item; // MealElement has meal_id
+  const isEditing = !!item && 'mealId' in item; // MealElement has mealId
   const isFromSearch = route.params?.fromSearch;
   
   const [mealType, setMealType] = useState<'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'>('BREAKFAST');
@@ -148,8 +148,8 @@ const MealElementScreen: React.FC = observer(() => {
         if (!mealId) {
           // Create new meal
           const meal = await mealStore.createMeal({
-            meal_type: mealType,
-            date_time: mealTime.toISOString(),
+            mealType: mealType,
+            dateTime: mealTime.toISOString(),
           });
           mealId = meal.id;
         }
@@ -163,12 +163,12 @@ const MealElementScreen: React.FC = observer(() => {
           fats: data.fats,
           carbohydrates: data.carbohydrates,
           calories: data.calories,
-          measurement_type: 'GRAM' as const,
-          default_proteins: item?.proteins || data.proteins,
-          default_fats: item?.fats || data.fats,
-          default_carbohydrates: item?.carbohydrates || data.carbohydrates,
-          default_calories: item?.calories || data.calories,
-          default_quantity: item?.quantity || '100',
+          measurementType: 'GRAM' as const,
+          defaultProteins: item?.proteins || data.proteins,
+          defaultFats: item?.fats || data.fats,
+          defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
+          defaultCalories: item?.calories || data.calories,
+          defaultQuantity: item?.quantity || '100',
         };
 
         await mealStore.createMealElement(elementData);
@@ -204,7 +204,7 @@ const MealElementScreen: React.FC = observer(() => {
         {item && (
           <View style={styles.productInfo}>
             <Text style={styles.productName}>{item.name}</Text>
-            {item.image_url && (
+            {item.imageUrl && (
               <Text style={styles.productImage}>🖼️</Text>
             )}
           </View>

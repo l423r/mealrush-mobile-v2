@@ -36,8 +36,8 @@ class ProfileStore {
       this.profile.height,
       this.age,
       this.profile.gender,
-      this.profile.physical_activity_level,
-      this.profile.target_weight_type
+      this.profile.physicalActivityLevel,
+      this.profile.targetWeightType
     );
   }
 
@@ -103,8 +103,8 @@ class ProfileStore {
       });
       
     } catch (error: any) {
-      // Если профиль не найден (404), это нормально - пользователь еще не создал профиль
-      if (error.response?.status === 404) {
+      // Если профиль не найден (404) или нет доступа (403), это нормально - пользователь еще не создал профиль
+      if (error.response?.status === 404 || error.response?.status === 403) {
         runInAction(() => {
           this.profile = null;
         });

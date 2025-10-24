@@ -136,21 +136,21 @@ const ProfileScreen: React.FC = observer(() => {
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>Цель</Text>
             <Text style={styles.goalValue}>
-              {formatTargetWeightType(profile.target_weight_type)}
+              {formatTargetWeightType(profile.targetWeightType)}
             </Text>
           </View>
           
-          {profile.target_weight_type !== 'SAVE' && (
+          {profile.targetWeightType !== 'SAVE' && (
             <View style={styles.goalItem}>
               <Text style={styles.goalLabel}>Целевой вес</Text>
-              <Text style={styles.goalValue}>{profile.target_weight} кг</Text>
+              <Text style={styles.goalValue}>{profile.targetWeight} кг</Text>
             </View>
           )}
           
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>Активность</Text>
             <Text style={styles.goalValue}>
-              {formatActivityLevel(profile.physical_activity_level)}
+              {formatActivityLevel(profile.physicalActivityLevel)}
             </Text>
           </View>
         </View>
@@ -161,7 +161,7 @@ const ProfileScreen: React.FC = observer(() => {
           
           <View style={styles.calorieItem}>
             <Text style={styles.calorieLabel}>Установленный лимит</Text>
-            <Text style={styles.calorieValue}>{profile.day_limit_cal} ккал</Text>
+            <Text style={styles.calorieValue}>{profile.dayLimitCal} ккал</Text>
           </View>
           
           {recommendedCalories && (

@@ -67,8 +67,8 @@ const MainScreen: React.FC = observer(() => {
         onPress={() => handleMealPress(meal)}
       >
         <View style={styles.mealHeader}>
-          <Text style={styles.mealType}>{formatMealType(meal.meal_type)}</Text>
-          <Text style={styles.mealTime}>{formatTime(meal.date_time)}</Text>
+          <Text style={styles.mealType}>{formatMealType(meal.mealType)}</Text>
+          <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
         </View>
         
         <View style={styles.mealContent}>
@@ -162,7 +162,7 @@ const MainScreen: React.FC = observer(() => {
                     {
                       width: `${calculateProgressPercentage(
                         mealStore.dailyCalories,
-                        profileStore.profile?.day_limit_cal || 2000
+                        profileStore.profile?.dayLimitCal || 2000
                       )}%`,
                     },
                   ]}

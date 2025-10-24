@@ -151,7 +151,7 @@ const MealScreen: React.FC = observer(() => {
   return (
     <View style={styles.container}>
       <Header
-        title={formatMealType(meal.meal_type)}
+        title={formatMealType(meal.mealType)}
         showBackButton
         onBackPress={handleBack}
         rightComponent={
@@ -164,7 +164,7 @@ const MealScreen: React.FC = observer(() => {
       <View style={styles.content}>
         {/* Meal Info */}
         <View style={styles.mealInfo}>
-          <Text style={styles.mealTime}>{formatTime(meal.date_time)}</Text>
+          <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
           {meal.name && (
             <Text style={styles.mealName}>{meal.name}</Text>
           )}

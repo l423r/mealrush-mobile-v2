@@ -34,9 +34,9 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  jwt_token: string;
-  token_type: string;
-  expires_in: number;
+  jwtToken: string;
+  tokenType: string;
+  expiresIn: number;
 }
 
 export interface RegisterRequest {
@@ -50,7 +50,7 @@ export interface User {
   email: string;
   name: string;
   roles: string[];
-  created_at?: string;
+  createdAt?: string;
 }
 
 // User Profile types
@@ -62,17 +62,17 @@ export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPE
 
 export interface UserProfile {
   id: number;
-  user_id: number;
+  userId: number;
   height: number;
   weight: number;
   gender: Gender;
   birthday: string;
-  target_weight_type: TargetWeightType;
-  target_weight: number;
-  physical_activity_level: PhysicalActivityLevel;
-  day_limit_cal: number;
-  created_at: string;
-  updated_at: string;
+  targetWeightType: TargetWeightType;
+  targetWeight: number;
+  physicalActivityLevel: PhysicalActivityLevel;
+  dayLimitCal: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface UserProfileCreate {
@@ -80,10 +80,10 @@ export interface UserProfileCreate {
   weight: number;
   gender: Gender;
   birthday: string;
-  target_weight_type: TargetWeightType;
-  target_weight: number;
-  physical_activity_level: PhysicalActivityLevel;
-  day_limit_cal: number;
+  targetWeightType: TargetWeightType;
+  targetWeight: number;
+  physicalActivityLevel: PhysicalActivityLevel;
+  dayLimitCal: number;
 }
 
 export interface UserProfileUpdate {
@@ -91,10 +91,10 @@ export interface UserProfileUpdate {
   weight?: number;
   gender?: Gender;
   birthday?: string;
-  target_weight_type?: TargetWeightType;
-  target_weight?: number;
-  physical_activity_level?: PhysicalActivityLevel;
-  day_limit_cal?: number;
+  targetWeightType?: TargetWeightType;
+  targetWeight?: number;
+  physicalActivityLevel?: PhysicalActivityLevel;
+  dayLimitCal?: number;
 }
 
 // Product types
@@ -105,22 +105,22 @@ export interface ProductCategory {
 
 export interface Product {
   id: number;
-  user_id: number | null;
+  userId: number | null;
   name: string;
   proteins: number;
   fats: number;
   carbohydrates: number;
   calories: number;
   quantity: string;
-  measurement_type: MeasurementType;
+  measurementType: MeasurementType;
   code?: string;
-  image_url?: string;
+  imageUrl?: string;
   source?: string;
-  product_category?: ProductCategory;
+  productCategory?: ProductCategory;
   store?: string;
   price?: number;
-  created_at: string;
-  updated_at?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ProductCreate {
@@ -130,10 +130,10 @@ export interface ProductCreate {
   carbohydrates: number;
   calories: number;
   quantity: string;
-  measurement_type: MeasurementType;
+  measurementType: MeasurementType;
   code?: string;
-  image_base64?: string;
-  product_category?: {
+  imageBase64?: string;
+  productCategory?: {
     id: string;
   };
 }
@@ -146,10 +146,10 @@ export interface ProductUpdate {
   carbohydrates?: number;
   calories?: number;
   quantity?: string;
-  measurement_type?: MeasurementType;
+  measurementType?: MeasurementType;
   code?: string;
-  image_base64?: string;
-  product_category?: {
+  imageBase64?: string;
+  productCategory?: {
     id: string;
   };
 }
@@ -157,32 +157,32 @@ export interface ProductUpdate {
 // Meal types
 export interface Meal {
   id: number;
-  user_id: number;
-  meal_type: MealType;
+  userId: number;
+  mealType: MealType;
   name?: string;
-  date_time: string;
-  created_at: string;
-  updated_at?: string;
+  dateTime: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface MealCreate {
-  meal_type: MealType;
-  date_time: string;
+  mealType: MealType;
+  dateTime: string;
   name?: string;
 }
 
 export interface MealUpdate {
   id: number;
-  meal_type?: MealType;
-  date_time?: string;
+  mealType?: MealType;
+  dateTime?: string;
   name?: string;
 }
 
 // Meal Element types
 export interface MealElement {
   id: number;
-  meal_id: number;
-  parent_product?: {
+  mealId: number;
+  parentProduct?: {
     id: number;
     name: string;
   };
@@ -192,23 +192,23 @@ export interface MealElement {
   carbohydrates: number;
   calories: number;
   quantity: string;
-  measurement_type: MeasurementType;
-  default_proteins: number;
-  default_fats: number;
-  default_carbohydrates: number;
-  default_calories: number;
-  default_quantity: string;
+  measurementType: MeasurementType;
+  defaultProteins: number;
+  defaultFats: number;
+  defaultCarbohydrates: number;
+  defaultCalories: number;
+  defaultQuantity: string;
   code?: string;
-  image_url?: string;
-  created_at: string;
-  updated_at?: string;
+  imageUrl?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export interface MealElementCreate {
   meal: {
     id: number;
   };
-  parent_product?: {
+  parentProduct?: {
     id: number;
   };
   name: string;
@@ -217,14 +217,14 @@ export interface MealElementCreate {
   carbohydrates: number;
   calories: number;
   quantity: string;
-  measurement_type: MeasurementType;
-  default_proteins: number;
-  default_fats: number;
-  default_carbohydrates: number;
-  default_calories: number;
-  default_quantity: string;
+  measurementType: MeasurementType;
+  defaultProteins: number;
+  defaultFats: number;
+  defaultCarbohydrates: number;
+  defaultCalories: number;
+  defaultQuantity: string;
   code?: string;
-  image_base64?: string;
+  imageBase64?: string;
 }
 
 export interface MealElementUpdate {
@@ -238,14 +238,14 @@ export interface MealElementUpdate {
 
 // Photo Analysis types
 export interface PhotoAnalysisRequest {
-  image_base64: string;
+  imageBase64: string;
   language?: string;
 }
 
 export interface PhotoAnalysisIngredient {
   name: string;
   quantity: number;
-  measurement_type: MeasurementType;
+  measurementType: MeasurementType;
   proteins: number;
   fats: number;
   carbohydrates: number;
@@ -254,7 +254,7 @@ export interface PhotoAnalysisIngredient {
 
 export interface PhotoAnalysisResponse {
   ingredients: PhotoAnalysisIngredient[];
-  total_nutrients: {
+  totalNutrients: {
     proteins: number;
     fats: number;
     carbohydrates: number;
@@ -269,15 +269,15 @@ export type DeviceType = 'ANDROID' | 'IOS';
 
 export interface Device {
   id: number;
-  user_id: number;
-  device_token: string;
-  device_type: DeviceType;
-  created_at: string;
+  userId: number;
+  deviceToken: string;
+  deviceType: DeviceType;
+  createdAt: string;
 }
 
 export interface DeviceCreate {
-  device_token: string;
-  device_type: DeviceType;
+  deviceToken: string;
+  deviceType: DeviceType;
 }
 
 // Search types

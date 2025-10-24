@@ -55,7 +55,7 @@ const ProductScreen: React.FC = observer(() => {
   useEffect(() => {
     if (product) {
       setIsEditing(true);
-      setImageUri(product.image_url || null);
+      setImageUri(product.imageUrl || null);
     }
   }, [product]);
 
@@ -131,8 +131,8 @@ const ProductScreen: React.FC = observer(() => {
 
       const productData = {
         ...data,
-        image_base64: base64Image,
-        product_category: {
+        imageBase64: base64Image,
+        productCategory: {
           id: 'other', // Default category
         },
       };

@@ -45,8 +45,8 @@ export const ANIMATION_DURATION = {
 
 // Storage keys
 export const STORAGE_KEYS = {
-  JWT_TOKEN: 'jwt_token',
-  USER_PREFERENCES: 'user_preferences',
+  JWT_TOKEN: 'jwtToken',
+  USER_PREFERENCES: 'userPreferences',
   THEME: 'theme',
 } as const;
 

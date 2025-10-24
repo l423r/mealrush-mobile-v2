@@ -72,10 +72,10 @@ const CompleteProfileScreen: React.FC = () => {
         weight,
         gender: gender as 'MALE' | 'FEMALE',
         birthday,
-        target_weight_type: target as 'LOSE' | 'SAVE' | 'GAIN',
-        target_weight: targetWeight,
-        physical_activity_level: activity as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH',
-        day_limit_cal: recommendedCalories,
+        targetWeightType: target as 'LOSE' | 'SAVE' | 'GAIN',
+        targetWeight: targetWeight,
+        physicalActivityLevel: activity as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH',
+        dayLimitCal: recommendedCalories,
       };
 
       await profileStore.createProfile(profileData);

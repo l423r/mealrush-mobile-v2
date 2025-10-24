@@ -27,14 +27,16 @@ class AuthStore {
     try {
       const response = await authService.login(credentials);
       
+      console.log('Login response:', JSON.stringify(response.data, null, 2));
+      
       runInAction(() => {
-        this.token = response.data.jwt_token;
+        this.token = String(response.data.jwtToken);
         this.isAuthenticated = true;
         this.loading = false;
         this.error = null;
       });
       
-      await saveToken(response.data.jwt_token);
+      await saveToken(String(response.data.jwtToken));
       
       // Get user data
       await this.getUser();
