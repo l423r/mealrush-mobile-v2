@@ -39,6 +39,9 @@ class AuthStore {
       // Get user data
       await this.getUser();
       
+      // Check if user has profile
+      await this.rootStore.profileStore.checkProfile();
+      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
@@ -61,6 +64,12 @@ class AuthStore {
         this.user = response.data;
         this.loading = false;
         this.error = null;
+      });
+      
+      // После успешной регистрации автоматически входим в систему
+      await this.login({
+        email: userData.email,
+        password: userData.password
       });
       
     } catch (error: any) {
@@ -106,10 +115,12 @@ class AuthStore {
     if (this.token) {
       try {
         await this.getUser();
+        await this.rootStore.profileStore.checkProfile();
         runInAction(() => {
           this.isAuthenticated = true;
         });
       } catch (error) {
+        console.error('Auth check failed:', error);
         await this.logout();
       }
     }

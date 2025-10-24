@@ -5,14 +5,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type GetHeightScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetHeight'>;
-type GetHeightScreenRouteProp = RouteProp<AuthStackParamList, 'GetHeight'>;
+type GetHeightScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetHeight'>;
+type GetHeightScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetHeight'>;
 
 const heightSchema = yup.object().shape({
   height: yup

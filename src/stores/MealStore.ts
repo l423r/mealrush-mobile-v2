@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { mealService } from '../api/services/meal.service';
 import RootStore from './RootStore';
-import { Meal, MealCreate, MealElement, MealElementCreate, MealElementUpdate, PaginatedResponse } from '../types/api.types';
+import { Meal, MealCreate, MealElement, MealElementCreate, MealElementUpdate } from '../types/api.types';
 import { formatDateForAPI } from '../utils/formatting';
 
 class MealStore {
@@ -84,7 +84,7 @@ class MealStore {
       const response = await mealService.getMealsByDate(dateString);
       
       runInAction(() => {
-        this.meals = response.data.content;
+        this.meals = response.data || [];
         this.loading = false;
         this.error = null;
       });

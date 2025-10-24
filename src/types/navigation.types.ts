@@ -4,12 +4,14 @@ import { Product, MealElement, Meal } from './api.types';
 // Root Stack
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
+  ProfileSetup: NavigatorScreenParams<ProfileSetupStackParamList>;
   Main: NavigatorScreenParams<MainStackParamList>;
 };
 
 // Auth Stack
 export type AuthStackParamList = {
   SignIn: undefined;
+  SimpleRegistration: undefined;
   GetGender: undefined;
   GetTarget: {
     gender?: string;
@@ -45,6 +47,53 @@ export type AuthStackParamList = {
     birthday?: string;
   };
   Registration: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+    activity?: string;
+  };
+};
+
+// Profile Setup Stack
+export type ProfileSetupStackParamList = {
+  GetGender: undefined;
+  GetTarget: {
+    gender?: string;
+  };
+  GetWeight: {
+    gender?: string;
+    target?: string;
+  };
+  GetTargetWeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+  };
+  GetHeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+  };
+  GetBirthday: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+  };
+  GetActivity: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+  };
+  CompleteProfile: {
     gender?: string;
     target?: string;
     weight?: number;

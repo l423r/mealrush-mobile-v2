@@ -15,9 +15,9 @@ export const mealService = {
   createMeal: (mealData: MealCreate) =>
     apiClient.post<Meal>(MY_FOOD_ENDPOINTS.MEALS, mealData),
   
-  getMealsByDate: (date: string, page: number = 0, size: number = 20) =>
-    apiClient.get<PaginatedResponse<Meal>>(MY_FOOD_ENDPOINTS.MEALS_BY_DATE, {
-      params: { date, page, size }
+  getMealsByDate: (date: string) =>
+    apiClient.get<Meal[]>(MY_FOOD_ENDPOINTS.MEALS_BY_DATE, {
+      params: { date }
     }),
   
   getMeal: (id: number) =>

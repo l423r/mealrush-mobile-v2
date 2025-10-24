@@ -5,14 +5,14 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type GetWeightScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetWeight'>;
-type GetWeightScreenRouteProp = RouteProp<AuthStackParamList, 'GetWeight'>;
+type GetWeightScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetWeight'>;
+type GetWeightScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetWeight'>;
 
 const weightSchema = yup.object().shape({
   weight: yup

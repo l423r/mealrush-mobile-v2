@@ -1,8 +1,8 @@
 import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
-import { API_BASE_URL, AUTH_BASE_URL, REQUEST_TIMEOUT } from './endpoints';
+import { API_BASE_URL, REQUEST_TIMEOUT } from './endpoints';
 import * as SecureStore from 'expo-secure-store';
 
-// Create axios instances
+// Create axios instance
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: REQUEST_TIMEOUT,
@@ -11,13 +11,10 @@ export const apiClient: AxiosInstance = axios.create({
   },
 });
 
-export const authClient: AxiosInstance = axios.create({
-  baseURL: AUTH_BASE_URL,
-  timeout: REQUEST_TIMEOUT,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
+// Debug logging in development
+if (__DEV__) {
+  console.log('API Base URL:', API_BASE_URL);
+}
 
 // Token management
 const TOKEN_KEY = 'jwt_token';
@@ -47,21 +44,30 @@ export const deleteToken = async (): Promise<void> => {
   }
 };
 
-// Request interceptor for API client
+// Request interceptor - adds JWT token to all requests except public auth endpoints
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    const token = await getToken();
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    // Skip adding token only for public auth endpoints (POST requests to login, register, reset password)
+    const isPublicAuthEndpoint = config.method === 'post' && (
+      config.url === '/auth/user' || 
+      config.url === '/auth/token' || 
+      config.url === '/auth/reset-password'
+    );
+    
+    if (!isPublicAuthEndpoint) {
+      const token = await getToken();
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
   (error) => {
-    return Promise.reject(error);
+    throw error;
   }
 );
 
-// Response interceptor for API client
+// Response interceptor - handles token expiration
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error) => {
@@ -71,14 +77,6 @@ apiClient.interceptors.response.use(
       // You can dispatch a logout action here or use navigation
       // navigation.navigate('Auth', { screen: 'SignIn' });
     }
-    return Promise.reject(error);
-  }
-);
-
-// Response interceptor for Auth client
-authClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  (error) => {
-    return Promise.reject(error);
+    throw error;
   }
 );

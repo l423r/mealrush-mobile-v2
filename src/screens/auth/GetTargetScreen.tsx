@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 
-type GetTargetScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetTarget'>;
-type GetTargetScreenRouteProp = RouteProp<AuthStackParamList, 'GetTarget'>;
+type GetTargetScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetTarget'>;
+type GetTargetScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetTarget'>;
 
 const GetTargetScreen: React.FC = () => {
   const navigation = useNavigation<GetTargetScreenNavigationProp>();

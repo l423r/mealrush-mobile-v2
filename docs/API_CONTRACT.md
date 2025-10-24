@@ -28,9 +28,9 @@ http://80.87.201.75:8079/gateway/my-food
 Authorization: Bearer {JWT_TOKEN}
 ```
 
-JWT токен получается от auth service:
+JWT токен получается через эндпоинт:
 ```
-POST /gateway/auth/token
+POST /my-food/auth/token
 ```
 
 ### 1.3. Общие форматы
@@ -94,15 +94,15 @@ POST /gateway/auth/token
 
 ---
 
-## 2. Аутентификация (Auth Service)
+## 2. Аутентификация
 
-**Примечание:** Эндпоинты аутентификации находятся в отдельном сервисе `/gateway/auth`
+**Примечание:** Все эндпоинты аутентификации являются публичными и не требуют JWT токена
 
 ### 2.1. Получение токена (вход)
 
 **Endpoint:**
 ```
-POST /gateway/auth/token
+POST /my-food/auth/token
 ```
 
 **Request Body:**
@@ -130,7 +130,7 @@ POST /gateway/auth/token
 
 **Endpoint:**
 ```
-POST /gateway/auth/user
+POST /my-food/auth/user
 ```
 
 **Request Body:**
@@ -161,7 +161,7 @@ POST /gateway/auth/user
 
 **Endpoint:**
 ```
-GET /gateway/auth/user
+GET /my-food/auth/user
 Headers: Authorization: Bearer {token}
 ```
 
@@ -179,7 +179,7 @@ Headers: Authorization: Bearer {token}
 
 **Endpoint:**
 ```
-POST /gateway/auth/reset-password
+POST /my-food/auth/reset-password
 ```
 
 **Request Body:**
@@ -192,9 +192,11 @@ POST /gateway/auth/reset-password
 **Response (200 OK):**
 ```json
 {
-  "message": "Новый пароль отправлен на email"
+  "message": "Новый пароль отправлен на email. Dev mode - новый пароль: abc123xyz456"
 }
 ```
+
+**Примечание:** В текущей версии (dev mode) новый пароль возвращается в ответе. В production версии пароль будет отправляться на email и не будет возвращаться в response.
 
 ---
 
@@ -1209,21 +1211,21 @@ Headers: Authorization: Bearer {token}
 
 ```javascript
 // 1. Регистрация
-POST /auth/user
+POST /my-food/auth/user
 {
   "email": "user@example.com",
   "password": "password123",
   "name": "Иван"
 }
-→ Response: { id, email, name }
+→ Response: { id, email, name, roles, created_at }
 
 // 2. Получение токена
-POST /auth/token
+POST /my-food/auth/token
 {
   "email": "user@example.com",
   "password": "password123"
 }
-→ Response: { jwt_token }
+→ Response: { jwt_token, token_type, expires_in }
 
 // 3. Создание профиля
 POST /my-food/user-profile
@@ -1436,9 +1438,13 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.0.0 (текущая - 21 октября 2024)
+### Версия 2.0.0 (текущая - 23 октября 2024)
 
 **Новые эндпоинты:**
+- `POST /my-food/auth/user` - регистрация пользователя
+- `POST /my-food/auth/token` - получение JWT токена
+- `GET /my-food/auth/user` - получение данных текущего пользователя
+- `POST /my-food/auth/reset-password` - восстановление пароля
 - `POST /meal_element/analyze-photo` - анализ блюда по фото с помощью AI
 - `GET /images/{filename}` - получение изображений продуктов и блюд
 - `GET /meal` - список приемов пищи с пагинацией
@@ -1448,7 +1454,10 @@ GET /my-food/swagger-ui/index.html
 - `GET /product_category/{id}` - получение категории по ID
 
 **Изменения:**
+- **Аутентификация теперь встроена в сервис** - отдельный auth service не требуется
+- Все auth эндпоинты находятся в `/my-food/auth/*`
 - Миграция на новый стек (Java 21, Spring Boot 3.4, JOOQ)
+- Реализована полная система JWT аутентификации с BCrypt
 - Улучшенная обработка штрихкодов
 - Новые источники данных (Open Food Facts, EAN-DB, Barcode-list.ru)
 - `GET /meal/findByDate` теперь возвращает простой список (без пагинации)
@@ -1457,6 +1466,7 @@ GET /my-food/swagger-ui/index.html
 
 **Breaking changes:**
 - Полная переписка API с нуля
+- Auth эндпоинты перенесены с `/gateway/auth/*` на `/my-food/auth/*`
 - Формат дат: ISO 8601
 - Поля в camelCase
 
@@ -1507,12 +1517,12 @@ GET /my-food/swagger-ui/index.html
 ## 17. Приоритеты реализации эндпоинтов
 
 ### Неделя 1 (P0):
-- POST /auth/user (регистрация)
-- POST /auth/token (вход)
-- GET /auth/user
-- POST /user-profile
-- GET /user-profile
-- PUT /user-profile
+- POST /my-food/auth/user (регистрация)
+- POST /my-food/auth/token (вход)
+- GET /my-food/auth/user
+- POST /my-food/user-profile
+- GET /my-food/user-profile
+- PUT /my-food/user-profile
 
 ### Неделя 2 (P1):
 - GET /product_category

@@ -45,6 +45,10 @@ class ProfileStore {
     return !!this.profile;
   }
 
+  get needsProfileSetup(): boolean {
+    return !this.profile;
+  }
+
   // Actions
   async createProfile(profileData: UserProfileCreate) {
     this.loading = true;
@@ -87,6 +91,26 @@ class ProfileStore {
         this.error = error.response?.data?.message || 'Ошибка загрузки профиля';
       });
       throw error;
+    }
+  }
+
+  async checkProfile() {
+    try {
+      const response = await profileService.getProfile();
+      
+      runInAction(() => {
+        this.profile = response.data;
+      });
+      
+    } catch (error: any) {
+      // Если профиль не найден (404), это нормально - пользователь еще не создал профиль
+      if (error.response?.status === 404) {
+        runInAction(() => {
+          this.profile = null;
+        });
+      } else {
+        console.error('Error checking profile:', error);
+      }
     }
   }
 

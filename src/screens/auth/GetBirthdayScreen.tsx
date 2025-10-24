@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, ScrollView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import { calculateAge } from '../../utils/calculations';
 
-type GetBirthdayScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetBirthday'>;
-type GetBirthdayScreenRouteProp = RouteProp<AuthStackParamList, 'GetBirthday'>;
+type GetBirthdayScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetBirthday'>;
+type GetBirthdayScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetBirthday'>;
 
 const GetBirthdayScreen: React.FC = () => {
   const navigation = useNavigation<GetBirthdayScreenNavigationProp>();

@@ -8,7 +8,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useStores } from '../../stores';
 import { AuthStackParamList } from '../../types/navigation.types';
 import { loginSchema } from '../../utils/validation';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing } from '../../theme';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 
@@ -33,12 +33,13 @@ const SignInScreen: React.FC = observer(() => {
       await authStore.login(data);
       // Navigation will be handled by AppNavigator based on auth state
     } catch (error) {
+      console.error('Login error:', error);
       Alert.alert('Ошибка', authStore.error || 'Не удалось войти в систему');
     }
   };
 
   const handleRegister = () => {
-    navigation.navigate('GetGender');
+    navigation.navigate('SimpleRegistration');
   };
 
   const handleForgotPassword = () => {

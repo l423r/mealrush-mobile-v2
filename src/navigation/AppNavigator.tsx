@@ -5,13 +5,14 @@ import { observer } from 'mobx-react-lite';
 import { useStores } from '../stores';
 import { RootStackParamList } from '../types/navigation.types';
 import AuthNavigator from './AuthNavigator';
+import ProfileSetupNavigator from './ProfileSetupNavigator';
 import MainNavigator from './MainNavigator';
 import Loading from '../components/common/Loading';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator: React.FC = observer(() => {
-  const { authStore } = useStores();
+  const { authStore, profileStore } = useStores();
 
   useEffect(() => {
     // Check if user is already authenticated
@@ -22,6 +23,18 @@ const AppNavigator: React.FC = observer(() => {
     return <Loading message="Проверка авторизации..." />;
   }
 
+  const renderScreen = () => {
+    if (!authStore.isAuthenticated) {
+      return <Stack.Screen name="Auth" component={AuthNavigator} />;
+    }
+    
+    if (profileStore.needsProfileSetup) {
+      return <Stack.Screen name="ProfileSetup" component={ProfileSetupNavigator} />;
+    }
+    
+    return <Stack.Screen name="Main" component={MainNavigator} />;
+  };
+
   return (
     <NavigationContainer>
       <Stack.Navigator
@@ -29,11 +42,7 @@ const AppNavigator: React.FC = observer(() => {
           headerShown: false,
         }}
       >
-        {authStore.isAuthenticated ? (
-          <Stack.Screen name="Main" component={MainNavigator} />
-        ) : (
-          <Stack.Screen name="Auth" component={AuthNavigator} />
-        )}
+        {renderScreen()}
       </Stack.Navigator>
     </NavigationContainer>
   );
