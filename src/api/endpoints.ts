@@ -7,11 +7,10 @@ import { Platform } from 'react-native';
 const getBaseURL = () => {
   if (__DEV__) {
     // В режиме разработки
-    if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:8080/my-food'; // Android эмулятор
-    } else {
-      return 'http://localhost:8080/my-food'; // iOS симулятор
-    }
+    // Для физического устройства используйте IP адрес вашего компьютера в локальной сети
+    // Для Android эмулятора используйте: http://10.0.2.2:8080/my-food
+    // Для физического Android устройства используйте IP компьютера:
+    return 'http://192.168.1.10:8080/my-food';
   } else {
     // В production
     return 'http://80.87.201.75:8079/gateway/my-food';

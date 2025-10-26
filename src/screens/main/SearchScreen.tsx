@@ -11,6 +11,7 @@ import { formatCalories, formatWeight } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
+import { CachedImage } from '../../components/common/CachedImage';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Search'>;
 type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
@@ -101,16 +102,15 @@ const SearchScreen: React.FC = observer(() => {
         onPress={() => handleProductPress(product)}
       >
         {product.imageUrl ? (
-          <Image 
-            source={{ uri: product.imageUrl }} 
+          <CachedImage 
+            uri={product.imageUrl} 
             style={styles.productImage}
             resizeMode="cover"
-            onError={(e) => {
-              console.log('Image load error:', product.name, product.imageUrl, e.nativeEvent.error);
-            }}
-            onLoad={() => {
-              console.log('Image loaded successfully:', product.name, product.imageUrl);
-            }}
+            placeholder={
+              <View style={styles.productImagePlaceholder}>
+                <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+              </View>
+            }
           />
         ) : (
           <View style={styles.productImagePlaceholder}>
