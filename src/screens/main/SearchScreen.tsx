@@ -6,7 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../types/navigation.types';
 import { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -292,29 +292,28 @@ const styles = StyleSheet.create({
   searchContainer: {
     padding: spacing.lg,
     backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    paddingBottom: spacing.md,
   },
   searchInput: {
     ...typography.body1,
-    backgroundColor: colors.background.default,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.light,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    paddingVertical: spacing.md,
+    borderWidth: 0,
+    ...shadows.sm,
   },
   tabs: {
     flexDirection: 'row',
     backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
   },
   tab: {
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: 'transparent',
   },
   activeTab: {
@@ -323,10 +322,11 @@ const styles = StyleSheet.create({
   tabText: {
     ...typography.body1,
     color: colors.text.secondary,
+    fontWeight: '500',
   },
   activeTabText: {
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   quickActions: {
     flexDirection: 'row',
@@ -344,10 +344,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    ...shadows.md,
   },
   productImage: {
     width: 60,

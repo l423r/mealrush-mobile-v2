@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatGender, formatTargetWeightType, formatActivityLevel } from '../../utils/formatting';
 import { getBMICategory } from '../../utils/calculations';
 import Header from '../../components/common/Header';
@@ -213,8 +213,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing.xl,
     backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    borderBottomWidth: 0,
+    marginBottom: spacing.lg,
+    ...shadows.md,
   },
   avatar: {
     width: 80,
@@ -239,11 +240,11 @@ const styles = StyleSheet.create({
   },
   statsCard: {
     margin: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderRadius: borderRadius.xl,
+    borderWidth: 0,
+    ...shadows.lg,
   },
   cardTitle: {
     ...typography.h5,
@@ -282,11 +283,11 @@ const styles = StyleSheet.create({
   goalsCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderRadius: borderRadius.xl,
+    borderWidth: 0,
+    ...shadows.lg,
   },
   goalItem: {
     flexDirection: 'row',
@@ -308,11 +309,11 @@ const styles = StyleSheet.create({
   calorieCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderRadius: borderRadius.xl,
+    borderWidth: 0,
+    ...shadows.lg,
   },
   calorieItem: {
     flexDirection: 'row',

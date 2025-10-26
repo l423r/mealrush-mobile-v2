@@ -1,14 +1,14 @@
-// Color palette
+// Color palette - Fresh & Clean Modern Design
 export const colors = {
-  // Primary colors
-  primary: '#43a047',
-  primaryDark: '#2e7d32',
-  primaryLight: '#66bb6a',
+  // Primary colors - Fresh Green
+  primary: '#4CAF50',
+  primaryDark: '#388E3C',
+  primaryLight: '#81C784',
   
-  // Secondary colors
-  secondary: '#ff7043',
-  secondaryDark: '#d84315',
-  secondaryLight: '#ffab91',
+  // Secondary colors - Warm Orange
+  secondary: '#FF7043',
+  secondaryDark: '#E64A19',
+  secondaryLight: '#FFAB91',
   
   // Neutral colors
   white: '#ffffff',
@@ -26,6 +26,22 @@ export const colors = {
     900: '#212121',
   },
   
+  // Additional accent colors for modern design
+  accent: {
+    blue: '#64B5F6',
+    purple: '#BA68C8',
+    teal: '#26A69A',
+    amber: '#FFC107',
+  },
+  
+  // Gradient colors
+  gradient: {
+    primary: ['#4CAF50', '#81C784'],
+    secondary: ['#FF7043', '#FFAB91'],
+    warm: ['#FF6B35', '#FF8A65'],
+    cool: ['#64B5F6', '#90CAF9'],
+  },
+  
   // Text colors
   text: {
     primary: '#212121',
@@ -34,31 +50,34 @@ export const colors = {
     hint: '#9e9e9e',
   },
   
-  // Background colors
+  // Background colors - Fresh & Clean
   background: {
-    default: '#fafafa',
-    paper: '#ffffff',
+    default: '#F8F9FA',  // Light gray-blue background
+    paper: '#FFFFFF',
+    light: '#F5F7FA',
     dark: '#121212',
+    elevated: '#FFFFFF',
   },
   
-  // Status colors
-  success: '#4caf50',
-  warning: '#ff9800',
-  error: '#f44336',
-  info: '#2196f3',
+  // Status colors - Modern
+  success: '#4CAF50',
+  warning: '#FF9800',
+  error: '#F44336',
+  info: '#2196F3',
   
-  // Border colors
+  // Border colors - Subtle modern borders
   border: {
-    light: '#e0e0e0',
-    medium: '#bdbdbd',
-    dark: '#757575',
+    light: '#E3E8EF',
+    medium: '#CFD8DC',
+    dark: '#90A4AE',
   },
   
-  // Shadow colors
+  // Shadow colors - Soft modern shadows
   shadow: {
-    light: 'rgba(0, 0, 0, 0.1)',
-    medium: 'rgba(0, 0, 0, 0.2)',
-    dark: 'rgba(0, 0, 0, 0.3)',
+    light: 'rgba(0, 0, 0, 0.05)',
+    medium: 'rgba(0, 0, 0, 0.1)',
+    dark: 'rgba(0, 0, 0, 0.15)',
+    colored: 'rgba(76, 175, 80, 0.15)',
   },
 } as const;
 

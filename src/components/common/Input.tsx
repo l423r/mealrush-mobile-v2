@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, ViewStyle, TextStyle, TextInputProps } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -81,16 +81,20 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.paper,
-    minHeight: 44,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.background.light,
+    minHeight: 48,
+    ...shadows.sm,
   },
   focusedInputContainer: {
+    borderWidth: 2,
     borderColor: colors.primary,
+    ...shadows.md,
   },
   errorInputContainer: {
+    borderWidth: 2,
     borderColor: colors.error,
   },
   input: {
