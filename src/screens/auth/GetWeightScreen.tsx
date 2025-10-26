@@ -93,11 +93,14 @@ const GetWeightScreen: React.FC = () => {
                   label="Вес"
                   placeholder={`Введите вес в ${unit === 'kg' ? 'килограммах' : 'фунтах'}`}
                   value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
+                  onChangeText={(text) => {
+                    const numValue = parseFloat(text);
+                    onChange(isNaN(numValue) ? 0 : numValue);
+                  }}
                   onBlur={onBlur}
                   error={errors.weight?.message}
                   keyboardType="numeric"
-                  inputStyle={styles.weightInput}
+                  inputStyle={[styles.weightInput, { flex: 0 }]}
                 />
               )}
             />
@@ -166,11 +169,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    justifyContent: 'center',
     width: '100%',
-    maxWidth: 200,
+    maxWidth: 250,
   },
   weightInput: {
-    flex: 1,
+    width: 150,
+    minWidth: 150,
     textAlign: 'center',
     fontSize: 24,
     fontWeight: '600',
@@ -181,6 +186,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     marginLeft: spacing.sm,
+    marginBottom: spacing.sm,
   },
   unitText: {
     ...typography.button,

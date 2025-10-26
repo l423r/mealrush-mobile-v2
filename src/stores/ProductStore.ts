@@ -53,6 +53,12 @@ class ProductStore {
           this.products = [...this.products, ...response.data.content];
         }
         
+        // Debug logging
+        if (response.data.content.length > 0) {
+          console.log('Search results sample:', response.data.content[0]);
+          console.log('First product imageUrl:', response.data.content[0].imageUrl);
+        }
+        
         this.pagination = {
           page: response.data.page,
           size: response.data.size,

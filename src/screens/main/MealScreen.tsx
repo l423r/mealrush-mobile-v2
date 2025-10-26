@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -96,6 +96,18 @@ const MealScreen: React.FC = observer(() => {
         style={styles.elementCard}
         onPress={() => handleElementPress(element)}
       >
+        {element.imageUrl ? (
+          <Image 
+            source={{ uri: element.imageUrl }} 
+            style={styles.elementImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.elementImagePlaceholder}>
+            <Text style={styles.elementImagePlaceholderIcon}>🍽️</Text>
+          </View>
+        )}
+        
         <View style={styles.elementInfo}>
           <Text style={styles.elementName} numberOfLines={2}>
             {element.name}
@@ -299,6 +311,24 @@ const styles = StyleSheet.create({
     borderColor: colors.border.light,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  elementImage: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+  },
+  elementImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  elementImagePlaceholderIcon: {
+    fontSize: 24,
   },
   elementInfo: {
     flex: 1,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -65,6 +65,18 @@ const ProductsScreen: React.FC = observer(() => {
         style={styles.productCard}
         onPress={() => handleProductPress(product)}
       >
+        {product.imageUrl ? (
+          <Image 
+            source={{ uri: product.imageUrl }} 
+            style={styles.productImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+          </View>
+        )}
+        
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
@@ -239,6 +251,24 @@ const styles = StyleSheet.create({
     borderColor: colors.border.light,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+  },
+  productImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  productImagePlaceholderIcon: {
+    fontSize: 24,
   },
   productInfo: {
     flex: 1,

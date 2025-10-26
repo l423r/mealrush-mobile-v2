@@ -104,15 +104,18 @@ const GetHeightScreen: React.FC = () => {
               control={control}
               name="height"
               render={({ field: { onChange, onBlur, value } }) => (
-                <Input
+                <Input 
                   label="Рост"
                   placeholder={unit === 'cm' ? 'Введите рост в сантиметрах' : 'Введите рост в футах'}
                   value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
+                  onChangeText={(text) => {
+                    const numValue = parseFloat(text);
+                    onChange(isNaN(numValue) ? 0 : numValue);
+                  }}
                   onBlur={onBlur}
                   error={errors.height?.message}
                   keyboardType="numeric"
-                  inputStyle={styles.heightInput}
+                  inputStyle={[styles.heightInput, { flex: 0 }]}
                 />
               )}
             />
@@ -194,11 +197,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    justifyContent: 'center',
     width: '100%',
-    maxWidth: 200,
+    maxWidth: 250,
   },
   heightInput: {
-    flex: 1,
+    width: 150,
+    minWidth: 150,
     textAlign: 'center',
     fontSize: 24,
     fontWeight: '600',
@@ -209,6 +214,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     marginLeft: spacing.sm,
+    marginBottom: spacing.sm,
   },
   unitText: {
     ...typography.button,

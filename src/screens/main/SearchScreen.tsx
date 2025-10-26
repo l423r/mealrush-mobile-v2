@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -100,6 +100,24 @@ const SearchScreen: React.FC = observer(() => {
         style={styles.productCard}
         onPress={() => handleProductPress(product)}
       >
+        {product.imageUrl ? (
+          <Image 
+            source={{ uri: product.imageUrl }} 
+            style={styles.productImage}
+            resizeMode="cover"
+            onError={(e) => {
+              console.log('Image load error:', product.name, product.imageUrl, e.nativeEvent.error);
+            }}
+            onLoad={() => {
+              console.log('Image loaded successfully:', product.name, product.imageUrl);
+            }}
+          />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+          </View>
+        )}
+        
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
@@ -330,6 +348,24 @@ const styles = StyleSheet.create({
     borderColor: colors.border.light,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+  },
+  productImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+    backgroundColor: colors.background.light,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  productImagePlaceholderIcon: {
+    fontSize: 30,
   },
   productInfo: {
     flex: 1,

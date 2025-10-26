@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -203,10 +203,18 @@ const MealElementScreen: React.FC = observer(() => {
         {/* Product Info */}
         {item && (
           <View style={styles.productInfo}>
-            <Text style={styles.productName}>{item.name}</Text>
-            {item.imageUrl && (
-              <Text style={styles.productImage}>🖼️</Text>
+            {item.imageUrl ? (
+              <Image 
+                source={{ uri: item.imageUrl }} 
+                style={styles.productImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.productImagePlaceholder}>
+                <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+              </View>
             )}
+            <Text style={styles.productName}>{item.name}</Text>
           </View>
         )}
 
@@ -382,14 +390,28 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
     alignItems: 'center',
   },
+  productImage: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+  },
+  productImagePlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.background.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  productImagePlaceholderIcon: {
+    fontSize: 48,
+  },
   productName: {
     ...typography.h4,
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  productImage: {
-    fontSize: 32,
   },
   mealSettings: {
     padding: spacing.lg,
