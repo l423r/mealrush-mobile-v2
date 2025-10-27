@@ -1,0 +1,408 @@
+---
+alwaysApply: true
+---
+
+# MealRush Mobile V2 - Cursor Rules
+
+## Project Overview
+This is a React Native mobile application built with Expo for tracking nutrition and calories. The app uses TypeScript, MobX for state management, React Navigation for navigation, and React Hook Form with Yup for form validation.
+
+**Important Documentation:**
+- API specifications and contracts: See `docs/API_CONTRACT.md` for complete backend API documentation, endpoints, request/response formats, error handling, and integration guidelines.
+
+## Tech Stack
+- **Compat**: Use only compatible versions listed in `package.json`
+- **Expo SDK**: ~54.0.13
+- **React Native**: 0.81.4
+- **React**: 19.1.0
+- **TypeScript**: ~5.9.2 with strict mode enabled
+- **MobX**: ^6.15.0
+- **React Navigation**: ^7.x
+- **Axios**: ^1.12.2
+- **React Hook Form**: ^7.65.0
+- **Yup**: ^1.7.1
+
+## Architecture
+
+### Directory Structure
+```
+src/
+├── api/              # API configuration and services
+│   ├── axios.config.ts
+│   ├── endpoints.ts
+│   └── services/     # API service modules (auth, meal, product, profile)
+├── components/       # Reusable UI components
+│   └── common/       # Shared components (Button, Input, Header, etc.)
+├── navigation/       # Navigation setup and navigators
+├── screens/          # Screen components
+│   ├── auth/         # Authentication screens
+│   └── main/         # Main app screens
+├── stores/           # MobX stores (state management)
+├── theme/            # Theme configuration (colors, typography, spacing)
+├── types/            # TypeScript type definitions
+└── utils/            # Utility functions (validation, formatting, calculations)
+```
+
+### State Management (MobX)
+- Use MobX with `makeAutoObservable` for all stores
+- All stores should extend or reference RootStore
+- Use `runInAction` when updating observable state asynchronously
+- Use `observer` HOC from `mobx-react-lite` to wrap React components that use store data
+- Pattern for stores:
+  ```typescript
+  class MyStore {
+    rootStore: RootStore;
+    data: DataType | null = null;
+    loading: boolean = false;
+    error: string | null = null;
+    
+    constructor(rootStore: RootStore) {
+      this.rootStore = rootStore;
+      makeAutoObservable(this);
+    }
+    
+    async fetchData() {
+      this.loading = true;
+      this.error = null;
+      try {
+        const response = await apiService.getData();
+        runInAction(() => {
+          this.data = response.data;
+          this.loading = false;
+        });
+      } catch (error: any) {
+        runInAction(() => {
+          this.loading = false;
+          this.error = error.response?.data?.message || 'Error message';
+        });
+      }
+    }
+    
+    reset() {
+      // Reset all state to initial values
+    }
+  }
+  ```
+
+### Components
+- Use functional components with TypeScript
+- Define clear interfaces for props
+- Use StyleSheet.create() for styles
+- Import theme values from `src/theme`
+- Pattern for components:
+  ```typescript
+  import React from 'react';
+  import { View, Text, StyleSheet } from 'react-native';
+  import { colors, typography, spacing } from '../../theme';
+
+  interface MyComponentProps {
+    title: string;
+    onPress?: () => void;
+  }
+
+  const MyComponent: React.FC<MyComponentProps> = ({ title, onPress }) => {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.title}>{title}</Text>
+      </View>
+    );
+  };
+
+  const styles = StyleSheet.create({
+    container: {
+      padding: spacing.md,
+      backgroundColor: colors.background.paper,
+    },
+    title: {
+      ...typography.h2,
+      color: colors.text.primary,
+    },
+  });
+
+  export default MyComponent;
+  ```
+
+### Screens
+- Use functional components with observer HOC
+- Use useStores hook to access stores
+- Handle loading and error states
+- Use KeyboardAvoidingView for forms
+- Pattern for screens:
+  ```typescript
+  import React from 'react';
+  import { View, StyleSheet } from 'react-native';
+  import { observer } from 'mobx-react-lite';
+  import { useStores } from '../../stores';
+  import { colors, spacing } from '../../theme';
+
+  const MyScreen: React.FC = observer(() => {
+    const { myStore } = useStores();
+    
+    // Component logic
+    
+    return (
+      <View style={styles.container}>
+        {/* Screen content */}
+      </View>
+    );
+  });
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background.default,
+    },
+  });
+
+  export default MyScreen;
+  ```
+
+### API Services
+- Use axios client from `src/api/axios.config.ts`
+- All API calls should be in separate service files under `src/api/services/`
+- Use TypeScript interfaces from `src/types/api.types.ts`
+- **Important:** When working with API endpoints, always refer to `docs/API_CONTRACT.md` for:
+  - Complete endpoint specifications
+  - Request/response formats
+  - Field naming conventions (snake_case vs camelCase)
+  - Error handling patterns
+  - Enum values
+  - Pagination parameters
+  - Authentication requirements
+- Pattern for API services:
+  ```typescript
+  import { apiClient } from '../axios.config';
+  import { API_ENDPOINTS } from '../endpoints';
+  import { DataType } from '../../types/api.types';
+
+  export const myService = {
+    getData: () => apiClient.get<DataType>(API_ENDPOINTS.DATA),
+    createData: (data: CreateDataType) => apiClient.post<DataType>(API_ENDPOINTS.DATA, data),
+    updateData: (id: number, data: UpdateDataType) => 
+      apiClient.put<DataType>(`${API_ENDPOINTS.DATA}/${id}`, data),
+    deleteData: (id: number) => apiClient.delete(`${API_ENDPOINTS.DATA}/${id}`),
+  };
+  ```
+
+### Forms and Validation
+- Use React Hook Form with Yup resolver
+- Define validation schemas in `src/utils/validation.ts`
+- Use Controller component from React Hook Form
+- Pattern for forms:
+  ```typescript
+  import { useForm, Controller } from 'react-hook-form';
+  import { yupResolver } from '@hookform/resolvers/yup';
+  import { validationSchema } from '../../utils/validation';
+
+  const MyForm: React.FC = () => {
+    const { control, handleSubmit, formState: { errors } } = useForm({
+      resolver: yupResolver(validationSchema),
+      mode: 'onChange',
+    });
+
+    const onSubmit = async (data: FormData) => {
+      // Handle submission
+    };
+
+    return (
+      <Controller
+        control={control}
+        name="fieldName"
+        render={({ field: { onChange, onBlur, value } }) => (
+          <Input
+            value={value}
+            onChangeText={onChange}
+            onBlur={onBlur}
+            error={errors.fieldName?.message}
+          />
+        )}
+      />
+    );
+  };
+  ```
+
+## Styling Guidelines
+
+### Theme Usage
+- Always import theme values from `src/theme`
+- Use `colors` for colors
+- Use `typography` for text styles
+- Use `spacing` for padding and margins
+- Use `borderRadius` for border radius
+- Use `shadows` for shadow styles
+
+### Colors
+- Primary: Green (#4CAF50) - main actions
+- Secondary: Orange (#FF7043) - secondary actions
+- Use semantic color names: `colors.primary`, `colors.text.primary`, `colors.background.default`
+- Use gray scale for neutral elements: `colors.gray[500]`
+
+### Typography
+- Use typography styles: `typography.h1`, `typography.h2`, `typography.body1`, `typography.body2`, `typography.button`, etc.
+- Don't hardcode font sizes
+
+### Spacing
+- Use spacing constants: `spacing.xs`, `spacing.sm`, `spacing.md`, `spacing.lg`, `spacing.xl`, etc.
+- Maintain consistent spacing throughout the app
+
+### Component Spacing
+- Use `componentSpacing` for larger gaps: `componentSpacing.section`, `componentSpacing.screen`, etc.
+
+## TypeScript Guidelines
+
+### Strict Mode
+- TypeScript strict mode is enabled
+- Define explicit types for all variables, functions, and components
+- Use interfaces for object types
+- Use type unions for finite sets of values
+
+### Types
+- Define API types in `src/types/api.types.ts`
+- Define navigation types in `src/types/navigation.types.ts`
+- Create specific types instead of using `any`
+- Use `as const` for constant objects
+
+### Error Handling
+- Use try-catch blocks for async operations
+- Provide meaningful error messages
+- Log errors in development mode
+- Use `error.response?.data?.message` for API errors
+- See `docs/API_CONTRACT.md` section 13 for detailed error handling patterns and HTTP status codes (401, 403, 404, 400, 500, etc.)
+
+## Navigation
+
+### Structure
+- Use React Navigation v7
+- Define navigation types in `src/types/navigation.types.ts`
+- Use native stack and bottom tabs navigators
+
+### Navigation Types
+```typescript
+export type RootStackParamList = {
+  Auth: undefined;
+  Main: undefined;
+  ProfileSetup: undefined;
+};
+
+export type AuthStackParamList = {
+  SignIn: undefined;
+  SimpleRegistration: undefined;
+  // ... other auth screens
+};
+```
+
+## Common Patterns
+
+### Loading States
+- Use Loading component from `src/components/common/Loading`
+- Show loading indicators during async operations
+- Pattern:
+  ```typescript
+  if (store.loading) {
+    return <Loading message="Загрузка..." />;
+  }
+  ```
+
+### Error Handling
+- Display errors to users using Alert
+- Store errors in store.error state
+- Pattern:
+  ```typescript
+  try {
+    await store.action();
+  } catch (error) {
+    Alert.alert('Ошибка', store.error || 'Произошла ошибка');
+  }
+  ```
+
+### Token Management
+- Tokens are stored in SecureStore (Expo SecureStore)
+- JWT token is automatically added to requests via axios interceptor
+- Public auth endpoints (login, register) don't require token
+- See `docs/API_CONTRACT.md` section 2 for detailed authentication flow and JWT token handling
+
+## Code Quality
+
+### Linting
+- Run `npm run lint` before committing
+- Fix all linting errors
+- Use `npm run lint:fix` for auto-fixing
+
+### Formatting
+- Use Prettier for code formatting
+- Run `npm run format` before committing
+
+### Type Checking
+- Run `npm run type-check` to verify TypeScript types
+
+## Naming Conventions
+
+### Files and Directories
+- Use PascalCase for component files: `MyComponent.tsx`
+- Use camelCase for utility files: `myUtility.ts`
+- Use kebab-case for directories: `my-directory/`
+
+### Variables and Functions
+- Use camelCase: `myVariable`, `myFunction`
+- Use descriptive names
+- Prefix boolean variables with `is`, `has`, `should`: `isLoading`, `hasError`
+
+### Components
+- Use PascalCase: `MyComponent`
+- Use functional components offering React.FC
+- Export default at the bottom
+
+### Stores
+- Use PascalCase: `AuthStore`, `ProductStore`
+- End with "Store": `MyStore`
+
+### Constants
+- Use UPPER_SNAKE_CASE: `API_BASE_URL`, `MAX_RETRIES`
+
+## Russian Language
+- All user-facing text should be in Russian
+- Comments can be in English or Russian (be consistent)
+- Error messages should be in Russian
+- Validation messages are in Russian
+
+## Security
+
+### Token Storage
+- Never store tokens in AsyncStorage
+- Use Expo SecureStore for sensitive data
+- Delete tokens on logout
+
+### API Calls
+- Don't expose API endpoints in client code
+- Use environment variables for API URLs
+- Handle token expiration (401) gracefully
+
+## Performance
+
+### React Native
+- Use FlatList for long lists
+- Implement proper keyExtractor in FlatList
+- Use useCallback for callbacks passed to children
+- Use useMemo for expensive calculations
+
+### Images
+- Use CachedImage component from `src/components/common/CachedImage` for remote images
+- Optimize image sizes
+
+## Testing
+- Write unit tests for utilities
+- Test store logic
+- Test form validation
+
+## Git Workflow
+- Keep commits small and focused
+- Write descriptive commit messages
+- Don't commit build artifacts or node_modules
+
+## Additional Notes
+- Always check if the user is authenticated before accessing protected screens
+- Handle profile setup flow for new users
+- Use the theme system consistently throughout the app
+- Keep components small and focused
+- Extract reusable logic into hooks or utilities
+- Follow the existing code patterns and structure
