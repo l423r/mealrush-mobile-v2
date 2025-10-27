@@ -132,16 +132,11 @@ const ProductScreen: React.FC = observer(() => {
       const productData = {
         ...data,
         imageBase64: base64Image,
-        productCategory: {
-          id: 'other', // Default category
-        },
+        productCategoryId: 'other', // Default category
       };
 
       if (isEditing && product) {
-        await productStore.updateProduct({
-          id: product.id,
-          ...productData,
-        });
+        await productStore.updateProduct(product.id, productData);
         Alert.alert('Успех', 'Продукт обновлен');
       } else {
         await productStore.createProduct(productData);

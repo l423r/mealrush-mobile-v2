@@ -23,8 +23,8 @@ export const mealService = {
   getMeal: (id: number) =>
     apiClient.get<Meal>(`${MY_FOOD_ENDPOINTS.MEALS}/${id}`),
   
-  updateMeal: (mealData: Meal) =>
-    apiClient.put<Meal>(MY_FOOD_ENDPOINTS.MEALS, mealData),
+  updateMeal: (id: number, mealData: Meal) =>
+    apiClient.put<Meal>(`${MY_FOOD_ENDPOINTS.MEALS}/${id}`, mealData),
   
   deleteMeal: (id: number) =>
     apiClient.delete(`${MY_FOOD_ENDPOINTS.MEALS}/${id}`),
@@ -37,8 +37,8 @@ export const mealService = {
       params: { page, size }
     }),
   
-  updateMealElement: (elementData: MealElementUpdate) =>
-    apiClient.put<MealElement>(MY_FOOD_ENDPOINTS.MEAL_ELEMENTS, elementData),
+  updateMealElement: (id: number, elementData: MealElementUpdate) =>
+    apiClient.put<MealElement>(`${MY_FOOD_ENDPOINTS.MEAL_ELEMENTS}/${id}`, elementData),
   
   deleteMealElement: (id: number) =>
     apiClient.delete(`${MY_FOOD_ENDPOINTS.MEAL_ELEMENTS}/${id}`),

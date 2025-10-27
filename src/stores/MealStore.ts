@@ -148,7 +148,7 @@ class MealStore {
       const response = await mealService.createMealElement(elementData);
       
       runInAction(() => {
-        const mealId = elementData.meal.id;
+        const mealId = elementData.mealId;
         if (!this.mealElements[mealId]) {
           this.mealElements[mealId] = [];
         }
@@ -168,18 +168,18 @@ class MealStore {
     }
   }
 
-  async updateMealElement(elementData: MealElementUpdate) {
+  async updateMealElement(elementId: number, elementData: MealElementUpdate) {
     this.loading = true;
     this.error = null;
     
     try {
-      const response = await mealService.updateMealElement(elementData);
+      const response = await mealService.updateMealElement(elementId, elementData);
       
       runInAction(() => {
         // Find and update the element in mealElements
         Object.keys(this.mealElements).forEach(mealId => {
           const elements = this.mealElements[parseInt(mealId)];
-          const index = elements.findIndex(e => e.id === elementData.id);
+          const index = elements.findIndex(e => e.id === elementId);
           if (index !== -1) {
             elements[index] = response.data;
           }

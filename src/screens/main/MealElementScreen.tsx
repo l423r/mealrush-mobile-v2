@@ -132,8 +132,8 @@ const MealElementScreen: React.FC = observer(() => {
     try {
       if (isEditing) {
         // Update existing meal element
-        await mealStore.updateMealElement({
-          id: (item as MealElement).id,
+        const mealElement = item as MealElement;
+        await mealStore.updateMealElement(mealElement.id, {
           quantity: data.quantity,
           proteins: data.proteins,
           fats: data.fats,
@@ -155,8 +155,8 @@ const MealElementScreen: React.FC = observer(() => {
         }
 
         const elementData = {
-          meal: { id: mealId },
-          parent_product: item && 'id' in item ? { id: item.id } : undefined,
+          mealId: mealId,
+          parentProductId: item && 'id' in item ? item.id : undefined,
           name: item?.name || 'Блюдо',
           quantity: data.quantity,
           proteins: data.proteins,

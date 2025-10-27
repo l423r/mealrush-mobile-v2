@@ -11,4 +11,7 @@ export const profileService = {
   
   updateProfile: (profileData: UserProfileUpdate) =>
     apiClient.put<UserProfile>(MY_FOOD_ENDPOINTS.USER_PROFILE, profileData),
+  
+  deleteProfile: () =>
+    apiClient.delete(MY_FOOD_ENDPOINTS.USER_PROFILE),
 };

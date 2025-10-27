@@ -21,8 +21,11 @@ export const productService = {
   create: (productData: ProductCreate) =>
     apiClient.post<Product>(MY_FOOD_ENDPOINTS.PRODUCTS, productData),
   
-  update: (productData: ProductUpdate) =>
-    apiClient.put<Product>(MY_FOOD_ENDPOINTS.PRODUCTS, productData),
+  getById: (id: number) =>
+    apiClient.get<Product>(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`),
+  
+  update: (id: number, productData: ProductUpdate) =>
+    apiClient.put<Product>(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`, productData),
   
   delete: (id: number) =>
     apiClient.delete(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`),
@@ -31,8 +34,8 @@ export const productService = {
   createProduct: (productData: ProductCreate) =>
     apiClient.post<Product>(MY_FOOD_ENDPOINTS.PRODUCTS, productData),
   
-  updateProduct: (productData: ProductUpdate) =>
-    apiClient.put<Product>(MY_FOOD_ENDPOINTS.PRODUCTS, productData),
+  updateProduct: (id: number, productData: ProductUpdate) =>
+    apiClient.put<Product>(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`, productData),
   
   deleteProduct: (id: number) =>
     apiClient.delete(`${MY_FOOD_ENDPOINTS.PRODUCTS}/${id}`),

@@ -164,22 +164,22 @@ class ProductStore {
     }
   }
 
-  async updateProduct(productData: ProductUpdate) {
+  async updateProduct(id: number, productData: ProductUpdate) {
     this.loading = true;
     this.error = null;
     
     try {
-      const response = await productService.updateProduct(productData);
+      const response = await productService.updateProduct(id, productData);
       
       runInAction(() => {
         // Update in myProducts (user's products)
-        const myIndex = this.myProducts.findIndex(p => p.id === productData.id);
+        const myIndex = this.myProducts.findIndex(p => p.id === id);
         if (myIndex !== -1) {
           this.myProducts[myIndex] = response.data;
         }
         
         // Also update in products (in case it's there from search)
-        const prodIndex = this.products.findIndex(p => p.id === productData.id);
+        const prodIndex = this.products.findIndex(p => p.id === id);
         if (prodIndex !== -1) {
           this.products[prodIndex] = response.data;
         }

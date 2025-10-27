@@ -113,12 +113,10 @@ export interface Product {
   calories: number;
   quantity: string;
   measurementType: MeasurementType;
+  productCategoryId?: string;
   code?: string;
   imageUrl?: string;
   source?: string;
-  productCategory?: ProductCategory;
-  store?: string;
-  price?: number;
   createdAt: string;
   updatedAt?: string;
 }
@@ -131,15 +129,12 @@ export interface ProductCreate {
   calories: number;
   quantity: string;
   measurementType: MeasurementType;
+  productCategoryId?: string;
   code?: string;
   imageBase64?: string;
-  productCategory?: {
-    id: string;
-  };
 }
 
 export interface ProductUpdate {
-  id: number;
   name?: string;
   proteins?: number;
   fats?: number;
@@ -147,11 +142,9 @@ export interface ProductUpdate {
   calories?: number;
   quantity?: string;
   measurementType?: MeasurementType;
+  productCategoryId?: string;
   code?: string;
   imageBase64?: string;
-  productCategory?: {
-    id: string;
-  };
 }
 
 // Meal types
@@ -172,7 +165,6 @@ export interface MealCreate {
 }
 
 export interface MealUpdate {
-  id: number;
   mealType?: MealType;
   dateTime?: string;
   name?: string;
@@ -182,10 +174,7 @@ export interface MealUpdate {
 export interface MealElement {
   id: number;
   mealId: number;
-  parentProduct?: {
-    id: number;
-    name: string;
-  };
+  parentProductId: number | null;
   name: string;
   proteins: number;
   fats: number;
@@ -198,19 +187,14 @@ export interface MealElement {
   defaultCarbohydrates: number;
   defaultCalories: number;
   defaultQuantity: string;
-  code?: string;
   imageUrl?: string;
   createdAt: string;
   updatedAt?: string;
 }
 
 export interface MealElementCreate {
-  meal: {
-    id: number;
-  };
-  parentProduct?: {
-    id: number;
-  };
+  mealId: number;
+  parentProductId?: number;
   name: string;
   proteins: number;
   fats: number;
@@ -223,12 +207,10 @@ export interface MealElementCreate {
   defaultCarbohydrates: number;
   defaultCalories: number;
   defaultQuantity: string;
-  code?: string;
   imageBase64?: string;
 }
 
 export interface MealElementUpdate {
-  id: number;
   quantity?: string;
   proteins?: number;
   fats?: number;
