@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -16,7 +16,7 @@ type SimpleRegistrationScreenNavigationProp = NativeStackNavigationProp<AuthStac
 
 const SimpleRegistrationScreen: React.FC = () => {
   const navigation = useNavigation<SimpleRegistrationScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, uiStore } = useStores();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -38,7 +38,7 @@ const SimpleRegistrationScreen: React.FC = () => {
       // If user doesn't have profile, they'll be redirected to ProfileSetup
     } catch (error) {
       console.error('Registration error:', error);
-      Alert.alert('Ошибка', authStore.error || 'Не удалось зарегистрироваться');
+      uiStore.showSnackbar(authStore.error || 'Не удалось зарегистрироваться', 'error');
     }
   };
 

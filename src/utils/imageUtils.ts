@@ -1,34 +1,21 @@
 import * as ImagePicker from 'expo-image-picker';
-import { Alert } from 'react-native';
 
 /**
  * Запрашивает разрешение на доступ к медиа-библиотеке
+ * Возвращает false если нет разрешения (сообщение об ошибке показывается через showSnackbar в вызывающем коде)
  */
 export async function requestMediaLibraryPermission(): Promise<boolean> {
   const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert(
-      'Нет разрешения',
-      'Необходимо разрешение на доступ к галерее для выбора фотографии',
-    );
-    return false;
-  }
-  return true;
+  return status === 'granted';
 }
 
 /**
  * Запрашивает разрешение на использование камеры
+ * Возвращает false если нет разрешения (сообщение об ошибке показывается через showSnackbar в вызывающем коде)
  */
 export async function requestCameraPermission(): Promise<boolean> {
   const { status } = await ImagePicker.requestCameraPermissionsAsync();
-  if (status !== 'granted') {
-    Alert.alert(
-      'Нет разрешения',
-      'Необходимо разрешение на использование камеры для съемки фотографии',
-    );
-    return false;
-  }
-  return true;
+  return status === 'granted';
 }
 
 /**
@@ -41,7 +28,7 @@ export async function launchCamera(): Promise<string | null> {
   }
 
   const result = await ImagePicker.launchCameraAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsEditing: true,
     quality: 0.8,
     base64: true,
@@ -64,7 +51,7 @@ export async function launchImageLibrary(): Promise<string | null> {
   }
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'],
     allowsEditing: true,
     quality: 0.8,
     base64: true,
@@ -79,29 +66,12 @@ export async function launchImageLibrary(): Promise<string | null> {
 
 /**
  * Показывает диалог выбора источника изображения (камера/галерея)
+ * Теперь используется ImageSourceDialog компонент вместо Alert
  */
 export async function pickImageSource(): Promise<'camera' | 'gallery' | null> {
-  return new Promise((resolve) => {
-    Alert.alert(
-      'Выберите источник',
-      'Откуда взять изображение?',
-      [
-        {
-          text: 'Камера',
-          onPress: () => resolve('camera'),
-        },
-        {
-          text: 'Галерея',
-          onPress: () => resolve('gallery'),
-        },
-        {
-          text: 'Отмена',
-          style: 'cancel',
-          onPress: () => resolve(null),
-        },
-      ],
-    );
-  });
+  // Эта функция больше не используется напрямую
+  // Используйте ImageSourceDialog компонент в UI
+  return null;
 }
 
 /**
@@ -185,7 +155,7 @@ export async function pickImageWithBase64(): Promise<{ uri: string; base64: stri
       return null;
     }
     result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
       base64: true,
@@ -196,7 +166,7 @@ export async function pickImageWithBase64(): Promise<{ uri: string; base64: stri
       return null;
     }
     result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       quality: 0.8,
       base64: true,

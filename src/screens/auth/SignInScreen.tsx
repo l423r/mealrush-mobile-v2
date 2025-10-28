@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -11,12 +11,15 @@ import { loginSchema } from '../../utils/validation';
 import { colors, typography, spacing } from '../../theme';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
 
 const SignInScreen: React.FC = observer(() => {
   const navigation = useNavigation<SignInScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, uiStore } = useStores();
+  const { alertState, showInfo, hideAlert } = useAlert();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -34,7 +37,7 @@ const SignInScreen: React.FC = observer(() => {
       // Navigation will be handled by AppNavigator based on auth state
     } catch (error) {
       console.error('Login error:', error);
-      Alert.alert('Ошибка', authStore.error || 'Не удалось войти в систему');
+      uiStore.showSnackbar(authStore.error || 'Не удалось войти в систему', 'error');
     }
   };
 
@@ -43,7 +46,7 @@ const SignInScreen: React.FC = observer(() => {
   };
 
   const handleForgotPassword = () => {
-    Alert.alert('Восстановление пароля', 'Функция восстановления пароля будет доступна в следующей версии');
+    showInfo('Восстановление пароля', 'Функция восстановления пароля будет доступна в следующей версии');
   };
 
   return (
@@ -141,6 +144,16 @@ const SignInScreen: React.FC = observer(() => {
           </View>
         </View>
       </ScrollView>
+
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        onDismiss={hideAlert}
+      />
     </KeyboardAvoidingView>
   );
 });

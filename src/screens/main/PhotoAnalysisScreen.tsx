@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,7 +27,7 @@ interface EditableIngredient extends PhotoAnalysisIngredient {
 const PhotoAnalysisScreen: React.FC = observer(() => {
   const navigation = useNavigation<PhotoAnalysisScreenNavigationProp>();
   const route = useRoute<PhotoAnalysisScreenRouteProp>();
-  const { mealStore } = useStores();
+  const { mealStore, uiStore } = useStores();
 
   const { analysisResult, imageUri, mealId } = route.params;
 
@@ -133,11 +133,11 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
         });
       }
 
-      Alert.alert('Успех', 'Блюда добавлены в прием пищи');
+      uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
       navigation.goBack();
     } catch {
       const errorMessage = mealStore.error || 'Не удалось сохранить блюда';
-      Alert.alert('Ошибка', errorMessage);
+      uiStore.showSnackbar(errorMessage, 'error');
     }
   };
 
@@ -174,7 +174,7 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
           <Text style={styles.confidenceLabel}>Уверенность анализа</Text>
           <View style={styles.confidenceBar}>
             {(() => {
-              let confidenceColor = colors.error;
+              let confidenceColor: string = colors.error;
               if (confidencePercent >= 70) {
                 confidenceColor = colors.success;
               } else if (confidencePercent >= 50) {

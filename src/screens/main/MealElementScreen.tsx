@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,7 +45,7 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, productStore } = useStores();
+  const { mealStore, productStore, uiStore } = useStores();
   
   const item = route.params?.item;
   const isEditing = !!item && 'mealId' in item; // MealElement has mealId
@@ -140,7 +140,7 @@ const MealElementScreen: React.FC = observer(() => {
           carbohydrates: data.carbohydrates,
           calories: data.calories,
         });
-        Alert.alert('Успех', 'Блюдо обновлено');
+        uiStore.showSnackbar('Блюдо обновлено', 'success');
       } else {
         // Create new meal element
         let mealId = route.params?.mealId;
@@ -172,12 +172,12 @@ const MealElementScreen: React.FC = observer(() => {
         };
 
         await mealStore.createMealElement(elementData);
-        Alert.alert('Успех', 'Блюдо добавлено');
+        uiStore.showSnackbar('Блюдо добавлено', 'success');
       }
 
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Ошибка', mealStore.error || 'Не удалось сохранить блюдо');
+      uiStore.showSnackbar(mealStore.error || 'Не удалось сохранить блюдо', 'error');
     }
   };
 

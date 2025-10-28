@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as ImagePicker from 'expo-image-picker';
 import { MainStackParamList } from '../../types/navigation.types';
 import { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
-import { pickImageWithBase64 } from '../../utils/imageUtils';
+import { requestCameraPermission, requestMediaLibraryPermission, imageUriToBase64 } from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import { CachedImage } from '../../components/common/CachedImage';
+import ImageSourceDialog from '../../components/common/ImageSourceDialog';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert, useImageSource } from '../../hooks/useAlert';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Search'>;
 type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
@@ -20,7 +24,9 @@ type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
 const SearchScreen: React.FC = observer(() => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
-  const { productStore, mealStore } = useStores();
+  const { productStore, mealStore, uiStore } = useStores();
+  const { alertState, showError, hideAlert } = useAlert();
+  const imageSource = useImageSource();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
@@ -74,46 +80,86 @@ const SearchScreen: React.FC = observer(() => {
     });
   };
 
-  const handlePhotoAnalysisPress = async () => {
+  const processImage = async (imageUri: string) => {
     try {
-      // Выбираем фото
-      const imageData = await pickImageWithBase64();
-      
-      if (!imageData?.base64) {
-        return; // Пользователь отменил выбор
-      }
-
       setIsAnalyzing(true);
 
+      // Конвертируем в base64
+      const base64 = await imageUriToBase64(imageUri);
+      if (!base64) {
+        uiStore.showSnackbar('Не удалось обработать изображение', 'error');
+        setIsAnalyzing(false);
+        return;
+      }
+
       // Вызываем API анализа
-      const analysisResult = await mealStore.analyzePhoto(imageData.base64, 'ru');
+      const analysisResult = await mealStore.analyzePhoto(base64, 'ru');
 
       setIsAnalyzing(false);
 
       // Переходим на экран результатов анализа
       navigation.navigate('PhotoAnalysis', {
         analysisResult,
-        imageUri: imageData.uri,
+        imageUri: imageUri,
         mealId: route.params?.mealId,
         date: route.params?.date,
       });
     } catch (error: unknown) {
       setIsAnalyzing(false);
       const errorMessage = mealStore.photoAnalysisError || 'Не удалось проанализировать фотографию';
-      Alert.alert(
+      showError(
         'Ошибка анализа',
-        errorMessage,
-        [
-          { text: 'ОК', style: 'default' },
-          {
-            text: 'Повторить',
-            onPress: () => {
-              void handlePhotoAnalysisPress();
-            },
-          },
-        ]
+        errorMessage
       );
     }
+  };
+
+  const handleCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      uiStore.showSnackbar('Нет разрешения на использование камеры', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      base64: false,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processImage(result.assets[0].uri);
+    }
+  };
+
+  const handleGallery = async () => {
+    const hasPermission = await requestMediaLibraryPermission();
+    if (!hasPermission) {
+      uiStore.showSnackbar('Нет разрешения на доступ к галерее', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      base64: false,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processImage(result.assets[0].uri);
+    }
+  };
+
+  const handlePhotoAnalysisPress = () => {
+    imageSource.showImageSourceDialog((source) => {
+      if (source === 'camera') {
+        handleCamera();
+      } else {
+        handleGallery();
+      }
+    });
   };
 
   const handleCreateProductPress = () => {
@@ -128,7 +174,7 @@ const SearchScreen: React.FC = observer(() => {
         await productStore.addToFavorites(product.id);
       }
     } catch (error) {
-      Alert.alert('Ошибка', 'Не удалось обновить избранное');
+      uiStore.showSnackbar('Не удалось обновить избранное', 'error');
     }
   };
 
@@ -319,6 +365,23 @@ const SearchScreen: React.FC = observer(() => {
           );
         })()}
       </View>
+
+      <ImageSourceDialog
+        visible={imageSource.visible}
+        onClose={imageSource.handleClose}
+        onCameraPress={imageSource.handleSelectCamera}
+        onGalleryPress={imageSource.handleSelectGallery}
+      />
+
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 });

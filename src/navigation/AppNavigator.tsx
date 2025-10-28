@@ -8,6 +8,7 @@ import AuthNavigator from './AuthNavigator';
 import ProfileSetupNavigator from './ProfileSetupNavigator';
 import MainNavigator from './MainNavigator';
 import Loading from '../components/common/Loading';
+import Snackbar from '../components/common/Snackbar';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -36,15 +37,18 @@ const AppNavigator: React.FC = observer(() => {
   };
 
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        {renderScreen()}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <>
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          {renderScreen()}
+        </Stack.Navigator>
+      </NavigationContainer>
+      <Snackbar />
+    </>
   );
 });
 

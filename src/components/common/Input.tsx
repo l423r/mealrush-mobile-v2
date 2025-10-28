@@ -6,7 +6,7 @@ interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   containerStyle?: ViewStyle;
-  inputStyle?: TextStyle;
+  inputStyle?: TextStyle | TextStyle[];
   labelStyle?: TextStyle;
   errorStyle?: TextStyle;
   leftIcon?: React.ReactNode;

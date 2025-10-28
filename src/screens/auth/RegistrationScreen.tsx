@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -18,7 +18,7 @@ type RegistrationScreenRouteProp = RouteProp<AuthStackParamList, 'Registration'>
 const RegistrationScreen: React.FC = () => {
   const navigation = useNavigation<RegistrationScreenNavigationProp>();
   const route = useRoute<RegistrationScreenRouteProp>();
-  const { authStore, profileStore } = useStores();
+  const { authStore, profileStore, uiStore } = useStores();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -61,7 +61,7 @@ const RegistrationScreen: React.FC = () => {
 
       // Navigation will be handled by AppNavigator
     } catch (error) {
-      Alert.alert('Ошибка', authStore.error || profileStore.error || 'Не удалось зарегистрироваться');
+      uiStore.showSnackbar(authStore.error || profileStore.error || 'Не удалось зарегистрироваться', 'error');
     }
   };
 
