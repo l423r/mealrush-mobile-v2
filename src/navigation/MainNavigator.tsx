@@ -7,6 +7,7 @@ import ScannerScreen from '../screens/main/ScannerScreen';
 import ProductScreen from '../screens/main/ProductScreen';
 import MealScreen from '../screens/main/MealScreen';
 import MealElementScreen from '../screens/main/MealElementScreen';
+import PhotoAnalysisScreen from '../screens/main/PhotoAnalysisScreen';
 import ProfileEditScreen from '../screens/main/ProfileEditScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
 import SettingsNameScreen from '../screens/main/SettingsNameScreen';
@@ -30,6 +31,7 @@ const MainNavigator: React.FC = () => {
       <Stack.Screen name="Product" component={ProductScreen} />
       <Stack.Screen name="Meal" component={MealScreen} />
       <Stack.Screen name="MealElement" component={MealElementScreen} />
+      <Stack.Screen name="PhotoAnalysis" component={PhotoAnalysisScreen} />
       <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="SettingsName" component={SettingsNameScreen} />

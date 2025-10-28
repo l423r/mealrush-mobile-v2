@@ -13,6 +13,8 @@ class MealStore {
   mealElements: { [mealId: number]: MealElement[] } = {};
   loading: boolean = false;
   error: string | null = null;
+  analyzingPhoto: boolean = false;
+  photoAnalysisError: string | null = null;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -261,12 +263,56 @@ class MealStore {
     this.error = null;
   }
 
+  async analyzePhoto(imageBase64: string, language: string = 'ru') {
+    this.analyzingPhoto = true;
+    this.photoAnalysisError = null;
+    
+    try {
+      const response = await mealService.analyzePhoto({
+        imageBase64,
+        language,
+      });
+      
+      runInAction(() => {
+        this.analyzingPhoto = false;
+        this.photoAnalysisError = null;
+      });
+      
+      return response.data;
+      
+    } catch (error: any) {
+      let errorMessage = 'Ошибка анализа фотографии';
+      
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 400) {
+          errorMessage = 'Изображение не предоставлено или невалидный формат';
+        } else if (status === 408) {
+          errorMessage = 'Превышено время ожидания. Попробуйте еще раз';
+        } else if (status === 503) {
+          errorMessage = 'Сервис анализа недоступен. Попробуйте позже';
+        } else {
+          errorMessage = error.response?.data?.message || errorMessage;
+        }
+      }
+      
+      runInAction(() => {
+        this.analyzingPhoto = false;
+        this.photoAnalysisError = errorMessage;
+      });
+      
+      throw error;
+    }
+  }
+
   reset() {
     this.meals = [];
     this.selectedDate = new Date();
     this.mealElements = {};
     this.loading = false;
     this.error = null;
+    this.analyzingPhoto = false;
+    this.photoAnalysisError = null;
   }
 }
 

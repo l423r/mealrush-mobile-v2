@@ -1,5 +1,5 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
-import { Product, MealElement, Meal } from './api.types';
+import { Product, MealElement, Meal, PhotoAnalysisResponse } from './api.types';
 
 // Root Stack
 export type RootStackParamList = {
@@ -127,6 +127,12 @@ export type MainStackParamList = {
     date?: string;
     mealId?: number;
     fromSearch?: boolean;
+  };
+  PhotoAnalysis: {
+    analysisResult: PhotoAnalysisResponse;
+    imageUri: string;
+    mealId?: number;
+    date?: string;
   };
   ProfileEdit: undefined;
   Settings: undefined;

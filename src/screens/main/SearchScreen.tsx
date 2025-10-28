@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,7 @@ import { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
+import { pickImageWithBase64 } from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
@@ -19,11 +20,12 @@ type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
 const SearchScreen: React.FC = observer(() => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
-  const { productStore } = useStores();
+  const { productStore, mealStore } = useStores();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const [isSearching, setIsSearching] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const debounceSearch = useCallback(
     (() => {
@@ -72,9 +74,46 @@ const SearchScreen: React.FC = observer(() => {
     });
   };
 
-  const handlePhotoAnalysisPress = () => {
-    // TODO: Implement photo analysis
-    Alert.alert('Анализ по фото', 'Функция анализа по фото будет доступна в следующей версии');
+  const handlePhotoAnalysisPress = async () => {
+    try {
+      // Выбираем фото
+      const imageData = await pickImageWithBase64();
+      
+      if (!imageData?.base64) {
+        return; // Пользователь отменил выбор
+      }
+
+      setIsAnalyzing(true);
+
+      // Вызываем API анализа
+      const analysisResult = await mealStore.analyzePhoto(imageData.base64, 'ru');
+
+      setIsAnalyzing(false);
+
+      // Переходим на экран результатов анализа
+      navigation.navigate('PhotoAnalysis', {
+        analysisResult,
+        imageUri: imageData.uri,
+        mealId: route.params?.mealId,
+        date: route.params?.date,
+      });
+    } catch (error: unknown) {
+      setIsAnalyzing(false);
+      const errorMessage = mealStore.photoAnalysisError || 'Не удалось проанализировать фотографию';
+      Alert.alert(
+        'Ошибка анализа',
+        errorMessage,
+        [
+          { text: 'ОК', style: 'default' },
+          {
+            text: 'Повторить',
+            onPress: () => {
+              void handlePhotoAnalysisPress();
+            },
+          },
+        ]
+      );
+    }
   };
 
   const handleCreateProductPress = () => {
@@ -261,18 +300,24 @@ const SearchScreen: React.FC = observer(() => {
         </View>
 
         {/* Products List */}
-        {isSearching ? (
-          <Loading message="Поиск продуктов..." />
-        ) : (
-          <FlatList
+        {(() => {
+          if (isAnalyzing || mealStore.analyzingPhoto) {
+            return <Loading message="Анализ фотографии..." />;
+          }
+          if (isSearching) {
+            return <Loading message="Поиск продуктов..." />;
+          }
+          return (
+            <FlatList
             data={getData()}
             renderItem={renderProductItem}
             keyExtractor={(item) => item.id.toString()}
             ListEmptyComponent={renderEmptyState}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
-          />
-        )}
+            />
+          );
+        })()}
       </View>
     </View>
   );
