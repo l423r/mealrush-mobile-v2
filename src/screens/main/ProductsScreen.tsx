@@ -158,11 +158,6 @@ const ProductsScreen: React.FC = observer(() => {
         <Text style={styles.emptySubtitle}>
           Создайте свой первый продукт
         </Text>
-        <Button
-          title="Создать продукт"
-          onPress={handleAddProduct}
-          style={styles.emptyButton}
-        />
       </View>
     );
   };
@@ -246,14 +241,16 @@ const ProductsScreen: React.FC = observer(() => {
         />
       </View>
 
-      {/* Add Button */}
-      <View style={styles.addButtonContainer}>
-        <Button
-          title="+ Создать продукт"
-          onPress={handleAddProduct}
-          style={styles.addButton}
-        />
-      </View>
+      {/* Add Button - показываем только на вкладке "Мои продукты" */}
+      {activeTab === 'my' && (
+        <View style={styles.addButtonContainer}>
+          <Button
+            title="+ Создать продукт"
+            onPress={handleAddProduct}
+            style={styles.addButton}
+          />
+        </View>
+      )}
     </View>
   );
 });
