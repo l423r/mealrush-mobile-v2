@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -76,6 +76,7 @@ const SignInScreen: React.FC = observer(() => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="sign_in_email_input"
                 />
               )}
             />
@@ -93,11 +94,19 @@ const SignInScreen: React.FC = observer(() => {
                   error={errors.password?.message}
                   secureTextEntry={!showPassword}
                   rightIcon={
-                    <Text style={styles.eyeIcon}>
-                      {showPassword ? '👁️' : '👁️‍🗨️'}
-                    </Text>
+                    <TouchableOpacity
+                      testID="password_toggle_icon"
+                      accessible={true}
+                      accessibilityLabel="password_toggle_icon"
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.eyeIcon}>
+                        {showPassword ? '👁️' : '👁️‍🗨️'}
+                      </Text>
+                    </TouchableOpacity>
                   }
-                  onRightIconPress={() => setShowPassword(!showPassword)}
+                  testID="sign_in_password_input"
                 />
               )}
             />
@@ -108,6 +117,7 @@ const SignInScreen: React.FC = observer(() => {
               disabled={!isValid || authStore.loading}
               loading={authStore.loading}
               style={styles.loginButton}
+              testID="sign_in_login_button"
             />
 
             <Button
@@ -115,6 +125,7 @@ const SignInScreen: React.FC = observer(() => {
               onPress={handleForgotPassword}
               variant="text"
               style={styles.forgotButton}
+              testID="sign_in_forgot_password_button"
             />
           </View>
 
@@ -125,6 +136,7 @@ const SignInScreen: React.FC = observer(() => {
               onPress={handleRegister}
               variant="outline"
               style={styles.registerButton}
+              testID="sign_in_register_button"
             />
           </View>
         </View>

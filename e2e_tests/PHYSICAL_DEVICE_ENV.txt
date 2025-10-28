@@ -1,0 +1,21 @@
+# Пример .env файла для физического устройства
+# Скопируйте содержимое в файл .env в папке e2e_tests
+
+APPIUM_SERVER_URL=http://localhost:4723/wd/hub
+PLATFORM=android
+
+# Ваше устройство: OnePlus 23127PN0CG с Android 15
+ANDROID_PLATFORM_VERSION=15
+ANDROID_DEVICE_NAME=53736f48
+ANDROID_APP_PATH=../android/app/build/outputs/apk/debug/app-debug.apk
+
+# iOS Configuration (можно оставить как есть, если не используете iOS)
+IOS_PLATFORM_VERSION=17.0
+IOS_DEVICE_NAME=iPhone 15 Pro
+IOS_APP_PATH=../build/iphone/FoodApp.app
+
+# Test User
+TEST_USER_EMAIL=test@example.com
+TEST_USER_PASSWORD=Test123456
+TEST_USER_NAME=Test User
+

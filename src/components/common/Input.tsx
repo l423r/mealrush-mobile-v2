@@ -12,6 +12,7 @@ interface InputProps extends TextInputProps {
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  testID?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -24,6 +25,7 @@ const Input: React.FC<InputProps> = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  testID,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -54,6 +56,8 @@ const Input: React.FC<InputProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholderTextColor={colors.text.hint}
+          testID={testID}
+          accessibilityLabel={testID}
           {...props}
         />
         
