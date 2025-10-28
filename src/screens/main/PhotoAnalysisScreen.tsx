@@ -18,6 +18,10 @@ type PhotoAnalysisScreenRouteProp = RouteProp<MainStackParamList, 'PhotoAnalysis
 
 interface EditableIngredient extends PhotoAnalysisIngredient {
   editedQuantity: number;
+  originalProteins: number;
+  originalFats: number;
+  originalCarbohydrates: number;
+  originalCalories: number;
 }
 
 const PhotoAnalysisScreen: React.FC = observer(() => {
@@ -33,6 +37,10 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
     analysisResult.ingredients.map(ing => ({
       ...ing,
       editedQuantity: ing.quantity,
+      originalProteins: ing.proteins,
+      originalFats: ing.fats,
+      originalCarbohydrates: ing.carbohydrates,
+      originalCalories: ing.calories,
     }))
   );
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
@@ -55,12 +63,13 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
     const ingredient = updatedIngredients[index];
 
     // Пересчитываем КБЖУ на основе нового количества
+    // Используем исходные значения и исходное количество для правильного пересчета
     const originalQuantity = ingredients[index].quantity;
     const recalculated = recalculateNutrients(
-      ingredient.proteins,
-      ingredient.fats,
-      ingredient.carbohydrates,
-      ingredient.calories,
+      ingredient.originalProteins,
+      ingredient.originalFats,
+      ingredient.originalCarbohydrates,
+      ingredient.originalCalories,
       originalQuantity,
       quantity
     );
