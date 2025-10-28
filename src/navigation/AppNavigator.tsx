@@ -20,7 +20,8 @@ const AppNavigator: React.FC = observer(() => {
     authStore.checkAuth();
   }, []);
 
-  if (authStore.loading) {
+  // Показываем загрузку, пока проверяется авторизация или профиль
+  if (authStore.loading || profileStore.checkingProfile) {
     return <Loading message="Проверка авторизации..." />;
   }
 
@@ -29,10 +30,12 @@ const AppNavigator: React.FC = observer(() => {
       return <Stack.Screen name="Auth" component={AuthNavigator} />;
     }
     
+    // Экран настройки профиля показываем только если профиль действительно отсутствует
     if (profileStore.needsProfileSetup) {
       return <Stack.Screen name="ProfileSetup" component={ProfileSetupNavigator} />;
     }
     
+    // Показываем главный экран, если профиль настроен
     return <Stack.Screen name="Main" component={MainNavigator} />;
   };
 

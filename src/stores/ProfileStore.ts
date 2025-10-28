@@ -10,6 +10,7 @@ class ProfileStore {
   // State
   profile: UserProfile | null = null;
   loading: boolean = false;
+  checkingProfile: boolean = false; // Флаг проверки профиля при инициализации
   error: string | null = null;
 
   constructor(rootStore: RootStore) {
@@ -95,22 +96,29 @@ class ProfileStore {
   }
 
   async checkProfile() {
+    this.checkingProfile = true;
+    this.error = null;
+    
     try {
       const response = await profileService.getProfile();
       
       runInAction(() => {
         this.profile = response.data;
+        this.checkingProfile = false;
+        this.error = null;
       });
       
     } catch (error: any) {
-      // Если профиль не найден (404) или нет доступа (403), это нормально - пользователь еще не создал профиль
-      if (error.response?.status === 404 || error.response?.status === 403) {
-        runInAction(() => {
+      runInAction(() => {
+        // Если профиль не найден (404) или нет доступа (403), это нормально - пользователь еще не создал профиль
+        if (error.response?.status === 404 || error.response?.status === 403) {
           this.profile = null;
-        });
-      } else {
-        console.error('Error checking profile:', error);
-      }
+        } else {
+          console.error('Error checking profile:', error);
+          this.error = error.response?.data?.message || 'Ошибка загрузки профиля';
+        }
+        this.checkingProfile = false;
+      });
     }
   }
 
@@ -151,6 +159,7 @@ class ProfileStore {
   reset() {
     this.profile = null;
     this.loading = false;
+    this.checkingProfile = false;
     this.error = null;
   }
 }

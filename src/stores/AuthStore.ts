@@ -32,7 +32,6 @@ class AuthStore {
       runInAction(() => {
         this.token = String(response.data.jwtToken);
         this.isAuthenticated = true;
-        this.loading = false;
         this.error = null;
       });
       
@@ -41,8 +40,12 @@ class AuthStore {
       // Get user data
       await this.getUser();
       
-      // Check if user has profile
+      // Check if user has profile (не сбрасываем loading до завершения проверки профиля)
       await this.rootStore.profileStore.checkProfile();
+      
+      runInAction(() => {
+        this.loading = false;
+      });
       
     } catch (error: any) {
       runInAction(() => {
