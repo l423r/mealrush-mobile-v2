@@ -1,0 +1,138 @@
+import { makeAutoObservable, runInAction } from 'mobx';
+import { authService } from '../api/services/auth.service';
+import RootStore from './RootStore';
+import { User, LoginRequest, RegisterRequest } from '../types/api.types';
+import { saveToken, deleteToken } from '../api/axios.config';
+
+class AuthStore {
+  rootStore: RootStore;
+  
+  // State
+  user: User | null = null;
+  token: string | null = null;
+  isAuthenticated: boolean = false;
+  loading: boolean = false;
+  error: string | null = null;
+
+  constructor(rootStore: RootStore) {
+    this.rootStore = rootStore;
+    makeAutoObservable(this);
+  }
+
+  // Actions
+  async login(credentials: LoginRequest) {
+    this.loading = true;
+    this.error = null;
+    
+    try {
+      const response = await authService.login(credentials);
+      
+      runInAction(() => {
+        this.token = response.data.jwt_token;
+        this.isAuthenticated = true;
+        this.loading = false;
+        this.error = null;
+      });
+      
+      await saveToken(response.data.jwt_token);
+      
+      // Get user data
+      await this.getUser();
+      
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error = error.response?.data?.message || 'Ошибка входа';
+      });
+      throw error;
+    }
+  }
+
+  async register(userData: RegisterRequest) {
+    this.loading = true;
+    this.error = null;
+    
+    try {
+      const response = await authService.register(userData);
+      
+      runInAction(() => {
+        this.user = response.data;
+        this.loading = false;
+        this.error = null;
+      });
+      
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error = error.response?.data?.message || 'Ошибка регистрации';
+      });
+      throw error;
+    }
+  }
+
+  async getUser() {
+    if (!this.token) return;
+    
+    try {
+      const response = await authService.getUser();
+      
+      runInAction(() => {
+        this.user = response.data;
+      });
+      
+    } catch (error: any) {
+      console.error('Error getting user:', error);
+      // Don't throw error here to avoid breaking the app
+    }
+  }
+
+  async logout() {
+    runInAction(() => {
+      this.user = null;
+      this.token = null;
+      this.isAuthenticated = false;
+      this.error = null;
+    });
+    
+    await deleteToken();
+    
+    // Reset all stores
+    this.rootStore.reset();
+  }
+
+  async checkAuth() {
+    if (this.token) {
+      try {
+        await this.getUser();
+        runInAction(() => {
+          this.isAuthenticated = true;
+        });
+      } catch (error) {
+        await this.logout();
+      }
+    }
+  }
+
+  setToken(token: string) {
+    this.token = token;
+    this.isAuthenticated = true;
+  }
+
+  setError(error: string | null) {
+    this.error = error;
+  }
+
+  clearError() {
+    this.error = null;
+  }
+
+  reset() {
+    this.user = null;
+    this.token = null;
+    this.isAuthenticated = false;
+    this.loading = false;
+    this.error = null;
+  }
+}
+
+export default AuthStore;
