@@ -1148,10 +1148,16 @@ Headers: Authorization: Bearer {token}
 **Request Body:**
 ```json
 {
-  "image_base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
-  "language": "ru"
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
+  "language": "ru",
+  "comment": "Это домашний обед с макаронами и котлетой"
 }
 ```
+
+**Поля:**
+- `imageBase64` (обязательное) - base64 строка изображения
+- `language` (опциональное) - язык для распознавания (`ru`/`en`, по умолчанию `ru`)
+- `comment` (опциональное) - комментарий пользователя для более точного анализа блюда (макс. 500 символов)
 
 **Response (200 OK):**
 ```json
@@ -1201,7 +1207,9 @@ Headers: Authorization: Bearer {token}
 - 408: Timeout (> 40 сек)
 - 503: OpenAI API недоступен
 
-**Примечание:** Клиент должен позволить пользователю откорректировать данные перед сохранением
+**Примечания:**
+- Клиент должен позволить пользователю откорректировать данные перед сохранением
+- Комментарий пользователя помогает AI более точно определить ингредиенты и их количество
 
 ---
 
@@ -1317,8 +1325,9 @@ GET /my-food/product/search/barcode/4607065597924
 // 2. Отправка на анализ
 POST /my-food/meal_element/analyze-photo
 {
-  "image_base64": "data:image/jpeg;base64,...",
-  "language": "ru"
+  "imageBase64": "data:image/jpeg;base64,...",
+  "language": "ru",
+  "comment": "Домашняя гречка с курицей, порция примерно 300г"
 }
 → Response: { ingredients: [...], total_nutrients: {...} }
 

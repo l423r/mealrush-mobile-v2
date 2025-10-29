@@ -15,6 +15,7 @@ import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import { CachedImage } from '../../components/common/CachedImage';
 import ImageSourceDialog from '../../components/common/ImageSourceDialog';
+import PhotoAnalysisDialog from '../../components/common/PhotoAnalysisDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert, useImageSource } from '../../hooks/useAlert';
 
@@ -32,6 +33,8 @@ const SearchScreen: React.FC = observer(() => {
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const [isSearching, setIsSearching] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [showPhotoAnalysisDialog, setShowPhotoAnalysisDialog] = useState(false);
 
   const debounceSearch = useCallback(
     (() => {
@@ -81,29 +84,42 @@ const SearchScreen: React.FC = observer(() => {
   };
 
   const processImage = async (imageUri: string) => {
+    // Сохраняем URI изображения и показываем диалог для комментария
+    setSelectedImageUri(imageUri);
+    setShowPhotoAnalysisDialog(true);
+  };
+
+  const handleStartAnalysis = async (comment?: string) => {
+    if (!selectedImageUri) return;
+
+    setShowPhotoAnalysisDialog(false);
+    
     try {
       setIsAnalyzing(true);
 
       // Конвертируем в base64
-      const base64 = await imageUriToBase64(imageUri);
+      const base64 = await imageUriToBase64(selectedImageUri);
       if (!base64) {
         uiStore.showSnackbar('Не удалось обработать изображение', 'error');
         setIsAnalyzing(false);
         return;
       }
 
-      // Вызываем API анализа
-      const analysisResult = await mealStore.analyzePhoto(base64, 'ru');
+      // Вызываем API анализа с комментарием
+      const analysisResult = await mealStore.analyzePhoto(base64, 'ru', comment);
 
       setIsAnalyzing(false);
 
       // Переходим на экран результатов анализа
       navigation.navigate('PhotoAnalysis', {
         analysisResult,
-        imageUri: imageUri,
+        imageUri: selectedImageUri,
         mealId: route.params?.mealId,
         date: route.params?.date,
       });
+
+      // Очищаем состояние
+      setSelectedImageUri(null);
     } catch (error: unknown) {
       setIsAnalyzing(false);
       const errorMessage = mealStore.photoAnalysisError || 'Не удалось проанализировать фотографию';
@@ -111,6 +127,8 @@ const SearchScreen: React.FC = observer(() => {
         'Ошибка анализа',
         errorMessage
       );
+      // Очищаем состояние при ошибке
+      setSelectedImageUri(null);
     }
   };
 
@@ -371,6 +389,16 @@ const SearchScreen: React.FC = observer(() => {
         onClose={imageSource.handleClose}
         onCameraPress={imageSource.handleSelectCamera}
         onGalleryPress={imageSource.handleSelectGallery}
+      />
+
+      <PhotoAnalysisDialog
+        visible={showPhotoAnalysisDialog}
+        onClose={() => {
+          setShowPhotoAnalysisDialog(false);
+          setSelectedImageUri(null);
+        }}
+        onAnalyze={handleStartAnalysis}
+        analyzing={isAnalyzing || mealStore.analyzingPhoto}
       />
 
       <AlertDialog

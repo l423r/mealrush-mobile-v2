@@ -263,7 +263,7 @@ class MealStore {
     this.error = null;
   }
 
-  async analyzePhoto(imageBase64: string, language: string = 'ru') {
+  async analyzePhoto(imageBase64: string, language: string = 'ru', comment?: string) {
     this.analyzingPhoto = true;
     this.photoAnalysisError = null;
     
@@ -271,6 +271,7 @@ class MealStore {
       const response = await mealService.analyzePhoto({
         imageBase64,
         language,
+        comment,
       });
       
       runInAction(() => {

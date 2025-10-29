@@ -222,6 +222,7 @@ export interface MealElementUpdate {
 export interface PhotoAnalysisRequest {
   imageBase64: string;
   language?: string;
+  comment?: string;
 }
 
 export interface PhotoAnalysisIngredient {
