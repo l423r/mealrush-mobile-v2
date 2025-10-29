@@ -1,4 +1,5 @@
 import React from 'react';
+import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { HomeTabParamList } from '../types/navigation.types';
 import { colors, typography } from '../theme';

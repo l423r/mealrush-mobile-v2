@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../theme';
 
 interface HeaderProps {
@@ -17,6 +18,7 @@ const Header: React.FC<HeaderProps> = ({
   onBackPress,
 }) => {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const handleBackPress = () => {
     if (onBackPress) {
@@ -32,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({
         barStyle="dark-content"
         backgroundColor={colors.background.paper}
       />
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top, spacing.sm) }]}>
         <View style={styles.left}>
           {showBackButton && (
             <TouchableOpacity
@@ -65,7 +67,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.background.paper,
     borderBottomWidth: 1,
     borderBottomColor: colors.border.light,

@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type GetWeightScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetWeight'>;
-type GetWeightScreenRouteProp = RouteProp<AuthStackParamList, 'GetWeight'>;
+type GetWeightScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetWeight'>;
+type GetWeightScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetWeight'>;
 
 const weightSchema = yup.object().shape({
   weight: yup
@@ -93,11 +93,14 @@ const GetWeightScreen: React.FC = () => {
                   label="Вес"
                   placeholder={`Введите вес в ${unit === 'kg' ? 'килограммах' : 'фунтах'}`}
                   value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
+                  onChangeText={(text) => {
+                    const numValue = parseFloat(text);
+                    onChange(isNaN(numValue) ? 0 : numValue);
+                  }}
                   onBlur={onBlur}
                   error={errors.weight?.message}
                   keyboardType="numeric"
-                  inputStyle={styles.weightInput}
+                  inputStyle={[styles.weightInput, { flex: 0 }]}
                 />
               )}
             />
@@ -166,11 +169,13 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'flex-end',
+    justifyContent: 'center',
     width: '100%',
-    maxWidth: 200,
+    maxWidth: 250,
   },
   weightInput: {
-    flex: 1,
+    width: 150,
+    minWidth: 150,
     textAlign: 'center',
     fontSize: 24,
     fontWeight: '600',
@@ -181,6 +186,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: borderRadius.md,
     marginLeft: spacing.sm,
+    marginBottom: spacing.sm,
   },
   unitText: {
     ...typography.button,

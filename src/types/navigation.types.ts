@@ -1,23 +1,107 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
-import { Product, MealElement, Meal } from './api.types';
+import { Product, MealElement, Meal, PhotoAnalysisResponse } from './api.types';
 
 // Root Stack
 export type RootStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
+  ProfileSetup: NavigatorScreenParams<ProfileSetupStackParamList>;
   Main: NavigatorScreenParams<MainStackParamList>;
 };
 
 // Auth Stack
 export type AuthStackParamList = {
   SignIn: undefined;
+  SimpleRegistration: undefined;
   GetGender: undefined;
-  GetTarget: undefined;
-  GetWeight: undefined;
-  GetTargetWeight: undefined;
-  GetHeight: undefined;
-  GetBirthday: undefined;
-  GetActivity: undefined;
-  Registration: undefined;
+  GetTarget: {
+    gender?: string;
+  };
+  GetWeight: {
+    gender?: string;
+    target?: string;
+  };
+  GetTargetWeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+  };
+  GetHeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+  };
+  GetBirthday: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+  };
+  GetActivity: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+  };
+  Registration: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+    activity?: string;
+  };
+};
+
+// Profile Setup Stack
+export type ProfileSetupStackParamList = {
+  GetGender: undefined;
+  GetTarget: {
+    gender?: string;
+  };
+  GetWeight: {
+    gender?: string;
+    target?: string;
+  };
+  GetTargetWeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+  };
+  GetHeight: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+  };
+  GetBirthday: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+  };
+  GetActivity: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+  };
+  CompleteProfile: {
+    gender?: string;
+    target?: string;
+    weight?: number;
+    targetWeight?: number;
+    height?: number;
+    birthday?: string;
+    activity?: string;
+  };
 };
 
 // Main Stack
@@ -33,6 +117,7 @@ export type MainStackParamList = {
   };
   Product: {
     product?: Product;
+    barcode?: string;
   };
   Meal: {
     meal: Meal;
@@ -42,6 +127,12 @@ export type MainStackParamList = {
     date?: string;
     mealId?: number;
     fromSearch?: boolean;
+  };
+  PhotoAnalysis: {
+    analysisResult: PhotoAnalysisResponse;
+    imageUri: string;
+    mealId?: number;
+    date?: string;
   };
   ProfileEdit: undefined;
   Settings: undefined;

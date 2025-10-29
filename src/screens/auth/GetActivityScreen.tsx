@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 
-type GetActivityScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetActivity'>;
-type GetActivityScreenRouteProp = RouteProp<AuthStackParamList, 'GetActivity'>;
+type GetActivityScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetActivity'>;
+type GetActivityScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetActivity'>;
 
 const GetActivityScreen: React.FC = () => {
   const navigation = useNavigation<GetActivityScreenNavigationProp>();
@@ -55,7 +55,7 @@ const GetActivityScreen: React.FC = () => {
 
   const handleNext = () => {
     if (selectedActivity) {
-      navigation.navigate('Registration', {
+      navigation.navigate('CompleteProfile', {
         gender: route.params?.gender,
         target: route.params?.target,
         weight: route.params?.weight,

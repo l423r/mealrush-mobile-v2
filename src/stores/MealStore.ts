@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { mealService } from '../api/services/meal.service';
 import RootStore from './RootStore';
-import { Meal, MealCreate, MealElement, MealElementCreate, MealElementUpdate, PaginatedResponse } from '../types/api.types';
+import { Meal, MealCreate, MealElement, MealElementCreate, MealElementUpdate } from '../types/api.types';
 import { formatDateForAPI } from '../utils/formatting';
 
 class MealStore {
@@ -13,6 +13,8 @@ class MealStore {
   mealElements: { [mealId: number]: MealElement[] } = {};
   loading: boolean = false;
   error: string | null = null;
+  analyzingPhoto: boolean = false;
+  photoAnalysisError: string | null = null;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -22,7 +24,7 @@ class MealStore {
   // Computed
   get mealsForSelectedDate(): Meal[] {
     return this.meals.filter(meal => {
-      const mealDate = new Date(meal.date_time);
+      const mealDate = new Date(meal.dateTime);
       return mealDate.toDateString() === this.selectedDate.toDateString();
     });
   }
@@ -84,7 +86,7 @@ class MealStore {
       const response = await mealService.getMealsByDate(dateString);
       
       runInAction(() => {
-        this.meals = response.data.content;
+        this.meals = response.data || [];
         this.loading = false;
         this.error = null;
       });
@@ -148,7 +150,7 @@ class MealStore {
       const response = await mealService.createMealElement(elementData);
       
       runInAction(() => {
-        const mealId = elementData.meal.id;
+        const mealId = elementData.mealId;
         if (!this.mealElements[mealId]) {
           this.mealElements[mealId] = [];
         }
@@ -168,18 +170,18 @@ class MealStore {
     }
   }
 
-  async updateMealElement(elementData: MealElementUpdate) {
+  async updateMealElement(elementId: number, elementData: MealElementUpdate) {
     this.loading = true;
     this.error = null;
     
     try {
-      const response = await mealService.updateMealElement(elementData);
+      const response = await mealService.updateMealElement(elementId, elementData);
       
       runInAction(() => {
         // Find and update the element in mealElements
         Object.keys(this.mealElements).forEach(mealId => {
           const elements = this.mealElements[parseInt(mealId)];
-          const index = elements.findIndex(e => e.id === elementData.id);
+          const index = elements.findIndex(e => e.id === elementId);
           if (index !== -1) {
             elements[index] = response.data;
           }
@@ -261,12 +263,56 @@ class MealStore {
     this.error = null;
   }
 
+  async analyzePhoto(imageBase64: string, language: string = 'ru') {
+    this.analyzingPhoto = true;
+    this.photoAnalysisError = null;
+    
+    try {
+      const response = await mealService.analyzePhoto({
+        imageBase64,
+        language,
+      });
+      
+      runInAction(() => {
+        this.analyzingPhoto = false;
+        this.photoAnalysisError = null;
+      });
+      
+      return response.data;
+      
+    } catch (error: any) {
+      let errorMessage = 'Ошибка анализа фотографии';
+      
+      if (error.response) {
+        const status = error.response.status;
+        if (status === 400) {
+          errorMessage = 'Изображение не предоставлено или невалидный формат';
+        } else if (status === 408) {
+          errorMessage = 'Превышено время ожидания. Попробуйте еще раз';
+        } else if (status === 503) {
+          errorMessage = 'Сервис анализа недоступен. Попробуйте позже';
+        } else {
+          errorMessage = error.response?.data?.message || errorMessage;
+        }
+      }
+      
+      runInAction(() => {
+        this.analyzingPhoto = false;
+        this.photoAnalysisError = errorMessage;
+      });
+      
+      throw error;
+    }
+  }
+
   reset() {
     this.meals = [];
     this.selectedDate = new Date();
     this.mealElements = {};
     this.loading = false;
     this.error = null;
+    this.analyzingPhoto = false;
+    this.photoAnalysisError = null;
   }
 }
 

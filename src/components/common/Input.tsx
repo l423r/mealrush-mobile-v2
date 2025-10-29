@@ -1,17 +1,18 @@
 import React, { useState } from 'react';
 import { View, TextInput, Text, StyleSheet, ViewStyle, TextStyle, TextInputProps } from 'react-native';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
   containerStyle?: ViewStyle;
-  inputStyle?: TextStyle;
+  inputStyle?: TextStyle | TextStyle[];
   labelStyle?: TextStyle;
   errorStyle?: TextStyle;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
   onRightIconPress?: () => void;
+  testID?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -24,21 +25,22 @@ const Input: React.FC<InputProps> = ({
   leftIcon,
   rightIcon,
   onRightIconPress,
+  testID,
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
 
   const inputContainerStyle = [
     styles.inputContainer,
-    isFocused && styles.focusedInputContainer,
-    error && styles.errorInputContainer,
+    isFocused ? styles.focusedInputContainer : undefined,
+    error ? styles.errorInputContainer : undefined,
     containerStyle,
   ];
 
   const inputStyleCombined = [
     styles.input,
-    leftIcon && styles.inputWithLeftIcon,
-    rightIcon && styles.inputWithRightIcon,
+    leftIcon ? styles.inputWithLeftIcon : undefined,
+    rightIcon ? styles.inputWithRightIcon : undefined,
     inputStyle,
   ];
 
@@ -54,6 +56,8 @@ const Input: React.FC<InputProps> = ({
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           placeholderTextColor={colors.text.hint}
+          testID={testID}
+          accessibilityLabel={testID}
           {...props}
         />
         
@@ -81,16 +85,20 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
     borderColor: colors.border.light,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.paper,
-    minHeight: 44,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.background.light,
+    minHeight: 48,
+    ...shadows.sm,
   },
   focusedInputContainer: {
+    borderWidth: 2,
     borderColor: colors.primary,
+    ...shadows.md,
   },
   errorInputContainer: {
+    borderWidth: 2,
     borderColor: colors.error,
   },
   input: {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,15 +7,17 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as ImagePicker from 'expo-image-picker';
 import { MainStackParamList } from '../../types/navigation.types';
-import { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { productSchema } from '../../utils/validation';
 import { calculateCalories } from '../../utils/calculations';
+import { requestCameraPermission, requestMediaLibraryPermission } from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import Loading from '../../components/common/Loading';
+import ImageSourceDialog from '../../components/common/ImageSourceDialog';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert, useImageSource } from '../../hooks/useAlert';
 
 type ProductScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Product'>;
 type ProductScreenRouteProp = RouteProp<MainStackParamList, 'Product'>;
@@ -23,7 +25,9 @@ type ProductScreenRouteProp = RouteProp<MainStackParamList, 'Product'>;
 const ProductScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductScreenNavigationProp>();
   const route = useRoute<ProductScreenRouteProp>();
-  const { productStore } = useStores();
+  const { productStore, uiStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
+  const imageSource = useImageSource();
   
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -55,7 +59,7 @@ const ProductScreen: React.FC = observer(() => {
   useEffect(() => {
     if (product) {
       setIsEditing(true);
-      setImageUri(product.image_url || null);
+      setImageUri(product.imageUrl || null);
     }
   }, [product]);
 
@@ -71,14 +75,14 @@ const ProductScreen: React.FC = observer(() => {
   }, [watchedValues.proteins, watchedValues.fats, watchedValues.carbohydrates, setValue]);
 
   const handleImagePicker = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Ошибка', 'Нет разрешения на доступ к галерее');
+    const hasPermission = await requestMediaLibraryPermission();
+    if (!hasPermission) {
+      uiStore.showSnackbar('Нет разрешения на доступ к галерее', 'error');
       return;
     }
 
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.8,
@@ -90,9 +94,9 @@ const ProductScreen: React.FC = observer(() => {
   };
 
   const handleCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Ошибка', 'Нет разрешения на использование камеры');
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      uiStore.showSnackbar('Нет разрешения на использование камеры', 'error');
       return;
     }
 
@@ -108,74 +112,59 @@ const ProductScreen: React.FC = observer(() => {
   };
 
   const handleImageSource = () => {
-    Alert.alert(
-      'Выберите источник',
-      'Откуда взять изображение?',
-      [
-        { text: 'Камера', onPress: handleCamera },
-        { text: 'Галерея', onPress: handleImagePicker },
-        { text: 'Отмена', style: 'cancel' },
-      ]
-    );
+    imageSource.showImageSourceDialog((source) => {
+      if (source === 'camera') {
+        handleCamera();
+      } else {
+        handleImagePicker();
+      }
+    });
   };
 
   const onSubmit = async (data: any) => {
     try {
       let base64Image = null;
       if (imageUri) {
-        // Convert image to base64
-        const response = await fetch(imageUri);
-        const blob = await response.blob();
-        base64Image = `data:image/jpeg;base64,${blob}`;
+        // Using URI directly for now
+        // Base64 conversion can be added later if needed via imageUriToBase64 utility
+        base64Image = imageUri;
       }
 
       const productData = {
         ...data,
-        image_base64: base64Image,
-        product_category: {
-          id: 'other', // Default category
-        },
+        imageBase64: base64Image,
+        productCategoryId: 'other', // Default category
       };
 
       if (isEditing && product) {
-        await productStore.updateProduct({
-          id: product.id,
-          ...productData,
-        });
-        Alert.alert('Успех', 'Продукт обновлен');
+        await productStore.updateProduct(product.id, productData);
+        uiStore.showSnackbar('Продукт обновлен', 'success');
       } else {
         await productStore.createProduct(productData);
-        Alert.alert('Успех', 'Продукт создан');
+        uiStore.showSnackbar('Продукт создан', 'success');
       }
 
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Ошибка', productStore.error || 'Не удалось сохранить продукт');
+      uiStore.showSnackbar(productStore.error || 'Не удалось сохранить продукт', 'error');
     }
   };
 
   const handleDelete = () => {
     if (!product) return;
 
-    Alert.alert(
+    showConfirm(
       'Удаление продукта',
       'Вы уверены, что хотите удалить этот продукт?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await productStore.deleteProduct(product.id);
-              Alert.alert('Успех', 'Продукт удален');
-              navigation.goBack();
-            } catch (error) {
-              Alert.alert('Ошибка', 'Не удалось удалить продукт');
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await productStore.deleteProduct(product.id);
+          uiStore.showSnackbar('Продукт удален', 'success');
+          navigation.goBack();
+        } catch (error) {
+          uiStore.showSnackbar('Не удалось удалить продукт', 'error');
+        }
+      }
     );
   };
 
@@ -340,6 +329,26 @@ const ProductScreen: React.FC = observer(() => {
           loading={productStore.loading}
         />
       </View>
+
+      <ImageSourceDialog
+        visible={imageSource.visible}
+        onClose={imageSource.handleClose}
+        onCameraPress={imageSource.handleSelectCamera}
+        onGalleryPress={imageSource.handleSelectGallery}
+      />
+
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 });

@@ -27,21 +27,31 @@ class AuthStore {
     try {
       const response = await authService.login(credentials);
       
+      console.log('Login response:', JSON.stringify(response.data, null, 2));
+      
       runInAction(() => {
-        this.token = response.data.jwt_token;
+        this.token = String(response.data.jwtToken);
         this.isAuthenticated = true;
-        this.loading = false;
         this.error = null;
       });
       
-      await saveToken(response.data.jwt_token);
+      await saveToken(String(response.data.jwtToken));
       
       // Get user data
       await this.getUser();
       
+      // Check if user has profile (не сбрасываем loading до завершения проверки профиля)
+      await this.rootStore.profileStore.checkProfile();
+      
+      runInAction(() => {
+        this.loading = false;
+      });
+      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
+        console.log("error" +error);
+        
         this.error = error.response?.data?.message || 'Ошибка входа';
       });
       throw error;
@@ -59,6 +69,12 @@ class AuthStore {
         this.user = response.data;
         this.loading = false;
         this.error = null;
+      });
+      
+      // После успешной регистрации автоматически входим в систему
+      await this.login({
+        email: userData.email,
+        password: userData.password
       });
       
     } catch (error: any) {
@@ -104,10 +120,12 @@ class AuthStore {
     if (this.token) {
       try {
         await this.getUser();
+        await this.rootStore.profileStore.checkProfile();
         runInAction(() => {
           this.isAuthenticated = true;
         });
       } catch (error) {
+        console.error('Auth check failed:', error);
         await this.logout();
       }
     }

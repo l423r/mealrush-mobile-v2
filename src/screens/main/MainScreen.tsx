@@ -5,7 +5,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatDate, formatTime, formatMealType } from '../../utils/formatting';
 import { calculateProgressPercentage } from '../../utils/calculations';
 import Header from '../../components/common/Header';
@@ -67,8 +67,8 @@ const MainScreen: React.FC = observer(() => {
         onPress={() => handleMealPress(meal)}
       >
         <View style={styles.mealHeader}>
-          <Text style={styles.mealType}>{formatMealType(meal.meal_type)}</Text>
-          <Text style={styles.mealTime}>{formatTime(meal.date_time)}</Text>
+          <Text style={styles.mealType}>{formatMealType(meal.mealType)}</Text>
+          <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
         </View>
         
         <View style={styles.mealContent}>
@@ -162,7 +162,7 @@ const MainScreen: React.FC = observer(() => {
                     {
                       width: `${calculateProgressPercentage(
                         mealStore.dailyCalories,
-                        profileStore.profile?.day_limit_cal || 2000
+                        profileStore.profile?.dayLimitCal || 2000
                       )}%`,
                     },
                   ]}
@@ -240,16 +240,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
     backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    borderBottomWidth: 0,
   },
   dateButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
+    ...shadows.md,
   },
   dateButtonText: {
     ...typography.h3,
@@ -271,11 +271,11 @@ const styles = StyleSheet.create({
   },
   statsContainer: {
     margin: spacing.lg,
-    padding: spacing.lg,
+    padding: spacing.xl,
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderRadius: borderRadius.xl,
+    borderWidth: 0,
+    ...shadows.lg,
   },
   statsTitle: {
     ...typography.h5,
@@ -303,16 +303,16 @@ const styles = StyleSheet.create({
   },
   progressBar: {
     width: 60,
-    height: 4,
-    backgroundColor: colors.border.light,
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: colors.background.light,
+    borderRadius: borderRadius.sm,
     marginTop: spacing.sm,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
     backgroundColor: colors.primary,
-    borderRadius: 2,
+    borderRadius: borderRadius.sm,
   },
   mealsContainer: {
     paddingHorizontal: spacing.lg,
@@ -328,10 +328,10 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    ...shadows.md,
   },
   mealHeader: {
     flex: 1,
@@ -394,8 +394,8 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.lg,
     backgroundColor: colors.background.paper,
-    borderTopWidth: 1,
-    borderTopColor: colors.border.light,
+    borderTopWidth: 0,
+    ...shadows.xl,
   },
   addButton: {
     width: '100%',

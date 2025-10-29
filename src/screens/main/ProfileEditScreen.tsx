@@ -39,14 +39,14 @@ const ProfileEditScreen: React.FC = observer(() => {
       weight: profileStore.profile?.weight || 70,
       gender: profileStore.profile?.gender || 'MALE',
       birthday: profileStore.profile?.birthday || new Date().toISOString().split('T')[0],
-      target_weight_type: profileStore.profile?.target_weight_type || 'SAVE',
-      target_weight: profileStore.profile?.target_weight || 70,
-      physical_activity_level: profileStore.profile?.physical_activity_level || 'SECOND',
-      day_limit_cal: profileStore.profile?.day_limit_cal || 2000,
+      targetWeightType: profileStore.profile?.targetWeightType || 'SAVE',
+      targetWeight: profileStore.profile?.targetWeight || 70,
+      physicalActivityLevel: profileStore.profile?.physicalActivityLevel || 'SECOND',
+      dayLimitCal: profileStore.profile?.dayLimitCal || 2000,
     },
   });
 
-  const watchedTargetType = watch('target_weight_type');
+  const watchedTargetType = watch('targetWeightType');
 
   const onSubmit = async (data: any) => {
     try {
@@ -68,12 +68,12 @@ const ProfileEditScreen: React.FC = observer(() => {
   };
 
   const handleTargetSelect = (target: 'LOSE' | 'SAVE' | 'GAIN') => {
-    setValue('target_weight_type', target);
+    setValue('targetWeightType', target);
     setShowTargetPicker(false);
   };
 
   const handleActivitySelect = (activity: 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH') => {
-    setValue('physical_activity_level', activity);
+    setValue('physicalActivityLevel', activity);
     setShowActivityPicker(false);
   };
 
@@ -170,7 +170,7 @@ const ProfileEditScreen: React.FC = observer(() => {
             
             <Controller
               control={control}
-              name="target_weight_type"
+              name="targetWeightType"
               render={({ field: { value } }) => (
                 <View>
                   <Text style={styles.label}>Цель</Text>
@@ -183,8 +183,8 @@ const ProfileEditScreen: React.FC = observer(() => {
                     </Text>
                     <Text style={styles.pickerArrow}>▼</Text>
                   </TouchableOpacity>
-                  {errors.target_weight_type && (
-                    <Text style={styles.errorText}>{errors.target_weight_type.message}</Text>
+                  {errors.targetWeightType && (
+                    <Text style={styles.errorText}>{errors.targetWeightType.message}</Text>
                   )}
                 </View>
               )}
@@ -193,7 +193,7 @@ const ProfileEditScreen: React.FC = observer(() => {
             {watchedTargetType !== 'SAVE' && (
               <Controller
                 control={control}
-                name="target_weight"
+                name="targetWeight"
                 render={({ field: { onChange, onBlur, value } }) => (
                   <Input
                     label="Целевой вес (кг)"
@@ -201,7 +201,7 @@ const ProfileEditScreen: React.FC = observer(() => {
                     value={value?.toString() || ''}
                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                     onBlur={onBlur}
-                    error={errors.target_weight?.message}
+                    error={errors.targetWeight?.message}
                     keyboardType="numeric"
                   />
                 )}
@@ -210,7 +210,7 @@ const ProfileEditScreen: React.FC = observer(() => {
 
             <Controller
               control={control}
-              name="physical_activity_level"
+              name="physicalActivityLevel"
               render={({ field: { value } }) => (
                 <View>
                   <Text style={styles.label}>Уровень активности</Text>
@@ -223,8 +223,8 @@ const ProfileEditScreen: React.FC = observer(() => {
                     </Text>
                     <Text style={styles.pickerArrow}>▼</Text>
                   </TouchableOpacity>
-                  {errors.physical_activity_level && (
-                    <Text style={styles.errorText}>{errors.physical_activity_level.message}</Text>
+                  {errors.physicalActivityLevel && (
+                    <Text style={styles.errorText}>{errors.physicalActivityLevel.message}</Text>
                   )}
                 </View>
               )}
@@ -237,7 +237,7 @@ const ProfileEditScreen: React.FC = observer(() => {
             
             <Controller
               control={control}
-              name="day_limit_cal"
+              name="dayLimitCal"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
                   label="Дневной лимит калорий"
@@ -245,7 +245,7 @@ const ProfileEditScreen: React.FC = observer(() => {
                   value={value?.toString() || ''}
                   onChangeText={(text) => onChange(parseFloat(text) || 0)}
                   onBlur={onBlur}
-                  error={errors.day_limit_cal?.message}
+                  error={errors.dayLimitCal?.message}
                   keyboardType="numeric"
                 />
               )}

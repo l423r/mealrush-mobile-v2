@@ -1,13 +1,12 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { formatTime, formatMealType } from '../../utils/formatting';
-import { formatCalories, formatWeight } from '../../utils/formatting';
+import { formatTime, formatMealType, formatCalories, formatWeight } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
@@ -96,6 +95,18 @@ const MealScreen: React.FC = observer(() => {
         style={styles.elementCard}
         onPress={() => handleElementPress(element)}
       >
+        {element.imageUrl ? (
+          <Image 
+            source={{ uri: element.imageUrl }} 
+            style={styles.elementImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.elementImagePlaceholder}>
+            <Text style={styles.elementImagePlaceholderIcon}>🍽️</Text>
+          </View>
+        )}
+        
         <View style={styles.elementInfo}>
           <Text style={styles.elementName} numberOfLines={2}>
             {element.name}
@@ -151,7 +162,7 @@ const MealScreen: React.FC = observer(() => {
   return (
     <View style={styles.container}>
       <Header
-        title={formatMealType(meal.meal_type)}
+        title={formatMealType(meal.mealType)}
         showBackButton
         onBackPress={handleBack}
         rightComponent={
@@ -161,54 +172,55 @@ const MealScreen: React.FC = observer(() => {
         }
       />
       
-      <View style={styles.content}>
-        {/* Meal Info */}
-        <View style={styles.mealInfo}>
-          <Text style={styles.mealTime}>{formatTime(meal.date_time)}</Text>
-          {meal.name && (
-            <Text style={styles.mealName}>{meal.name}</Text>
-          )}
-        </View>
+      <FlatList
+        style={styles.content}
+        contentContainerStyle={styles.scrollContent}
+        data={elements}
+        renderItem={renderElement}
+        keyExtractor={(item) => item.id.toString()}
+        ListHeaderComponent={
+          <>
+            {/* Meal Info */}
+            <View style={styles.mealInfo}>
+              <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
+              {meal.name && (
+                <Text style={styles.mealName}>{meal.name}</Text>
+              )}
+            </View>
 
-        {/* Summary */}
-        <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Итого</Text>
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{Math.round(totalCalories)}</Text>
-              <Text style={styles.summaryLabel}>ккал</Text>
+            {/* Summary */}
+            <View style={styles.summary}>
+              <Text style={styles.summaryTitle}>Итого</Text>
+              <View style={styles.summaryGrid}>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{Math.round(totalCalories)}</Text>
+                  <Text style={styles.summaryLabel}>ккал</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{Math.round(totalProteins)}</Text>
+                  <Text style={styles.summaryLabel}>белки</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{Math.round(totalFats)}</Text>
+                  <Text style={styles.summaryLabel}>жиры</Text>
+                </View>
+                <View style={styles.summaryItem}>
+                  <Text style={styles.summaryValue}>{Math.round(totalCarbohydrates)}</Text>
+                  <Text style={styles.summaryLabel}>углеводы</Text>
+                </View>
+              </View>
             </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{Math.round(totalProteins)}</Text>
-              <Text style={styles.summaryLabel}>белки</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{Math.round(totalFats)}</Text>
-              <Text style={styles.summaryLabel}>жиры</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{Math.round(totalCarbohydrates)}</Text>
-              <Text style={styles.summaryLabel}>углеводы</Text>
-            </View>
-          </View>
-        </View>
 
-        {/* Elements List */}
-        <View style={styles.elementsContainer}>
-          <Text style={styles.elementsTitle}>Блюда</Text>
-          
-          {elements.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            <FlatList
-              data={elements}
-              renderItem={renderElement}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-            />
-          )}
-        </View>
-      </View>
+            {/* Elements Title */}
+            <View style={styles.elementsTitleContainer}>
+              <Text style={styles.elementsTitle}>Блюда</Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={renderEmptyState()}
+        ListFooterComponent={<View style={styles.footerSpacing} />}
+        showsVerticalScrollIndicator={false}
+      />
 
       {/* Add Button */}
       <View style={styles.addButtonContainer}>
@@ -229,6 +241,10 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 100, // Space for add button
   },
   deleteIcon: {
     fontSize: 24,
@@ -280,25 +296,46 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     marginTop: spacing.xs,
   },
-  elementsContainer: {
-    flex: 1,
+  elementsTitleContainer: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 100, // Space for add button
+    marginTop: spacing.md,
   },
   elementsTitle: {
     ...typography.h5,
     color: colors.text.primary,
     marginBottom: spacing.md,
   },
+  footerSpacing: {
+    height: spacing.md,
+  },
   elementCard: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
+    marginHorizontal: spacing.lg,
     marginBottom: spacing.md,
     borderWidth: 1,
     borderColor: colors.border.light,
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  elementImage: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+  },
+  elementImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  elementImagePlaceholderIcon: {
+    fontSize: 24,
   },
   elementInfo: {
     flex: 1,

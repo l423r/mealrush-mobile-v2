@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
@@ -18,7 +18,7 @@ type RegistrationScreenRouteProp = RouteProp<AuthStackParamList, 'Registration'>
 const RegistrationScreen: React.FC = () => {
   const navigation = useNavigation<RegistrationScreenNavigationProp>();
   const route = useRoute<RegistrationScreenRouteProp>();
-  const { authStore, profileStore } = useStores();
+  const { authStore, profileStore, uiStore } = useStores();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -34,7 +34,7 @@ const RegistrationScreen: React.FC = () => {
 
   const password = watch('password');
 
-  const onSubmit = async (data: { email: string; password: string; name: string }) => {
+  const onSubmit = async (data: { email: string; password: string; confirmPassword: string; name: string }) => {
     try {
       // Register user
       await authStore.register(data);
@@ -43,12 +43,12 @@ const RegistrationScreen: React.FC = () => {
       const profileData = {
         height: route.params?.height || 170,
         weight: route.params?.weight || 70,
-        gender: route.params?.gender || 'MALE',
+        gender: (route.params?.gender || 'MALE') as 'MALE' | 'FEMALE',
         birthday: route.params?.birthday || new Date().toISOString().split('T')[0],
-        target_weight_type: route.params?.target || 'SAVE',
-        target_weight: route.params?.targetWeight || route.params?.weight || 70,
-        physical_activity_level: route.params?.activity || 'SECOND',
-        day_limit_cal: 2000, // Will be calculated by backend
+        targetWeightType: (route.params?.target || 'SAVE') as 'LOSE' | 'SAVE' | 'GAIN',
+        targetWeight: route.params?.targetWeight || route.params?.weight || 70,
+        physicalActivityLevel: (route.params?.activity || 'SECOND') as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH',
+        dayLimitCal: 2000, // Will be calculated by backend
       };
 
       await profileStore.createProfile(profileData);
@@ -61,7 +61,7 @@ const RegistrationScreen: React.FC = () => {
 
       // Navigation will be handled by AppNavigator
     } catch (error) {
-      Alert.alert('Ошибка', authStore.error || profileStore.error || 'Не удалось зарегистрироваться');
+      uiStore.showSnackbar(authStore.error || profileStore.error || 'Не удалось зарегистрироваться', 'error');
     }
   };
 

@@ -21,6 +21,10 @@ export const registerSchema = yup.object().shape({
     .string()
     .min(8, 'Пароль должен содержать минимум 8 символов')
     .required('Пароль обязателен'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Пароли должны совпадать')
+    .required('Подтверждение пароля обязательно'),
   name: yup
     .string()
     .min(2, 'Имя должно содержать минимум 2 символа')
@@ -46,23 +50,23 @@ export const userProfileSchema = yup.object().shape({
   birthday: yup
     .string()
     .required('Дата рождения обязательна'),
-  target_weight_type: yup
+  targetWeightType: yup
     .string()
     .oneOf(['LOSE', 'SAVE', 'GAIN'], 'Выберите цель')
     .required('Цель обязательна'),
-  target_weight: yup
+  targetWeight: yup
     .number()
     .min(30, 'Целевой вес должен быть не менее 30 кг')
     .max(300, 'Целевой вес должен быть не более 300 кг')
-    .when('target_weight_type', {
+    .when('targetWeightType', {
       is: (val: string) => val !== 'SAVE',
       then: (schema) => schema.required('Целевой вес обязателен'),
     }),
-  physical_activity_level: yup
+  physicalActivityLevel: yup
     .string()
     .oneOf(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'], 'Выберите уровень активности')
     .required('Уровень активности обязателен'),
-  day_limit_cal: yup
+  dayLimitCal: yup
     .number()
     .min(800, 'Калорийность должна быть не менее 800 ккал')
     .max(5000, 'Калорийность должна быть не более 5000 ккал')

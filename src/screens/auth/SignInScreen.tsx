@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,15 +8,18 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import { useStores } from '../../stores';
 import { AuthStackParamList } from '../../types/navigation.types';
 import { loginSchema } from '../../utils/validation';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing } from '../../theme';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'SignIn'>;
 
 const SignInScreen: React.FC = observer(() => {
   const navigation = useNavigation<SignInScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, uiStore } = useStores();
+  const { alertState, showInfo, hideAlert } = useAlert();
   const [showPassword, setShowPassword] = useState(false);
 
   const {
@@ -33,16 +36,17 @@ const SignInScreen: React.FC = observer(() => {
       await authStore.login(data);
       // Navigation will be handled by AppNavigator based on auth state
     } catch (error) {
-      Alert.alert('Ошибка', authStore.error || 'Не удалось войти в систему');
+      console.error('Login error:', error);
+      uiStore.showSnackbar(authStore.error || 'Не удалось войти в систему', 'error');
     }
   };
 
   const handleRegister = () => {
-    navigation.navigate('GetGender');
+    navigation.navigate('SimpleRegistration');
   };
 
   const handleForgotPassword = () => {
-    Alert.alert('Восстановление пароля', 'Функция восстановления пароля будет доступна в следующей версии');
+    showInfo('Восстановление пароля', 'Функция восстановления пароля будет доступна в следующей версии');
   };
 
   return (
@@ -75,6 +79,7 @@ const SignInScreen: React.FC = observer(() => {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   autoCorrect={false}
+                  testID="sign_in_email_input"
                 />
               )}
             />
@@ -92,11 +97,19 @@ const SignInScreen: React.FC = observer(() => {
                   error={errors.password?.message}
                   secureTextEntry={!showPassword}
                   rightIcon={
-                    <Text style={styles.eyeIcon}>
-                      {showPassword ? '👁️' : '👁️‍🗨️'}
-                    </Text>
+                    <TouchableOpacity
+                      testID="password_toggle_icon"
+                      accessible={true}
+                      accessibilityLabel="password_toggle_icon"
+                      onPress={() => setShowPassword(!showPassword)}
+                      activeOpacity={0.7}
+                    >
+                      <Text style={styles.eyeIcon}>
+                        {showPassword ? '👁️' : '👁️‍🗨️'}
+                      </Text>
+                    </TouchableOpacity>
                   }
-                  onRightIconPress={() => setShowPassword(!showPassword)}
+                  testID="sign_in_password_input"
                 />
               )}
             />
@@ -107,6 +120,7 @@ const SignInScreen: React.FC = observer(() => {
               disabled={!isValid || authStore.loading}
               loading={authStore.loading}
               style={styles.loginButton}
+              testID="sign_in_login_button"
             />
 
             <Button
@@ -114,6 +128,7 @@ const SignInScreen: React.FC = observer(() => {
               onPress={handleForgotPassword}
               variant="text"
               style={styles.forgotButton}
+              testID="sign_in_forgot_password_button"
             />
           </View>
 
@@ -124,10 +139,21 @@ const SignInScreen: React.FC = observer(() => {
               onPress={handleRegister}
               variant="outline"
               style={styles.registerButton}
+              testID="sign_in_register_button"
             />
           </View>
         </View>
       </ScrollView>
+
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        onDismiss={hideAlert}
+      />
     </KeyboardAvoidingView>
   );
 });

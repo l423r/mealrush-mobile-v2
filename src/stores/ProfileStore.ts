@@ -10,6 +10,7 @@ class ProfileStore {
   // State
   profile: UserProfile | null = null;
   loading: boolean = false;
+  checkingProfile: boolean = false; // Флаг проверки профиля при инициализации
   error: string | null = null;
 
   constructor(rootStore: RootStore) {
@@ -36,13 +37,17 @@ class ProfileStore {
       this.profile.height,
       this.age,
       this.profile.gender,
-      this.profile.physical_activity_level,
-      this.profile.target_weight_type
+      this.profile.physicalActivityLevel,
+      this.profile.targetWeightType
     );
   }
 
   get isProfileComplete(): boolean {
     return !!this.profile;
+  }
+
+  get needsProfileSetup(): boolean {
+    return !this.profile;
   }
 
   // Actions
@@ -90,6 +95,33 @@ class ProfileStore {
     }
   }
 
+  async checkProfile() {
+    this.checkingProfile = true;
+    this.error = null;
+    
+    try {
+      const response = await profileService.getProfile();
+      
+      runInAction(() => {
+        this.profile = response.data;
+        this.checkingProfile = false;
+        this.error = null;
+      });
+      
+    } catch (error: any) {
+      runInAction(() => {
+        // Если профиль не найден (404) или нет доступа (403), это нормально - пользователь еще не создал профиль
+        if (error.response?.status === 404 || error.response?.status === 403) {
+          this.profile = null;
+        } else {
+          console.error('Error checking profile:', error);
+          this.error = error.response?.data?.message || 'Ошибка загрузки профиля';
+        }
+        this.checkingProfile = false;
+      });
+    }
+  }
+
   async updateProfile(profileData: UserProfileUpdate) {
     this.loading = true;
     this.error = null;
@@ -127,6 +159,7 @@ class ProfileStore {
   reset() {
     this.profile = null;
     this.loading = false;
+    this.checkingProfile = false;
     this.error = null;
   }
 }

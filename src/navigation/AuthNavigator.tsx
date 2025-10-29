@@ -10,6 +10,7 @@ import GetHeightScreen from '../screens/auth/GetHeightScreen';
 import GetBirthdayScreen from '../screens/auth/GetBirthdayScreen';
 import GetActivityScreen from '../screens/auth/GetActivityScreen';
 import RegistrationScreen from '../screens/auth/RegistrationScreen';
+import SimpleRegistrationScreen from '../screens/auth/SimpleRegistrationScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -22,6 +23,7 @@ const AuthNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen name="SignIn" component={SignInScreen} />
+      <Stack.Screen name="SimpleRegistration" component={SimpleRegistrationScreen} />
       <Stack.Screen name="GetGender" component={GetGenderScreen} />
       <Stack.Screen name="GetTarget" component={GetTargetScreen} />
       <Stack.Screen name="GetWeight" component={GetWeightScreen} />

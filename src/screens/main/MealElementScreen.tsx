@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -45,10 +45,10 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, productStore } = useStores();
+  const { mealStore, productStore, uiStore } = useStores();
   
   const item = route.params?.item;
-  const isEditing = !!item && 'meal_id' in item; // MealElement has meal_id
+  const isEditing = !!item && 'mealId' in item; // MealElement has mealId
   const isFromSearch = route.params?.fromSearch;
   
   const [mealType, setMealType] = useState<'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'>('BREAKFAST');
@@ -77,6 +77,7 @@ const MealElementScreen: React.FC = observer(() => {
   const watchedProteins = watch('proteins');
   const watchedFats = watch('fats');
   const watchedCarbohydrates = watch('carbohydrates');
+  const watchedCalories = watch('calories');
 
   useEffect(() => {
     if (item && 'proteins' in item) {
@@ -131,15 +132,15 @@ const MealElementScreen: React.FC = observer(() => {
     try {
       if (isEditing) {
         // Update existing meal element
-        await mealStore.updateMealElement({
-          id: (item as MealElement).id,
+        const mealElement = item as MealElement;
+        await mealStore.updateMealElement(mealElement.id, {
           quantity: data.quantity,
           proteins: data.proteins,
           fats: data.fats,
           carbohydrates: data.carbohydrates,
           calories: data.calories,
         });
-        Alert.alert('Успех', 'Блюдо обновлено');
+        uiStore.showSnackbar('Блюдо обновлено', 'success');
       } else {
         // Create new meal element
         let mealId = route.params?.mealId;
@@ -147,35 +148,36 @@ const MealElementScreen: React.FC = observer(() => {
         if (!mealId) {
           // Create new meal
           const meal = await mealStore.createMeal({
-            meal_type: mealType,
-            date_time: mealTime.toISOString(),
+            mealType: mealType,
+            dateTime: mealTime.toISOString(),
           });
           mealId = meal.id;
         }
 
         const elementData = {
-          meal: { id: mealId },
-          parent_product: item && 'id' in item ? { id: item.id } : undefined,
+          mealId: mealId,
+          parentProductId: item && 'id' in item ? item.id : undefined,
           name: item?.name || 'Блюдо',
           quantity: data.quantity,
           proteins: data.proteins,
           fats: data.fats,
           carbohydrates: data.carbohydrates,
           calories: data.calories,
-          default_proteins: item?.proteins || data.proteins,
-          default_fats: item?.fats || data.fats,
-          default_carbohydrates: item?.carbohydrates || data.carbohydrates,
-          default_calories: item?.calories || data.calories,
-          default_quantity: item?.quantity || '100',
+          measurementType: 'GRAM' as const,
+          defaultProteins: item?.proteins || data.proteins,
+          defaultFats: item?.fats || data.fats,
+          defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
+          defaultCalories: item?.calories || data.calories,
+          defaultQuantity: item?.quantity || '100',
         };
 
         await mealStore.createMealElement(elementData);
-        Alert.alert('Успех', 'Блюдо добавлено');
+        uiStore.showSnackbar('Блюдо добавлено', 'success');
       }
 
       navigation.goBack();
     } catch (error) {
-      Alert.alert('Ошибка', mealStore.error || 'Не удалось сохранить блюдо');
+      uiStore.showSnackbar(mealStore.error || 'Не удалось сохранить блюдо', 'error');
     }
   };
 
@@ -201,10 +203,18 @@ const MealElementScreen: React.FC = observer(() => {
         {/* Product Info */}
         {item && (
           <View style={styles.productInfo}>
-            <Text style={styles.productName}>{item.name}</Text>
-            {item.image_url && (
-              <Text style={styles.productImage}>🖼️</Text>
+            {item.imageUrl ? (
+              <Image 
+                source={{ uri: item.imageUrl }} 
+                style={styles.productImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.productImagePlaceholder}>
+                <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+              </View>
             )}
+            <Text style={styles.productName}>{item.name}</Text>
           </View>
         )}
 
@@ -380,14 +390,28 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border.light,
     alignItems: 'center',
   },
+  productImage: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.lg,
+    marginBottom: spacing.md,
+  },
+  productImagePlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: borderRadius.lg,
+    backgroundColor: colors.background.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+  },
+  productImagePlaceholderIcon: {
+    fontSize: 48,
+  },
   productName: {
     ...typography.h4,
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  productImage: {
-    fontSize: 32,
   },
   mealSettings: {
     padding: spacing.lg,

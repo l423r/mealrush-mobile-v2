@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../../types/navigation.types';
+import { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 
-type GetGenderScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'GetGender'>;
+type GetGenderScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetGender'>;
 
 const GetGenderScreen: React.FC = () => {
   const navigation = useNavigation<GetGenderScreenNavigationProp>();

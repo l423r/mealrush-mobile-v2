@@ -28,9 +28,9 @@ http://80.87.201.75:8079/gateway/my-food
 Authorization: Bearer {JWT_TOKEN}
 ```
 
-JWT токен получается от auth service:
+JWT токен получается через эндпоинт:
 ```
-POST /gateway/auth/token
+POST /my-food/auth/token
 ```
 
 ### 1.3. Общие форматы
@@ -94,15 +94,15 @@ POST /gateway/auth/token
 
 ---
 
-## 2. Аутентификация (Auth Service)
+## 2. Аутентификация
 
-**Примечание:** Эндпоинты аутентификации находятся в отдельном сервисе `/gateway/auth`
+**Примечание:** Все эндпоинты аутентификации являются публичными и не требуют JWT токена
 
 ### 2.1. Получение токена (вход)
 
 **Endpoint:**
 ```
-POST /gateway/auth/token
+POST /my-food/auth/token
 ```
 
 **Request Body:**
@@ -130,7 +130,7 @@ POST /gateway/auth/token
 
 **Endpoint:**
 ```
-POST /gateway/auth/user
+POST /my-food/auth/user
 ```
 
 **Request Body:**
@@ -149,7 +149,7 @@ POST /gateway/auth/user
   "email": "user@example.com",
   "name": "Иван Иванов",
   "roles": ["USER"],
-  "created_at": "2024-10-20T12:00:00Z"
+  "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -161,7 +161,7 @@ POST /gateway/auth/user
 
 **Endpoint:**
 ```
-GET /gateway/auth/user
+GET /my-food/auth/user
 Headers: Authorization: Bearer {token}
 ```
 
@@ -179,7 +179,7 @@ Headers: Authorization: Bearer {token}
 
 **Endpoint:**
 ```
-POST /gateway/auth/reset-password
+POST /my-food/auth/reset-password
 ```
 
 **Request Body:**
@@ -192,9 +192,11 @@ POST /gateway/auth/reset-password
 **Response (200 OK):**
 ```json
 {
-  "message": "Новый пароль отправлен на email"
+  "message": "Новый пароль отправлен на email. Dev mode - новый пароль: abc123xyz456"
 }
 ```
+
+**Примечание:** В текущей версии (dev mode) новый пароль возвращается в ответе. В production версии пароль будет отправляться на email и не будет возвращаться в response.
 
 ---
 
@@ -215,10 +217,10 @@ Headers: Authorization: Bearer {token}
   "weight": 75,
   "gender": "MALE",
   "birthday": "1990-05-15",
-  "target_weight_type": "LOSE",
-  "target_weight": 70.0,
-  "physical_activity_level": "SECOND",
-  "day_limit_cal": 1800
+  "targetWeightType": "LOSE",
+  "targetWeight": 70.0,
+  "physicalActivityLevel": "SECOND",
+  "dayLimitCal": 1800
 }
 ```
 
@@ -231,17 +233,19 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "user_id": 1,
+  "userId": 1,
   "height": 180,
   "weight": 75,
   "gender": "MALE",
   "birthday": "1990-05-15",
-  "target_weight_type": "LOSE",
-  "target_weight": 70.0,
-  "physical_activity_level": "SECOND",
-  "day_limit_cal": 1800,
-  "created_at": "2024-10-20T12:00:00Z",
-  "updated_at": "2024-10-20T12:00:00Z"
+  "targetWeightType": "LOSE",
+  "targetWeight": 70.0,
+  "physicalActivityLevel": "SECOND",
+  "dayLimitCal": 1800,
+  "bmi": 23.15,
+  "recommendedCalories": 2400.0,
+  "createdAt": "2024-10-20T12:00:00Z",
+  "updatedAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -261,17 +265,19 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "user_id": 1,
+  "userId": 1,
   "height": 180,
   "weight": 75,
   "gender": "MALE",
   "birthday": "1990-05-15",
-  "target_weight_type": "LOSE",
-  "target_weight": 70.0,
-  "physical_activity_level": "SECOND",
-  "day_limit_cal": 1800,
-  "created_at": "2024-10-20T12:00:00Z",
-  "updated_at": "2024-10-20T12:00:00Z"
+  "targetWeightType": "LOSE",
+  "targetWeight": 70.0,
+  "physicalActivityLevel": "SECOND",
+  "dayLimitCal": 1800,
+  "bmi": 23.15,
+  "recommendedCalories": 2400.0,
+  "createdAt": "2024-10-20T12:00:00Z",
+  "updatedAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -290,7 +296,7 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "weight": 73,
-  "day_limit_cal": 1700
+  "dayLimitCal": 1700
 }
 ```
 
@@ -298,11 +304,11 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "user_id": 1,
+  "userId": 1,
   "height": 180,
   "weight": 73,
   ...
-  "updated_at": "2024-10-21T10:00:00Z"
+  "updatedAt": "2024-10-21T10:00:00Z"
 }
 ```
 
@@ -340,13 +346,13 @@ Headers: Authorization: Bearer {token}
   "carbohydrates": 21.3,
   "calories": 110.0,
   "quantity": "100",
-  "measurement_type": "GRAM",
-  "product_category": {
-    "id": "cereals"
-  },
-  "image_base64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..." // опционально
+  "measurementType": "GRAM",
+  "productCategoryId": "cereals",
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
 }
 ```
+
+**Примечание:** Поле `imageBase64` опционально.
 
 **Measurement types:**
 - `GRAM`, `KILOGRAM`, `LITER`, `MILLILITER`, `PIECE`, `UNIT`
@@ -355,21 +361,18 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 123,
-  "user_id": 1,
+  "userId": 1,
   "name": "Гречка отварная",
   "proteins": 4.2,
   "fats": 1.1,
   "carbohydrates": 21.3,
   "calories": 110.0,
   "quantity": "100",
-  "measurement_type": "GRAM",
-  "product_category": {
-    "id": "cereals",
-    "name": "Крупы и злаки"
-  },
-  "image_url": "http://80.87.201.75:8079/gateway/my-food/images/123.jpg",
+  "measurementType": "GRAM",
+  "productCategoryId": "cereals",
+  "imageUrl": "http://80.87.201.75:8079/gateway/my-food/images/123.jpg",
   "source": null,
-  "created_at": "2024-10-20T12:00:00Z"
+  "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -389,7 +392,7 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 123,
-  "user_id": 1,
+  "userId": 1,
   "name": "Гречка отварная",
   ...
 }
@@ -403,19 +406,20 @@ Headers: Authorization: Bearer {token}
 
 **Endpoint:**
 ```
-PUT /my-food/product
+PUT /my-food/product/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
 ```json
 {
-  "id": 123,
   "name": "Гречка отварная домашняя",
   "proteins": 4.5,
   ...
 }
 ```
+
+**Примечание:** Все поля опциональны. ID передается в URL path.
 
 **Response (200 OK):**
 ```json
@@ -423,7 +427,7 @@ Headers: Authorization: Bearer {token}
   "id": 123,
   "name": "Гречка отварная домашняя",
   ...
-  "updated_at": "2024-10-21T10:00:00Z"
+  "updatedAt": "2024-10-21T10:00:00Z"
 }
 ```
 
@@ -460,7 +464,7 @@ Headers: Authorization: Bearer {token}
   "content": [
     {
       "id": 123,
-      "user_id": 1,
+      "userId": 1,
       "name": "Гречка отварная",
       ...
     }
@@ -497,14 +501,14 @@ Headers: Authorization: Bearer {token}
   "content": [
     {
       "id": 456,
-      "user_id": null,
+      "userId": null,
       "name": "Гречка ядрица",
       "source": "open_food_facts",
       ...
     },
     {
       "id": 123,
-      "user_id": 1,
+      "userId": 1,
       "name": "Гречка отварная",
       ...
     }
@@ -543,7 +547,7 @@ Headers: Authorization: Bearer {token}
   "content": [
     {
       "id": 789,
-      "user_id": null,
+      "userId": null,
       "name": "Молоко 3.2%",
       "code": "4607065597924",
       "source": "open_food_facts",
@@ -661,11 +665,13 @@ Headers: Authorization: Bearer {token}
 **Request Body:**
 ```json
 {
-  "meal_type": "BREAKFAST",
-  "date_time": "2024-10-20T08:30:00",
-  "name": "Завтрак" // опционально
+  "mealType": "BREAKFAST",
+  "dateTime": "2024-10-20T08:30:00",
+  "name": "Завтрак"
 }
 ```
+
+**Примечание:** Поле `name` опционально.
 
 **Meal types:**
 - `BREAKFAST` - завтрак
@@ -678,11 +684,11 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "user_id": 1,
-  "meal_type": "BREAKFAST",
+  "userId": 1,
+  "mealType": "BREAKFAST",
   "name": "Завтрак",
-  "date_time": "2024-10-20T08:30:00",
-  "created_at": "2024-10-20T12:00:00Z"
+  "dateTime": "2024-10-20T08:30:00",
+  "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -706,17 +712,17 @@ Headers: Authorization: Bearer {token}
   "content": [
     {
       "id": 1,
-      "user_id": 1,
-      "meal_type": "BREAKFAST",
+      "userId": 1,
+      "mealType": "BREAKFAST",
       "name": null,
-      "date_time": "2024-10-20T08:30:00"
+      "dateTime": "2024-10-20T08:30:00"
     },
     {
       "id": 2,
-      "user_id": 1,
-      "meal_type": "LUNCH",
+      "userId": 1,
+      "mealType": "LUNCH",
       "name": null,
-      "date_time": "2024-10-20T13:00:00"
+      "dateTime": "2024-10-20T13:00:00"
     }
   ],
   "page": 0,
@@ -747,17 +753,17 @@ Headers: Authorization: Bearer {token}
 [
   {
     "id": 1,
-    "user_id": 1,
-    "meal_type": "BREAKFAST",
+    "userId": 1,
+    "mealType": "BREAKFAST",
     "name": null,
-    "date_time": "2024-10-20T08:30:00"
+    "dateTime": "2024-10-20T08:30:00"
   },
   {
     "id": 2,
-    "user_id": 1,
-    "meal_type": "LUNCH",
+    "userId": 1,
+    "mealType": "LUNCH",
     "name": null,
-    "date_time": "2024-10-20T13:00:00"
+    "dateTime": "2024-10-20T13:00:00"
   }
 ]
 ```
@@ -774,10 +780,10 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "user_id": 1,
-  "meal_type": "BREAKFAST",
+  "userId": 1,
+  "mealType": "BREAKFAST",
   "name": null,
-  "date_time": "2024-10-20T08:30:00"
+  "dateTime": "2024-10-20T08:30:00"
 }
 ```
 
@@ -789,19 +795,20 @@ Headers: Authorization: Bearer {token}
 
 **Endpoint:**
 ```
-PUT /my-food/meal
+PUT /my-food/meal/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
 ```json
 {
-  "id": 1,
-  "meal_type": "BREAKFAST",
-  "date_time": "2024-10-20T09:00:00",
+  "mealType": "BREAKFAST",
+  "dateTime": "2024-10-20T09:00:00",
   "name": "Поздний завтрак"
 }
 ```
+
+**Примечание:** Все поля опциональны. ID передается в URL path.
 
 **Response (200 OK):** обновленный Meal
 
@@ -832,27 +839,27 @@ Headers: Authorization: Bearer {token}
 **Request Body:**
 ```json
 {
-  "meal": {
-    "id": 1
-  },
-  "parent_product": {
-    "id": 123  // опционально, если создано из продукта
-  },
+  "mealId": 1,
+  "parentProductId": 123,
   "name": "Гречка отварная",
   "proteins": 6.3,
   "fats": 1.65,
   "carbohydrates": 31.95,
   "calories": 165.0,
   "quantity": "150",
-  "measurement_type": "GRAM",
-  "default_proteins": 4.2,
-  "default_fats": 1.1,
-  "default_carbohydrates": 21.3,
-  "default_calories": 110.0,
-  "default_quantity": "100",
-  "image_base64": "..." // опционально
+  "measurementType": "GRAM",
+  "defaultProteins": 4.2,
+  "defaultFats": 1.1,
+  "defaultCarbohydrates": 21.3,
+  "defaultCalories": 110.0,
+  "defaultQuantity": "100",
+  "imageBase64": "..."
 }
 ```
+
+**Примечание:** 
+- `parentProductId` опционально, если элемент создается из продукта
+- `imageBase64` опционально для загрузки изображения
 
 **Расчет actual vs default:**
 ```javascript
@@ -865,25 +872,22 @@ const actual_proteins = (default_proteins / 100) * quantity;
 ```json
 {
   "id": 1,
-  "meal_id": 1,
-  "parent_product": {
-    "id": 123,
-    "name": "Гречка отварная"
-  },
+  "mealId": 1,
+  "parentProductId": 123,
   "name": "Гречка отварная",
   "proteins": 6.3,
   "fats": 1.65,
   "carbohydrates": 31.95,
   "calories": 165.0,
   "quantity": "150",
-  "measurement_type": "GRAM",
-  "default_proteins": 4.2,
-  "default_fats": 1.1,
-  "default_carbohydrates": 21.3,
-  "default_calories": 110.0,
-  "default_quantity": "100",
-  "image_url": "http://.../images/456.jpg",
-  "created_at": "2024-10-20T12:00:00Z"
+  "measurementType": "GRAM",
+  "defaultProteins": 4.2,
+  "defaultFats": 1.1,
+  "defaultCarbohydrates": 21.3,
+  "defaultCalories": 110.0,
+  "defaultQuantity": "100",
+  "imageUrl": "http://.../images/456.jpg",
+  "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -899,18 +903,15 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "meal_id": 1,
-  "parent_product": {
-    "id": 123,
-    "name": "Гречка отварная"
-  },
+  "mealId": 1,
+  "parentProductId": 123,
   "name": "Гречка отварная",
   "proteins": 6.3,
   "fats": 1.65,
   "carbohydrates": 31.95,
   "calories": 165.0,
   "quantity": "150",
-  "measurement_type": "GRAM",
+  "measurementType": "GRAM",
   ...
 }
 ```
@@ -953,14 +954,13 @@ Headers: Authorization: Bearer {token}
 
 **Endpoint:**
 ```
-PUT /my-food/meal_element
+PUT /my-food/meal_element/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
 ```json
 {
-  "id": 1,
   "quantity": "200",
   "proteins": 8.4,
   "fats": 2.2,
@@ -968,6 +968,8 @@ Headers: Authorization: Bearer {token}
   "calories": 220.0
 }
 ```
+
+**Примечание:** Все поля опциональны. ID передается в URL path.
 
 **Response (200 OK):** обновленный MealElement
 
@@ -1073,10 +1075,10 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "id": 1,
-  "user_id": 1,
-  "device_token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-  "device_type": "ANDROID",
-  "created_at": "2024-10-20T12:00:00Z"
+  "userId": 1,
+  "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
+  "deviceType": "ANDROID",
+  "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -1209,21 +1211,21 @@ Headers: Authorization: Bearer {token}
 
 ```javascript
 // 1. Регистрация
-POST /auth/user
+POST /my-food/auth/user
 {
   "email": "user@example.com",
   "password": "password123",
   "name": "Иван"
 }
-→ Response: { id, email, name }
+→ Response: { id, email, name, roles, createdAt }
 
 // 2. Получение токена
-POST /auth/token
+POST /my-food/auth/token
 {
   "email": "user@example.com",
   "password": "password123"
 }
-→ Response: { jwt_token }
+→ Response: { jwt_token, token_type, expires_in }
 
 // 3. Создание профиля
 POST /my-food/user-profile
@@ -1260,28 +1262,28 @@ GET /my-food/product/search/name?name=гречка
 // 3. Создание приема пищи
 POST /my-food/meal
 {
-  "meal_type": "BREAKFAST",
-  "date_time": "2024-10-20T08:30:00"
+  "mealType": "BREAKFAST",
+  "dateTime": "2024-10-20T08:30:00"
 }
 → Response: { id: 1, ... }
 
 // 4. Создание элемента приема пищи
 POST /my-food/meal_element
 {
-  "meal": { "id": 1 },
-  "parent_product": { "id": 123 },
+  "mealId": 1,
+  "parentProductId": 123,
   "name": "Гречка отварная",
   "quantity": "150",
   "proteins": 6.3,    // (4.2 / 100) * 150
   "fats": 1.65,       // (1.1 / 100) * 150
   "carbohydrates": 31.95,
   "calories": 165.0,
-  "default_proteins": 4.2,  // из Product
-  "default_fats": 1.1,
-  "default_carbohydrates": 21.3,
-  "default_calories": 110.0,
-  "default_quantity": "100",
-  ...
+  "measurementType": "GRAM",
+  "defaultProteins": 4.2,  // из Product
+  "defaultFats": 1.1,
+  "defaultCarbohydrates": 21.3,
+  "defaultCalories": 110.0,
+  "defaultQuantity": "100"
 }
 → Response: MealElement created
 
@@ -1324,7 +1326,7 @@ POST /my-food/meal_element/analyze-photo
 
 // 4. Создание meal и meal_element с результатами анализа
 POST /my-food/meal
-→ meal_id
+→ mealId
 
 POST /my-food/meal_element (для каждого ингредиента или суммарно)
 → MealElement created
@@ -1436,9 +1438,13 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.0.0 (текущая - 21 октября 2024)
+### Версия 2.0.0 (текущая - 23 октября 2024)
 
 **Новые эндпоинты:**
+- `POST /my-food/auth/user` - регистрация пользователя
+- `POST /my-food/auth/token` - получение JWT токена
+- `GET /my-food/auth/user` - получение данных текущего пользователя
+- `POST /my-food/auth/reset-password` - восстановление пароля
 - `POST /meal_element/analyze-photo` - анализ блюда по фото с помощью AI
 - `GET /images/{filename}` - получение изображений продуктов и блюд
 - `GET /meal` - список приемов пищи с пагинацией
@@ -1448,7 +1454,10 @@ GET /my-food/swagger-ui/index.html
 - `GET /product_category/{id}` - получение категории по ID
 
 **Изменения:**
+- **Аутентификация теперь встроена в сервис** - отдельный auth service не требуется
+- Все auth эндпоинты находятся в `/my-food/auth/*`
 - Миграция на новый стек (Java 21, Spring Boot 3.4, JOOQ)
+- Реализована полная система JWT аутентификации с BCrypt
 - Улучшенная обработка штрихкодов
 - Новые источники данных (Open Food Facts, EAN-DB, Barcode-list.ru)
 - `GET /meal/findByDate` теперь возвращает простой список (без пагинации)
@@ -1457,6 +1466,7 @@ GET /my-food/swagger-ui/index.html
 
 **Breaking changes:**
 - Полная переписка API с нуля
+- Auth эндпоинты перенесены с `/gateway/auth/*` на `/my-food/auth/*`
 - Формат дат: ISO 8601
 - Поля в camelCase
 
@@ -1507,12 +1517,12 @@ GET /my-food/swagger-ui/index.html
 ## 17. Приоритеты реализации эндпоинтов
 
 ### Неделя 1 (P0):
-- POST /auth/user (регистрация)
-- POST /auth/token (вход)
-- GET /auth/user
-- POST /user-profile
-- GET /user-profile
-- PUT /user-profile
+- POST /my-food/auth/user (регистрация)
+- POST /my-food/auth/token (вход)
+- GET /my-food/auth/user
+- POST /my-food/user-profile
+- GET /my-food/user-profile
+- PUT /my-food/user-profile
 
 ### Неделя 2 (P1):
 - GET /product_category

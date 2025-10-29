@@ -1,17 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import * as ImagePicker from 'expo-image-picker';
 import { MainStackParamList } from '../../types/navigation.types';
 import { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
+import { requestCameraPermission, requestMediaLibraryPermission, imageUriToBase64 } from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
-import { Product } from '../../types/api.types';
+import { CachedImage } from '../../components/common/CachedImage';
+import ImageSourceDialog from '../../components/common/ImageSourceDialog';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert, useImageSource } from '../../hooks/useAlert';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Search'>;
 type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
@@ -19,11 +24,14 @@ type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
 const SearchScreen: React.FC = observer(() => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
-  const { productStore } = useStores();
+  const { productStore, mealStore, uiStore } = useStores();
+  const { alertState, showError, hideAlert } = useAlert();
+  const imageSource = useImageSource();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const [isSearching, setIsSearching] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const debounceSearch = useCallback(
     (() => {
@@ -72,13 +80,90 @@ const SearchScreen: React.FC = observer(() => {
     });
   };
 
+  const processImage = async (imageUri: string) => {
+    try {
+      setIsAnalyzing(true);
+
+      // Конвертируем в base64
+      const base64 = await imageUriToBase64(imageUri);
+      if (!base64) {
+        uiStore.showSnackbar('Не удалось обработать изображение', 'error');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      // Вызываем API анализа
+      const analysisResult = await mealStore.analyzePhoto(base64, 'ru');
+
+      setIsAnalyzing(false);
+
+      // Переходим на экран результатов анализа
+      navigation.navigate('PhotoAnalysis', {
+        analysisResult,
+        imageUri: imageUri,
+        mealId: route.params?.mealId,
+        date: route.params?.date,
+      });
+    } catch (error: unknown) {
+      setIsAnalyzing(false);
+      const errorMessage = mealStore.photoAnalysisError || 'Не удалось проанализировать фотографию';
+      showError(
+        'Ошибка анализа',
+        errorMessage
+      );
+    }
+  };
+
+  const handleCamera = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) {
+      uiStore.showSnackbar('Нет разрешения на использование камеры', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      base64: false,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processImage(result.assets[0].uri);
+    }
+  };
+
+  const handleGallery = async () => {
+    const hasPermission = await requestMediaLibraryPermission();
+    if (!hasPermission) {
+      uiStore.showSnackbar('Нет разрешения на доступ к галерее', 'error');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+      base64: false,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      await processImage(result.assets[0].uri);
+    }
+  };
+
   const handlePhotoAnalysisPress = () => {
-    // TODO: Implement photo analysis
-    Alert.alert('Анализ по фото', 'Функция анализа по фото будет доступна в следующей версии');
+    imageSource.showImageSourceDialog((source) => {
+      if (source === 'camera') {
+        handleCamera();
+      } else {
+        handleGallery();
+      }
+    });
   };
 
   const handleCreateProductPress = () => {
-    navigation.navigate('Product');
+    navigation.navigate('Product', {});
   };
 
   const handleFavoriteToggle = async (product: Product) => {
@@ -89,7 +174,7 @@ const SearchScreen: React.FC = observer(() => {
         await productStore.addToFavorites(product.id);
       }
     } catch (error) {
-      Alert.alert('Ошибка', 'Не удалось обновить избранное');
+      uiStore.showSnackbar('Не удалось обновить избранное', 'error');
     }
   };
 
@@ -101,6 +186,23 @@ const SearchScreen: React.FC = observer(() => {
         style={styles.productCard}
         onPress={() => handleProductPress(product)}
       >
+        {product.imageUrl ? (
+          <CachedImage 
+            uri={product.imageUrl} 
+            style={styles.productImage}
+            resizeMode="cover"
+            placeholder={
+              <View style={styles.productImagePlaceholder}>
+                <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+              </View>
+            }
+          />
+        ) : (
+          <View style={styles.productImagePlaceholder}>
+            <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+          </View>
+        )}
+        
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
@@ -244,19 +346,42 @@ const SearchScreen: React.FC = observer(() => {
         </View>
 
         {/* Products List */}
-        {isSearching ? (
-          <Loading message="Поиск продуктов..." />
-        ) : (
-          <FlatList
+        {(() => {
+          if (isAnalyzing || mealStore.analyzingPhoto) {
+            return <Loading message="Анализ фотографии..." />;
+          }
+          if (isSearching) {
+            return <Loading message="Поиск продуктов..." />;
+          }
+          return (
+            <FlatList
             data={getData()}
             renderItem={renderProductItem}
             keyExtractor={(item) => item.id.toString()}
             ListEmptyComponent={renderEmptyState}
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
-          />
-        )}
+            />
+          );
+        })()}
       </View>
+
+      <ImageSourceDialog
+        visible={imageSource.visible}
+        onClose={imageSource.handleClose}
+        onCameraPress={imageSource.handleSelectCamera}
+        onGalleryPress={imageSource.handleSelectGallery}
+      />
+
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        onConfirm={alertState.onConfirm}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 });
@@ -275,29 +400,28 @@ const styles = StyleSheet.create({
   searchContainer: {
     padding: spacing.lg,
     backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    paddingBottom: spacing.md,
   },
   searchInput: {
     ...typography.body1,
-    backgroundColor: colors.background.default,
-    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.light,
+    borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    paddingVertical: spacing.md,
+    borderWidth: 0,
+    ...shadows.sm,
   },
   tabs: {
     flexDirection: 'row',
     backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xs,
   },
   tab: {
     flex: 1,
     paddingVertical: spacing.md,
     alignItems: 'center',
-    borderBottomWidth: 2,
+    borderBottomWidth: 3,
     borderBottomColor: 'transparent',
   },
   activeTab: {
@@ -306,10 +430,11 @@ const styles = StyleSheet.create({
   tabText: {
     ...typography.body1,
     color: colors.text.secondary,
+    fontWeight: '500',
   },
   activeTabText: {
     color: colors.primary,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   quickActions: {
     flexDirection: 'row',
@@ -327,10 +452,28 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    borderWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
+    ...shadows.md,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+  },
+  productImagePlaceholder: {
+    width: 60,
+    height: 60,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.md,
+    backgroundColor: colors.background.light,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  productImagePlaceholderIcon: {
+    fontSize: 30,
   },
   productInfo: {
     flex: 1,

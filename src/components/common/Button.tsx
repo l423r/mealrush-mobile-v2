@@ -1,7 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 
 interface ButtonProps {
   title: string;
@@ -12,6 +11,7 @@ interface ButtonProps {
   loading?: boolean;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  testID?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -23,9 +23,8 @@ const Button: React.FC<ButtonProps> = ({
   loading = false,
   style,
   textStyle,
+  testID,
 }) => {
-  const { uiStore } = useStores();
-  const themeColors = colors;
 
   const buttonStyle = [
     styles.button,
@@ -49,6 +48,9 @@ const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={disabled || loading}
       activeOpacity={0.7}
+      testID={testID}
+      accessibilityLabel={testID}
+      accessible={!!testID}
     >
       {loading ? (
         <ActivityIndicator
@@ -64,43 +66,46 @@ const Button: React.FC<ButtonProps> = ({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: borderRadius.md,
+    borderRadius: borderRadius.lg,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+    ...shadows.sm,
   },
   
-  // Variants
+  // Variants - Modern elevated buttons
   primaryButton: {
     backgroundColor: colors.primary,
+    ...shadows.md,
   },
   secondaryButton: {
     backgroundColor: colors.secondary,
+    ...shadows.md,
   },
   outlineButton: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: colors.primary,
   },
   textButton: {
     backgroundColor: 'transparent',
   },
   
-  // Sizes
+  // Sizes - Generous padding
   smallButton: {
-    paddingHorizontal: spacing.sm,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
-    minHeight: 32,
+    minHeight: 36,
   },
   mediumButton: {
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
-    minHeight: 44,
+    minHeight: 48,
   },
   largeButton: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    minHeight: 52,
+    minHeight: 56,
   },
   
   // Disabled
