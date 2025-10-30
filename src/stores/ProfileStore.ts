@@ -1,12 +1,20 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { profileService } from '../api/services/profile.service';
-import RootStore from './RootStore';
-import { UserProfile, UserProfileCreate, UserProfileUpdate } from '../types/api.types';
-import { calculateRecommendedCalories, calculateAge, calculateBMI } from '../utils/calculations';
+import type RootStore from './RootStore';
+import type {
+  UserProfile,
+  UserProfileCreate,
+  UserProfileUpdate,
+} from '../types/api.types';
+import {
+  calculateRecommendedCalories,
+  calculateAge,
+  calculateBMI,
+} from '../utils/calculations';
 
 class ProfileStore {
   rootStore: RootStore;
-  
+
   // State
   profile: UserProfile | null = null;
   loading: boolean = false;
@@ -31,7 +39,7 @@ class ProfileStore {
 
   get recommendedCalories(): number | null {
     if (!this.profile || !this.age) return null;
-    
+
     return calculateRecommendedCalories(
       this.profile.weight,
       this.profile.height,
@@ -54,16 +62,15 @@ class ProfileStore {
   async createProfile(profileData: UserProfileCreate) {
     this.loading = true;
     this.error = null;
-    
+
     try {
       const response = await profileService.createProfile(profileData);
-      
+
       runInAction(() => {
         this.profile = response.data;
         this.loading = false;
         this.error = null;
       });
-      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
@@ -76,16 +83,15 @@ class ProfileStore {
   async getProfile() {
     this.loading = true;
     this.error = null;
-    
+
     try {
       const response = await profileService.getProfile();
-      
+
       runInAction(() => {
         this.profile = response.data;
         this.loading = false;
         this.error = null;
       });
-      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
@@ -98,16 +104,15 @@ class ProfileStore {
   async checkProfile() {
     this.checkingProfile = true;
     this.error = null;
-    
+
     try {
       const response = await profileService.getProfile();
-      
+
       runInAction(() => {
         this.profile = response.data;
         this.checkingProfile = false;
         this.error = null;
       });
-      
     } catch (error: any) {
       runInAction(() => {
         // Если профиль не найден (404) или нет доступа (403), это нормально - пользователь еще не создал профиль
@@ -115,7 +120,8 @@ class ProfileStore {
           this.profile = null;
         } else {
           console.error('Error checking profile:', error);
-          this.error = error.response?.data?.message || 'Ошибка загрузки профиля';
+          this.error =
+            error.response?.data?.message || 'Ошибка загрузки профиля';
         }
         this.checkingProfile = false;
       });
@@ -125,20 +131,20 @@ class ProfileStore {
   async updateProfile(profileData: UserProfileUpdate) {
     this.loading = true;
     this.error = null;
-    
+
     try {
       const response = await profileService.updateProfile(profileData);
-      
+
       runInAction(() => {
         this.profile = response.data;
         this.loading = false;
         this.error = null;
       });
-      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = error.response?.data?.message || 'Ошибка обновления профиля';
+        this.error =
+          error.response?.data?.message || 'Ошибка обновления профиля';
       });
       throw error;
     }

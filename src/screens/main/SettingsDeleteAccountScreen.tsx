@@ -2,14 +2,17 @@ import React from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 
-type SettingsDeleteAccountScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'SettingsDeleteAccount'>;
+type SettingsDeleteAccountScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'SettingsDeleteAccount'
+>;
 
 const SettingsDeleteAccountScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsDeleteAccountScreenNavigationProp>();
@@ -41,8 +44,11 @@ const SettingsDeleteAccountScreen: React.FC = observer(() => {
                     try {
                       // TODO: Implement account deletion API
                       await authStore.logout();
-                      Alert.alert('Аккаунт удален', 'Ваш аккаунт был успешно удален');
-                    } catch (error) {
+                      Alert.alert(
+                        'Аккаунт удален',
+                        'Ваш аккаунт был успешно удален'
+                      );
+                    } catch {
                       Alert.alert('Ошибка', 'Не удалось удалить аккаунт');
                     }
                   },
@@ -62,13 +68,14 @@ const SettingsDeleteAccountScreen: React.FC = observer(() => {
         showBackButton
         onBackPress={handleBack}
       />
-      
+
       <View style={styles.content}>
         <View style={styles.warningContainer}>
           <Text style={styles.warningEmoji}>⚠️</Text>
           <Text style={styles.warningTitle}>Внимание!</Text>
           <Text style={styles.warningText}>
-            Удаление аккаунта — это необратимое действие. Все ваши данные будут безвозвратно удалены:
+            Удаление аккаунта — это необратимое действие. Все ваши данные будут
+            безвозвратно удалены:
           </Text>
         </View>
 
@@ -82,7 +89,7 @@ const SettingsDeleteAccountScreen: React.FC = observer(() => {
 
         <View style={styles.infoContainer}>
           <Text style={styles.infoText}>
-            Если вы уверены, что хотите удалить аккаунт, нажмите кнопку ниже. 
+            Если вы уверены, что хотите удалить аккаунт, нажмите кнопку ниже.
             Это действие нельзя отменить.
           </Text>
         </View>

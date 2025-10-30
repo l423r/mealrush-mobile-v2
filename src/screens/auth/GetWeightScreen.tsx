@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type GetWeightScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetWeight'>;
-type GetWeightScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetWeight'>;
+type GetWeightScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'GetWeight'
+>;
+type GetWeightScreenRouteProp = RouteProp<
+  ProfileSetupStackParamList,
+  'GetWeight'
+>;
 
 const weightSchema = yup.object().shape({
   weight: yup
@@ -39,7 +52,11 @@ const GetWeightScreen: React.FC = () => {
 
   const weight = watch('weight');
 
-  const convertWeight = (value: number, from: 'kg' | 'lbs', to: 'kg' | 'lbs') => {
+  const convertWeight = (
+    value: number,
+    from: 'kg' | 'lbs',
+    to: 'kg' | 'lbs'
+  ) => {
     if (from === to) return value;
     if (from === 'kg' && to === 'lbs') return value * 2.20462;
     if (from === 'lbs' && to === 'kg') return value / 2.20462;
@@ -47,17 +64,16 @@ const GetWeightScreen: React.FC = () => {
   };
 
   const handleUnitToggle = () => {
-    const currentWeight = weight || 0;
     const newUnit = unit === 'kg' ? 'lbs' : 'kg';
-    const convertedWeight = convertWeight(currentWeight, unit, newUnit);
-    
+
     setUnit(newUnit);
     // Update form value with converted weight
     // This would require a setValue call from react-hook-form
   };
 
   const onSubmit = (data: { weight: number }) => {
-    const weightInKg = unit === 'lbs' ? convertWeight(data.weight, 'lbs', 'kg') : data.weight;
+    const weightInKg =
+      unit === 'lbs' ? convertWeight(data.weight, 'lbs', 'kg') : data.weight;
     navigation.navigate('GetTargetWeight', {
       gender: route.params?.gender,
       target: route.params?.target,
@@ -71,16 +87,14 @@ const GetWeightScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Ваш вес"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Ваш вес" showBackButton onBackPress={handleBack} />
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Какой у вас текущий вес?</Text>
-          <Text style={styles.subtitle}>Точный вес поможет рассчитать вашу дневную норму калорий</Text>
+          <Text style={styles.subtitle}>
+            Точный вес поможет рассчитать вашу дневную норму калорий
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -104,7 +118,7 @@ const GetWeightScreen: React.FC = () => {
                 />
               )}
             />
-            
+
             <TouchableOpacity
               style={styles.unitButton}
               onPress={handleUnitToggle}
@@ -116,10 +130,9 @@ const GetWeightScreen: React.FC = () => {
           {weight && (
             <View style={styles.conversion}>
               <Text style={styles.conversionText}>
-                {unit === 'kg' 
+                {unit === 'kg'
                   ? `${Math.round(convertWeight(weight, 'kg', 'lbs') * 10) / 10} фунтов`
-                  : `${Math.round(convertWeight(weight, 'lbs', 'kg') * 10) / 10} кг`
-                }
+                  : `${Math.round(convertWeight(weight, 'lbs', 'kg') * 10) / 10} кг`}
               </Text>
             </View>
           )}

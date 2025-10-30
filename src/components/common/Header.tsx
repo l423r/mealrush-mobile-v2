@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  StatusBar,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, typography, spacing } from '../../theme';
@@ -34,7 +40,12 @@ const Header: React.FC<HeaderProps> = ({
         barStyle="dark-content"
         backgroundColor={colors.background.paper}
       />
-      <View style={[styles.container, { paddingTop: Math.max(insets.top, spacing.sm) }]}>
+      <View
+        style={[
+          styles.container,
+          { paddingTop: Math.max(insets.top, spacing.sm) },
+        ]}
+      >
         <View style={styles.left}>
           {showBackButton && (
             <TouchableOpacity
@@ -46,16 +57,14 @@ const Header: React.FC<HeaderProps> = ({
             </TouchableOpacity>
           )}
         </View>
-        
+
         <View style={styles.center}>
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
         </View>
-        
-        <View style={styles.right}>
-          {rightComponent}
-        </View>
+
+        <View style={styles.right}>{rightComponent}</View>
       </View>
     </>
   );

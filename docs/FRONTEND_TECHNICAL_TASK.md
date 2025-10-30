@@ -30,6 +30,7 @@ MealRush — мобильное приложение для отслеживан
 ### 1.3. Границы ответственности
 
 **Frontend отвечает за:**
+
 - UI/UX всех экранов приложения
 - Клиентскую валидацию данных
 - Взаимодействие с Backend API
@@ -39,6 +40,7 @@ MealRush — мобильное приложение для отслеживан
 - Адаптивность под разные размеры экранов
 
 **Frontend НЕ отвечает за:**
+
 - Серверную бизнес-логику
 - Хранение данных в БД
 - Интеграцию с внешними API (делает Backend)
@@ -51,47 +53,57 @@ MealRush — мобильное приложение для отслеживан
 ### 2.1. Основные технологии
 
 **Платформа:**
+
 - React Native 0.74.5+
 - Expo SDK ~51.0
 - TypeScript (рекомендуется) или JavaScript
 
 **Навигация:**
+
 - React Navigation 6.x
   - Bottom Tabs Navigator
   - Native Stack Navigator
-  
+
 **Управление состоянием:**
+
 - MobX 6.x
 - MobX React Lite (для React интеграции)
 - MobX Persist Store (для сохранения состояния)
 
 **UI компоненты:**
+
 - React Native Paper 5.x (Material Design)
 - React Native Vector Icons
 - Custom components
 
 **Работа с API:**
+
 - Axios или Fetch API
 - Интерцепторы для токенов
 
 **Камера и изображения:**
+
 - Expo Camera
 - Expo Image Picker
 - Expo Barcode Scanner
 
 **Хранилище:**
+
 - Expo Secure Store (для токенов)
 - AsyncStorage (для некритичных данных)
 
 **Даты:**
+
 - date-fns или Day.js (легковесная альтернатива Moment.js)
 - @react-native-community/datetimepicker
 
 **Уведомления:**
+
 - Expo Notifications
 - Firebase Cloud Messaging
 
 **Утилиты:**
+
 - React Hook Form (формы)
 - Yup (валидация схем)
 - lodash (при необходимости)
@@ -99,29 +111,35 @@ MealRush — мобильное приложение для отслеживан
 ### 2.2. Сборка и публикация
 
 **Development:**
+
 - Expo Go (для быстрого тестирования)
 - Dev Build (для нативных модулей)
 
 **Production:**
+
 - EAS Build (Expo Application Services)
 - Android: APK/AAB
 - iOS: IPA
 
 **CI/CD:**
+
 - GitHub Actions
 - Автоматическая сборка при push в main
 
 ### 2.3. Тестирование
 
 **Unit/Integration тесты:**
+
 - Jest (included with React Native)
 - React Native Testing Library
 - Mock для API запросов
 
 **E2E тесты (опционально, Фаза 2):**
+
 - Detox
 
 **Manual QA:**
+
 - Тестирование на реальных устройствах
 - Android 5.0+, iOS 13+
 - Разные размеры экранов
@@ -224,6 +242,7 @@ FoodApp/
 ### 3.2. State Management (MobX)
 
 **Root Store:**
+
 ```typescript
 // RootStore.ts
 import { makeAutoObservable } from 'mobx';
@@ -254,6 +273,7 @@ export default RootStore;
 ```
 
 **Пример Store (AuthStore):**
+
 ```typescript
 import { makeAutoObservable, runInAction } from 'mobx';
 import { authService } from '../api/services/auth.service';
@@ -302,6 +322,7 @@ export default AuthStore;
 ```
 
 **MobX patterns:**
+
 - makeAutoObservable для автоматической обсерваемости
 - runInAction для мутаций после async
 - Computed values для производных данных
@@ -309,6 +330,7 @@ export default AuthStore;
 - makePersistable для персистентности (mobx-persist-store)
 
 **Использование в компонентах:**
+
 ```typescript
 // MainScreen.tsx
 import { observer } from 'mobx-react-lite';
@@ -324,8 +346,8 @@ const MainScreen = observer(() => {
   return (
     <View>
       <Text>Калории: {mealStore.dailyCalories} / {profileStore.dayLimitCal}</Text>
-      <FlatList 
-        data={mealStore.meals} 
+      <FlatList
+        data={mealStore.meals}
         renderItem={({ item }) => <MealCard meal={item} />}
       />
     </View>
@@ -336,6 +358,7 @@ export default MainScreen;
 ```
 
 **Store Context:**
+
 ```typescript
 // stores/index.ts
 import React from 'react';
@@ -358,6 +381,7 @@ export const useStores = () => {
 ### 3.3. API интеграция
 
 **Axios configuration:**
+
 ```typescript
 // axios.config.ts
 import axios from 'axios';
@@ -395,28 +419,26 @@ export default api;
 ```
 
 **Service pattern:**
+
 ```typescript
 // product.service.ts
 import api from '../axios.config';
 
 export const productService = {
-  getAll: (page = 0, size = 20) => 
+  getAll: (page = 0, size = 20) =>
     api.get('/product', { params: { page, size } }),
-  
+
   searchByName: (name: string, page = 0, size = 20) =>
     api.get('/product/search/name', { params: { name, page, size } }),
-  
+
   searchByBarcode: (barcode: string) =>
     api.get(`/product/search/barcode/${barcode}`),
-  
-  create: (product: ProductCreate) =>
-    api.post('/product', product),
-  
-  update: (product: ProductUpdate) =>
-    api.put('/product', product),
-  
-  delete: (id: number) =>
-    api.delete(`/product/${id}`),
+
+  create: (product: ProductCreate) => api.post('/product', product),
+
+  update: (product: ProductUpdate) => api.put('/product', product),
+
+  delete: (id: number) => api.delete(`/product/${id}`),
 };
 ```
 
@@ -429,6 +451,7 @@ export const productService = {
 #### Экран: SignInScreen
 
 **Элементы:**
+
 - Логотип приложения
 - Input: Email
 - Input: Пароль (с иконкой показать/скрыть)
@@ -438,11 +461,13 @@ export const productService = {
 - Link: "Зарегистрироваться"
 
 **Валидация:**
+
 - Email: корректный формат
 - Пароль: минимум 8 символов
 - Показать ошибки под полями
 
 **API:**
+
 - `POST /auth/token` → получение JWT
 - Сохранение токена в Secure Store
 - Навигация на MainScreen после успеха
@@ -450,6 +475,7 @@ export const productService = {
 #### Экран: Онбординг (6-7 экранов)
 
 **Экраны:**
+
 1. GetGenderScreen - выбор пола (MALE/FEMALE)
 2. GetTargetScreen - выбор цели (LOSE/SAVE/GAIN)
 3. GetWeightScreen - ввод текущего веса
@@ -460,12 +486,14 @@ export const productService = {
 8. RegistrationScreen - ввод email, пароля, имени
 
 **UI/UX:**
+
 - Прогресс-бар вверху экрана
 - Кнопка "Назад" (кроме первого экрана)
 - Кнопка "Далее" (disabled если не заполнено)
 - Анимации переходов
 
 **API:**
+
 - `POST /auth/user` → регистрация пользователя
 - `POST /my-food/user-profile` → создание профиля
 - Автоматический вход после регистрации
@@ -475,6 +503,7 @@ export const productService = {
 #### Экран: MainScreen
 
 **Элементы:**
+
 - Header: "Расписание питания" + иконка календаря
 - Выбранная дата (день недели, дата)
 - Блок дневной статистики КБЖУ (прогресс-бары)
@@ -482,6 +511,7 @@ export const productService = {
 - Button: "Добавить прием пищи" (плавающая кнопка)
 
 **Дневная статистика:**
+
 ```
 Калории: 1450 / 1800 kcal [прогресс-бар 80%]
 Белки: 85 / 100 г [прогресс-бар]
@@ -490,21 +520,25 @@ export const productService = {
 ```
 
 **Карточка приема пищи:**
+
 - Иконка типа приема (завтрак/обед/ужин)
 - Время
 - Список блюд (краткий)
 - Суммарные КБЖУ
 
 **Взаимодействие:**
+
 - Нажатие на календарь → открытие date picker
 - Нажатие на прием пищи → переход к MealScreen
 - Нажатие "Добавить" → переход к SearchScreen
 
 **API:**
+
 - `GET /meal/findByDate?date={YYYY-MM-DD}` → приемы пищи за дату
 - `GET /meal_element/meal/{mealId}` → элементы каждого приема
 
 **Расчет статистики:**
+
 - Суммирование КБЖУ всех meal_elements за день
 - Сравнение с day_limit_cal из профиля
 
@@ -513,6 +547,7 @@ export const productService = {
 #### Экран: SearchScreen
 
 **Элементы:**
+
 - Header: "Поиск" + кнопка назад + иконка сканера
 - Tabs: "Все" | "Избранное"
 - Search Input (с debounce 300ms)
@@ -520,12 +555,14 @@ export const productService = {
 - Button: "Создать новый продукт"
 
 **Карточка продукта:**
+
 - Фото (или placeholder)
 - Название
 - КБЖУ на 100г
 - Иконка "избранное" (звездочка)
 
 **Взаимодействие:**
+
 - Ввод в поиск → API запрос → обновление списка
 - Нажатие на продукт → переход к MealElementScreen
 - Нажатие на звездочку → добавить/удалить из избранного
@@ -533,6 +570,7 @@ export const productService = {
 - Нажатие "Создать" → переход к ProductScreen
 
 **API:**
+
 - `GET /product/search/name?name={query}` → поиск продуктов
 - `GET /favorite` → список избранных
 - `POST /favorite/{productId}` → добавить в избранное
@@ -541,12 +579,14 @@ export const productService = {
 #### Экран: ScannerScreen
 
 **Элементы:**
+
 - Header: "Сканер штрихкодов" + кнопка назад
 - Camera view с рамкой для сканирования
 - Индикатор загрузки при обработке
 - Инструкция "Наведите камеру на штрихкод"
 
 **Логика:**
+
 - Запрос разрешения на камеру
 - Сканирование штрихкода (EAN-13, UPC)
 - Отправка в Backend API
@@ -554,11 +594,13 @@ export const productService = {
 - При ошибке → показать сообщение, возможность повторить
 
 **API:**
+
 - `GET /product/search/barcode/{barcode}` → поиск по штрихкоду
 
 #### Экран: ProductScreen (создание/редактирование)
 
 **Элементы:**
+
 - Header: "Создание продукта" / "Редактирование продукта"
 - Input: Название
 - ImagePicker: Фото продукта (опционально)
@@ -573,11 +615,13 @@ export const productService = {
 - Hint: "При сохранении все показатели будут пересчитаны на 100г"
 
 **Валидация:**
+
 - Название: не пустое
 - Количество: > 0
 - КБЖУ: числа >= 0
 
 **API:**
+
 - `POST /product` → создание продукта
 - `PUT /product` → обновление продукта
 - `GET /product_category` → список категорий
@@ -587,6 +631,7 @@ export const productService = {
 #### Экран: MealElementScreen
 
 **Элементы:**
+
 - Header: "Блюдо" + кнопка назад + иконка корзины (если редактирование)
 - Название продукта/блюда (большой текст)
 - ImageView: Фото блюда (если есть)
@@ -598,11 +643,13 @@ export const productService = {
 - Button: "Сохранить" / "ОК"
 
 **Логика:**
+
 - Если продукт из поиска → показать данные, редактировать только количество
 - При изменении количества → автоматический пересчет КБЖУ
 - Формула: `actual_value = (base_value_per_100g / 100) * quantity`
 
 **API:**
+
 - `POST /meal` → создание приема пищи (если еще нет)
 - `POST /meal_element` → создание элемента приема пищи
 - `PUT /meal_element` → обновление элемента
@@ -611,12 +658,14 @@ export const productService = {
 #### Экран: MealScreen
 
 **Элементы:**
+
 - Header: Тип приема + время + иконка редактирования
 - Список элементов (блюд) в приеме пищи
 - Суммарные КБЖУ приема пищи
 - Button: "Добавить блюдо"
 
 **Взаимодействие:**
+
 - Нажатие на блюдо → редактирование MealElementScreen
 - Нажатие "Добавить" → переход к SearchScreen с передачей meal_id
 
@@ -627,6 +676,7 @@ export const productService = {
 **Точка входа:** Кнопка "Анализ по фото" на SearchScreen
 
 **Шаги:**
+
 1. **Выбор источника:**
    - Modal: "Сделать фото" | "Выбрать из галереи"
    - Запрос разрешений
@@ -653,11 +703,13 @@ export const productService = {
    - Возврат на MainScreen
 
 **API:**
+
 - `POST /meal_element/analyze-photo` → анализ фото
   - Request: `{ "image_base64": "...", "prompt": "..." }`
   - Response: `{ "ingredients": [{name, quantity, proteins, fats, carbs, calories}], "total_nutrients": {...} }`
 
 **Обработка ошибок:**
+
 - Timeout → показать сообщение, предложить повторить или ввести вручную
 - API error → предложить создать блюдо вручную
 - Плохое фото → подсказка сделать фото получше
@@ -667,6 +719,7 @@ export const productService = {
 #### Экран: ProfileScreen
 
 **Элементы:**
+
 - Header: "Профиль" + иконка настроек
 - Аватар (мужчина/женщина)
 - Имя, Email
@@ -685,12 +738,14 @@ export const productService = {
 - Button: "Редактировать"
 
 **API:**
+
 - `GET /user-profile` → получение профиля
 - Расчет ИМТ локально: `weight / (height/100)^2`
 
 #### Экран: ProfileEditScreen
 
 **Элементы:**
+
 - Header: "Редактирование профиля"
 - Input: Вес
 - Input: Рост
@@ -702,12 +757,14 @@ export const productService = {
 - Button: "Сохранить"
 
 **API:**
+
 - `PUT /user-profile` → обновление профиля
 - Backend пересчитывает рекомендации
 
 #### Экран: SettingsScreen
 
 **Элементы:**
+
 - Header: "Настройки"
 - Option: "Изменить имя"
 - Option: "Изменить email"
@@ -716,6 +773,7 @@ export const productService = {
 - Button: "Выйти"
 
 **Переходы:**
+
 - SettingsNameScreen
 - SettingsEmailScreen
 - SettingsPasswordScreen
@@ -728,6 +786,7 @@ export const productService = {
 ### 5.1. Производительность
 
 **Целевые показатели:**
+
 - Холодный старт приложения: < 3 сек
 - Теплый старт: < 1 сек
 - Переходы между экранами: < 300 мс
@@ -735,6 +794,7 @@ export const productService = {
 - Плавность скролла: 60 FPS
 
 **Оптимизации:**
+
 - FlatList для больших списков
 - React.memo для дорогих компонентов
 - useMemo, useCallback где нужно
@@ -745,6 +805,7 @@ export const productService = {
 ### 5.2. UX/UI
 
 **Принципы:**
+
 - Минимализм и простота
 - Последовательность в дизайне
 - Быстрая обратная связь (Loading indicators, Snackbars)
@@ -752,10 +813,12 @@ export const productService = {
 - Адаптивность под разные размеры экранов
 
 **Темная/Светлая тема:**
+
 - Автоматическое переключение по системным настройкам
 - Сохранение предпочтений пользователя (опционально)
 
 **Цветовая схема:**
+
 - Основной: #43a047 (зеленый)
 - Серый текст: #9599a4
 - Фон светлый: #f2f2f2
@@ -763,6 +826,7 @@ export const productService = {
 - Ошибка: #BA1A1A
 
 **Типографика:**
+
 - Заголовки: Bold, 20-24px
 - Основной текст: Regular, 14-16px
 - Второстепенный: Regular, 12-14px
@@ -770,30 +834,36 @@ export const productService = {
 ### 5.3. Совместимость
 
 **Платформы:**
+
 - Android 5.0+ (API 21)
 - iOS 13.0+
 
 **Размеры экранов:**
+
 - От 4.7" до 6.7"+
 - Portrait ориентация (основная)
 - Landscape не требуется
 
 **Тестирование на устройствах:**
+
 - Android: разные производители (Samsung, Xiaomi, Google)
 - iOS: разные модели iPhone (SE, 13, 14)
 
 ### 5.4. Безопасность
 
 **Хранение токенов:**
+
 - Expo Secure Store для JWT токенов
 - Никогда не логировать токены в консоль (в production)
 
 **Валидация:**
+
 - Клиентская валидация перед отправкой
 - Санитизация пользовательского ввода
 - Максимальные длины полей
 
 **HTTPS:**
+
 - Все запросы через HTTPS (в production)
 
 ### 5.5. Офлайн режим
@@ -801,6 +871,7 @@ export const productService = {
 **MVP:** Нет офлайн режима
 
 **Фаза 2:**
+
 - Кеширование данных с MobX Persist Store
 - Синхронизация при восстановлении соединения
 
@@ -850,6 +921,7 @@ Root Navigator (Native Stack)
 ### 6.2. Навигационные параметры
 
 **TypeScript типы:**
+
 ```typescript
 type RootStackParamList = {
   Auth: undefined;
@@ -882,6 +954,7 @@ type MainStackParamList = {
 **Схема:** `mealrush://`
 
 **Маршруты:**
+
 - `mealrush://main` → MainScreen
 - `mealrush://search` → SearchScreen
 - `mealrush://profile` → ProfileScreen
@@ -895,6 +968,7 @@ type MainStackParamList = {
 #### P0 - Критично (Неделя 1)
 
 **Инфраструктура:**
+
 - [ ] Инициализация Expo проекта (TypeScript)
 - [ ] Настройка navigation (React Navigation)
 - [ ] Настройка MobX + MobX React Lite
@@ -904,12 +978,14 @@ type MainStackParamList = {
 - [ ] Базовая структура папок
 
 **Аутентификация:**
+
 - [ ] SignInScreen (UI + API интеграция)
 - [ ] Сохранение/чтение токена (Secure Store)
 - [ ] Auto-login при наличии токена
 - [ ] Logout функциональность
 
 **Онбординг:**
+
 - [ ] GetGenderScreen
 - [ ] GetTargetScreen
 - [ ] GetWeightScreen
@@ -921,6 +997,7 @@ type MainStackParamList = {
 - [ ] Прогресс-бар и навигация между экранами
 
 **Компоненты:**
+
 - [ ] Button компонент
 - [ ] Input компонент
 - [ ] Loading компонент
@@ -929,6 +1006,7 @@ type MainStackParamList = {
 #### P1 - Высокий приоритет (Неделя 1-2)
 
 **Главный экран:**
+
 - [ ] MainScreen (UI layout)
 - [ ] Date picker для выбора даты
 - [ ] Список приемов пищи (FlatList)
@@ -937,6 +1015,7 @@ type MainStackParamList = {
 - [ ] Расчет суммарных КБЖУ
 
 **Поиск продуктов:**
+
 - [ ] SearchScreen (UI + tabs)
 - [ ] Search Input с debounce
 - [ ] Список продуктов (FlatList)
@@ -945,6 +1024,7 @@ type MainStackParamList = {
 - [ ] Добавление/удаление из избранного
 
 **Создание элемента:**
+
 - [ ] MealElementScreen (UI)
 - [ ] Пересчет КБЖУ при изменении количества
 - [ ] Выбор типа приема пищи и времени
@@ -952,6 +1032,7 @@ type MainStackParamList = {
 - [ ] Возврат на MainScreen и обновление
 
 **Профиль:**
+
 - [ ] ProfileScreen (UI)
 - [ ] API: получение профиля
 - [ ] Отображение данных и расчетов
@@ -959,6 +1040,7 @@ type MainStackParamList = {
 #### P2 - Средний приоритет (Неделя 2-3)
 
 **Сканер штрихкодов:**
+
 - [ ] ScannerScreen (Camera + Barcode Scanner)
 - [ ] Запрос разрешений на камеру
 - [ ] API: поиск по штрихкоду
@@ -966,6 +1048,7 @@ type MainStackParamList = {
 - [ ] Обработка ошибок (не найден, невалидный код)
 
 **Продукты:**
+
 - [ ] ProductScreen (создание/редактирование)
 - [ ] Image Picker для фото продукта
 - [ ] Валидация полей
@@ -973,11 +1056,13 @@ type MainStackParamList = {
 - [ ] Конвертация base64 изображений
 
 **Профиль:**
+
 - [ ] ProfileEditScreen (редактирование)
 - [ ] API: обновление профиля
 - [ ] Валидация данных
 
 **Настройки:**
+
 - [ ] SettingsScreen (список опций)
 - [ ] SettingsNameScreen, SettingsEmailScreen, SettingsPasswordScreen
 - [ ] SettingsDeleteAccountScreen
@@ -986,6 +1071,7 @@ type MainStackParamList = {
 #### P3 - Низкий приоритет (Неделя 3-4)
 
 **Анализ по фото:**
+
 - [ ] Flow выбора фото (камера/галерея)
 - [ ] Modal для выбора источника
 - [ ] Конвертация фото в base64
@@ -995,12 +1081,14 @@ type MainStackParamList = {
 - [ ] Обработка ошибок и таймаутов
 
 **Google Sign-In:**
+
 - [ ] Google Sign-In button
 - [ ] Firebase/Google OAuth интеграция
 - [ ] Получение токена от Backend
 - [ ] Обработка ошибок
 
 **UI/UX улучшения:**
+
 - [ ] Темная/светлая тема (автопереключение)
 - [ ] Snackbar компонент для уведомлений
 - [ ] Анимации переходов
@@ -1008,12 +1096,14 @@ type MainStackParamList = {
 - [ ] Empty states (нет данных)
 
 **Push уведомления:**
+
 - [ ] Запрос разрешений на уведомления
 - [ ] Получение device token
 - [ ] API: регистрация устройства
 - [ ] Обработка входящих уведомлений
 
 #### Тестирование и оптимизация:
+
 - [ ] Unit тесты для утилит (валидация, расчеты)
 - [ ] Integration тесты для ключевых компонентов
 - [ ] Тестирование на Android устройствах
@@ -1022,6 +1112,7 @@ type MainStackParamList = {
 - [ ] Исправление багов
 
 #### Сборка:
+
 - [ ] Конфигурация EAS Build
 - [ ] Test build для Android
 - [ ] Test build для iOS
@@ -1038,7 +1129,7 @@ type MainStackParamList = {
 ✅ Приложение работает на Android 5.0+ и iOS 13+  
 ✅ Темная/светлая тема работает  
 ✅ Нет критичных багов  
-✅ Build успешно создается через EAS  
+✅ Build успешно создается через EAS
 
 ---
 
@@ -1047,12 +1138,14 @@ type MainStackParamList = {
 ### 8.1. Unit тесты
 
 **Тестировать:**
+
 - Утилиты валидации
 - Утилиты расчетов (КБЖУ, ИМТ)
 - Утилиты форматирования (даты, числа)
 - MobX stores и actions
 
 **Пример:**
+
 ```typescript
 // calculations.test.ts
 describe('calculateCalories', () => {
@@ -1066,23 +1159,25 @@ describe('calculateCalories', () => {
 ### 8.2. Integration тесты
 
 **Тестировать:**
+
 - Ключевые компоненты с API mock
 - MobX flow (action → API → update observable state)
 - Navigation flow
 
 **Пример:**
+
 ```typescript
 // MealElementScreen.test.tsx
 describe('MealElementScreen', () => {
   it('should update calories when quantity changes', () => {
     const { getByTestId } = render(<MealElementScreen />);
-    
+
     // Given
     const quantityInput = getByTestId('quantity-input');
-    
+
     // When
     fireEvent.changeText(quantityInput, '200');
-    
+
     // Then
     const caloriesDisplay = getByTestId('calories-display');
     expect(caloriesDisplay.props.children).toBe('200'); // doubled
@@ -1093,6 +1188,7 @@ describe('MealElementScreen', () => {
 ### 8.3. Manual QA
 
 **Тестовые сценарии:**
+
 - [ ] Регистрация и вход (happy path)
 - [ ] Добавление приема пищи через поиск
 - [ ] Добавление приема пищи через сканер
@@ -1103,6 +1199,7 @@ describe('MealElementScreen', () => {
 - [ ] Работа на разных устройствах
 
 **Checklist для релиза:**
+
 - [ ] Все функции MVP работают
 - [ ] Нет критичных багов
 - [ ] Производительность приемлема
@@ -1120,34 +1217,34 @@ name: Frontend CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-        cache: 'npm'
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Run ESLint
-      run: npm run lint
-    
-    - name: Run tests
-      run: npm test -- --coverage
-    
-    - name: Upload coverage
-      uses: codecov/codecov-action@v3
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test -- --coverage
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
 ```
 
 ### 9.2. Workflow: EAS Build
@@ -1163,29 +1260,29 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - uses: actions/checkout@v3
-    
-    - name: Setup Node.js
-      uses: actions/setup-node@v3
-      with:
-        node-version: '18'
-    
-    - name: Setup Expo
-      uses: expo/expo-github-action@v7
-      with:
-        expo-version: latest
-        token: ${{ secrets.EXPO_TOKEN }}
-    
-    - name: Install dependencies
-      run: npm ci
-    
-    - name: Build Android
-      run: eas build --platform android --non-interactive
-    
-    - name: Build iOS
-      run: eas build --platform ios --non-interactive
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v7
+        with:
+          expo-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Android
+        run: eas build --platform android --non-interactive
+
+      - name: Build iOS
+        run: eas build --platform ios --non-interactive
 ```
 
 ---
@@ -1275,12 +1372,14 @@ jobs:
 ### 10.3. Environment variables
 
 **Для локальной разработки (.env):**
+
 ```bash
 API_BASE_URL=http://80.87.201.75:8079/gateway/my-food
 AUTH_BASE_URL=http://80.87.201.75:8079/gateway/auth
 ```
 
 **Для production (через EAS):**
+
 ```bash
 eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 ```
@@ -1292,6 +1391,7 @@ eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 ### 11.1. Best Practices
 
 **Код:**
+
 - Использовать TypeScript для type safety
 - Использовать functional components (hooks)
 - Избегать inline styles (использовать StyleSheet)
@@ -1301,11 +1401,13 @@ eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 - Использовать computed для производных значений
 
 **Git:**
+
 - Conventional commits (feat:, fix:, refactor:, etc.)
 - Feature branches
 - Pull requests с review
 
 **UX:**
+
 - Loading states для всех асинхронных операций
 - Error states с понятными сообщениями
 - Empty states когда нет данных
@@ -1330,6 +1432,7 @@ eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 ## 12. Ссылки и ресурсы
 
 **Документация:**
+
 - React Native: https://reactnative.dev/
 - Expo: https://docs.expo.dev/
 - React Navigation: https://reactnavigation.org/
@@ -1338,10 +1441,12 @@ eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 - React Native Paper: https://callstack.github.io/react-native-paper/
 
 **Design:**
+
 - Material Design: https://m3.material.io/
 - iOS Human Interface Guidelines: https://developer.apple.com/design/human-interface-guidelines/
 
 **API:**
+
 - См. `API_CONTRACT.md` (детальная документация)
 - Backend Swagger: http://80.87.201.75:8079/gateway/my-food/swagger-ui/
 
@@ -1353,12 +1458,14 @@ eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 **Роль:** Frontend Developer
 
 **Связь с Backend:**
+
 - Backend разработчик: L423r
 - API контракт: `API_CONTRACT.md`
 - Синхронизация: регулярные встречи
 - Вопросы: через Issues или напрямую
 
 **Документы для синхронизации:**
+
 - Общее ТЗ: `TECHNICAL_TASK_MealRush.md`
 - Backend ТЗ: `BACKEND_TECHNICAL_TASK.md`
 - API контракт: `API_CONTRACT.md`
@@ -1368,4 +1475,3 @@ eas secret:create --name API_BASE_URL --value https://api.mealrush.com/my-food
 **Дата утверждения:** 20 октября 2024  
 **Версия документа:** 1.0  
 **Статус:** Готов к разработке 🚀
-

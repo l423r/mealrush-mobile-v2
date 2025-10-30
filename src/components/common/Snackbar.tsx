@@ -1,7 +1,19 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Animated,
+  TouchableOpacity,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 import { observer } from 'mobx-react-lite';
 import { useStores } from '../../stores';
 
@@ -9,6 +21,10 @@ const Snackbar: React.FC = observer(() => {
   const { uiStore } = useStores();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
   const slideAnim = React.useRef(new Animated.Value(100)).current;
+
+  const hideSnackbar = React.useCallback(() => {
+    uiStore.hideSnackbar();
+  }, [uiStore]);
 
   useEffect(() => {
     if (uiStore.snackbar.visible) {
@@ -48,11 +64,7 @@ const Snackbar: React.FC = observer(() => {
         }),
       ]).start();
     }
-  }, [uiStore.snackbar.visible]);
-
-  const hideSnackbar = () => {
-    uiStore.hideSnackbar();
-  };
+  }, [uiStore.snackbar.visible, fadeAnim, slideAnim, hideSnackbar]);
 
   if (!uiStore.snackbar.visible) {
     return null;
@@ -96,7 +108,9 @@ const Snackbar: React.FC = observer(() => {
         },
       ]}
     >
-      <View style={[styles.snackbar, { backgroundColor: getBackgroundColor() }]}>
+      <View
+        style={[styles.snackbar, { backgroundColor: getBackgroundColor() }]}
+      >
         <MaterialIcons
           name={getIconName()}
           size={24}
@@ -147,4 +161,3 @@ const styles = StyleSheet.create({
 });
 
 export default Snackbar;
-

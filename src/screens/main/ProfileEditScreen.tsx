@@ -1,26 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Alert,
+  TouchableOpacity,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { userProfileSchema } from '../../utils/validation';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { GENDER_OPTIONS, TARGET_WEIGHT_TYPES, ACTIVITY_LEVELS } from '../../utils/constants';
+import {
+  GENDER_OPTIONS,
+  TARGET_WEIGHT_TYPES,
+  ACTIVITY_LEVELS,
+} from '../../utils/constants';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import Loading from '../../components/common/Loading';
 
-type ProfileEditScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'ProfileEdit'>;
+type ProfileEditScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'ProfileEdit'
+>;
 
 const ProfileEditScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileEditScreenNavigationProp>();
   const { profileStore } = useStores();
-  
+
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [showTargetPicker, setShowTargetPicker] = useState(false);
   const [showActivityPicker, setShowActivityPicker] = useState(false);
@@ -38,10 +52,13 @@ const ProfileEditScreen: React.FC = observer(() => {
       height: profileStore.profile?.height || 170,
       weight: profileStore.profile?.weight || 70,
       gender: profileStore.profile?.gender || 'MALE',
-      birthday: profileStore.profile?.birthday || new Date().toISOString().split('T')[0],
+      birthday:
+        profileStore.profile?.birthday ||
+        new Date().toISOString().split('T')[0],
       targetWeightType: profileStore.profile?.targetWeightType || 'SAVE',
       targetWeight: profileStore.profile?.targetWeight || 70,
-      physicalActivityLevel: profileStore.profile?.physicalActivityLevel || 'SECOND',
+      physicalActivityLevel:
+        profileStore.profile?.physicalActivityLevel || 'SECOND',
       dayLimitCal: profileStore.profile?.dayLimitCal || 2000,
     },
   });
@@ -53,8 +70,11 @@ const ProfileEditScreen: React.FC = observer(() => {
       await profileStore.updateProfile(data);
       Alert.alert('Успех', 'Профиль обновлен');
       navigation.goBack();
-    } catch (error) {
-      Alert.alert('Ошибка', profileStore.error || 'Не удалось обновить профиль');
+    } catch {
+      Alert.alert(
+        'Ошибка',
+        profileStore.error || 'Не удалось обновить профиль'
+      );
     }
   };
 
@@ -72,7 +92,9 @@ const ProfileEditScreen: React.FC = observer(() => {
     setShowTargetPicker(false);
   };
 
-  const handleActivitySelect = (activity: 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH') => {
+  const handleActivitySelect = (
+    activity: 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH'
+  ) => {
     setValue('physicalActivityLevel', activity);
     setShowActivityPicker(false);
   };
@@ -88,13 +110,13 @@ const ProfileEditScreen: React.FC = observer(() => {
         showBackButton
         onBackPress={handleBack}
       />
-      
+
       <ScrollView style={styles.content}>
         <View style={styles.form}>
           {/* Basic Info */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Основная информация</Text>
-            
+
             <Controller
               control={control}
               name="height"
@@ -138,12 +160,17 @@ const ProfileEditScreen: React.FC = observer(() => {
                     onPress={() => setShowGenderPicker(true)}
                   >
                     <Text style={styles.pickerButtonText}>
-                      {GENDER_OPTIONS.find(option => option.value === value)?.label}
+                      {
+                        GENDER_OPTIONS.find((option) => option.value === value)
+                          ?.label
+                      }
                     </Text>
                     <Text style={styles.pickerArrow}>▼</Text>
                   </TouchableOpacity>
                   {errors.gender && (
-                    <Text style={styles.errorText}>{errors.gender.message}</Text>
+                    <Text style={styles.errorText}>
+                      {errors.gender.message}
+                    </Text>
                   )}
                 </View>
               )}
@@ -167,7 +194,7 @@ const ProfileEditScreen: React.FC = observer(() => {
           {/* Goals */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Цели</Text>
-            
+
             <Controller
               control={control}
               name="targetWeightType"
@@ -179,12 +206,18 @@ const ProfileEditScreen: React.FC = observer(() => {
                     onPress={() => setShowTargetPicker(true)}
                   >
                     <Text style={styles.pickerButtonText}>
-                      {TARGET_WEIGHT_TYPES.find(option => option.value === value)?.label}
+                      {
+                        TARGET_WEIGHT_TYPES.find(
+                          (option) => option.value === value
+                        )?.label
+                      }
                     </Text>
                     <Text style={styles.pickerArrow}>▼</Text>
                   </TouchableOpacity>
                   {errors.targetWeightType && (
-                    <Text style={styles.errorText}>{errors.targetWeightType.message}</Text>
+                    <Text style={styles.errorText}>
+                      {errors.targetWeightType.message}
+                    </Text>
                   )}
                 </View>
               )}
@@ -219,12 +252,17 @@ const ProfileEditScreen: React.FC = observer(() => {
                     onPress={() => setShowActivityPicker(true)}
                   >
                     <Text style={styles.pickerButtonText}>
-                      {ACTIVITY_LEVELS.find(option => option.value === value)?.label}
+                      {
+                        ACTIVITY_LEVELS.find((option) => option.value === value)
+                          ?.label
+                      }
                     </Text>
                     <Text style={styles.pickerArrow}>▼</Text>
                   </TouchableOpacity>
                   {errors.physicalActivityLevel && (
-                    <Text style={styles.errorText}>{errors.physicalActivityLevel.message}</Text>
+                    <Text style={styles.errorText}>
+                      {errors.physicalActivityLevel.message}
+                    </Text>
                   )}
                 </View>
               )}
@@ -234,7 +272,7 @@ const ProfileEditScreen: React.FC = observer(() => {
           {/* Calorie Settings */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Калорийность</Text>
-            
+
             <Controller
               control={control}
               name="dayLimitCal"
@@ -323,7 +361,9 @@ const ProfileEditScreen: React.FC = observer(() => {
                 onPress={() => handleActivitySelect(option.value)}
               >
                 <Text style={styles.modalOptionText}>{option.label}</Text>
-                <Text style={styles.modalOptionDescription}>{option.description}</Text>
+                <Text style={styles.modalOptionDescription}>
+                  {option.description}
+                </Text>
               </TouchableOpacity>
             ))}
             <Button

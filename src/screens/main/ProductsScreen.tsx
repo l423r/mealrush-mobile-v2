@@ -1,29 +1,51 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, Image, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  RefreshControl,
+  Image,
+  TextInput,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 
-type ProductsScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'HomeTabs'>;
+type ProductsScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'HomeTabs'
+>;
 
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const { productStore, recommendationsStore } = useStores();
-  
-  const [activeTab, setActiveTab] = useState<'my' | 'favorites' | 'search' | 'reco'>('search');
+
+  const [activeTab, setActiveTab] = useState<
+    'my' | 'favorites' | 'search' | 'reco'
+  >('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
   // Initial load on mount
   useEffect(() => {
-    console.log(`🚀 [ProductsScreen] Mount/Initial load - activeTab: ${activeTab}`);
+    console.log(
+      `🚀 [ProductsScreen] Mount/Initial load - activeTab: ${activeTab}`
+    );
     // Don't load data on mount for search tab, only for my and favorites
     if (activeTab === 'my' || activeTab === 'favorites') {
       loadData(activeTab);
@@ -31,7 +53,7 @@ const ProductsScreen: React.FC = observer(() => {
       loadRecommendations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
+  }, [activeTab, productStore, recommendationsStore]); // include stores
 
   const loadData = async (tab?: 'my' | 'favorites' | 'search' | 'reco') => {
     const targetTab = tab || activeTab;
@@ -44,7 +66,9 @@ const ProductsScreen: React.FC = observer(() => {
         console.log('⭐ [ProductsScreen] Loading favorites (GET /favorite)');
         await productStore.getFavorites();
       } else if (targetTab === 'search') {
-        console.log('🔍 [ProductsScreen] Search tab - will be handled by searchQuery effect');
+        console.log(
+          '🔍 [ProductsScreen] Search tab - will be handled by searchQuery effect'
+        );
         // Search will be handled by searchQuery effect
       } else if (targetTab === 'reco') {
         await loadRecommendations();
@@ -82,7 +106,7 @@ const ProductsScreen: React.FC = observer(() => {
     } else if (activeTab === 'search') {
       productStore.clearSearch();
     }
-  }, [searchQuery, activeTab]);
+  }, [searchQuery, activeTab, productStore]);
 
   const loadRecommendations = async () => {
     try {
@@ -91,7 +115,7 @@ const ProductsScreen: React.FC = observer(() => {
         recommendationsStore.loadInsights(),
         recommendationsStore.loadMealPicks(5),
       ]);
-    } catch (e) {
+    } catch {
       // handled in store
     }
   };
@@ -111,8 +135,8 @@ const ProductsScreen: React.FC = observer(() => {
         onPress={() => handleProductPress(product)}
       >
         {product.imageUrl ? (
-          <Image 
-            source={{ uri: product.imageUrl }} 
+          <Image
+            source={{ uri: product.imageUrl }}
             style={styles.productImage}
             resizeMode="cover"
           />
@@ -121,24 +145,24 @@ const ProductsScreen: React.FC = observer(() => {
             <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
           </View>
         )}
-        
+
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
           </Text>
           <Text style={styles.productMacros}>
-            Б: {product.proteins}г • Ж: {product.fats}г • У: {product.carbohydrates}г
+            Б: {product.proteins}г • Ж: {product.fats}г • У:{' '}
+            {product.carbohydrates}г
           </Text>
           <Text style={styles.productCalories}>
-            {formatCalories(product.calories)} на {formatWeight(Number.parseFloat(product.quantity))}
+            {formatCalories(product.calories)} на{' '}
+            {formatWeight(Number.parseFloat(product.quantity))}
           </Text>
           {product.source && (
-            <Text style={styles.productSource}>
-              Источник: {product.source}
-            </Text>
+            <Text style={styles.productSource}>Источник: {product.source}</Text>
           )}
         </View>
-        
+
         <Text style={styles.productArrow}>›</Text>
       </TouchableOpacity>
     );
@@ -173,9 +197,7 @@ const ProductsScreen: React.FC = observer(() => {
       <View style={styles.emptyState}>
         <Text style={styles.emptyEmoji}>🥗</Text>
         <Text style={styles.emptyTitle}>Нет продуктов</Text>
-        <Text style={styles.emptySubtitle}>
-          Создайте свой первый продукт
-        </Text>
+        <Text style={styles.emptySubtitle}>Создайте свой первый продукт</Text>
       </View>
     );
   };
@@ -199,10 +221,8 @@ const ProductsScreen: React.FC = observer(() => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="База продуктов"
-      />
-      
+      <Header title="База продуктов" />
+
       <View style={styles.content}>
         {/* Tabs */}
         <View style={styles.tabs}>
@@ -210,7 +230,12 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'search' && styles.activeTab]}
             onPress={() => handleTabChange('search')}
           >
-            <Text style={[styles.tabText, activeTab === 'search' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'search' && styles.activeTabText,
+              ]}
+            >
               Поиск
             </Text>
           </TouchableOpacity>
@@ -218,7 +243,12 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
             onPress={() => handleTabChange('favorites')}
           >
-            <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'favorites' && styles.activeTabText,
+              ]}
+            >
               Избранное
             </Text>
           </TouchableOpacity>
@@ -226,7 +256,12 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'my' && styles.activeTab]}
             onPress={() => handleTabChange('my')}
           >
-            <Text style={[styles.tabText, activeTab === 'my' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'my' && styles.activeTabText,
+              ]}
+            >
               Мои продукты
             </Text>
           </TouchableOpacity>
@@ -234,7 +269,12 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'reco' && styles.activeTab]}
             onPress={() => handleTabChange('reco')}
           >
-            <Text style={[styles.tabText, activeTab === 'reco' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'reco' && styles.activeTabText,
+              ]}
+            >
               Рекомендации
             </Text>
           </TouchableOpacity>
@@ -263,22 +303,33 @@ const ProductsScreen: React.FC = observer(() => {
             contentContainerStyle={styles.listContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={handleRefresh}
+              />
             }
           />
         ) : (
           <View style={styles.recoContainer}>
             <View style={styles.recoHeaderRow}>
               <Text style={styles.recoHeader}>Подборки для приёма</Text>
-              <TouchableOpacity style={styles.recoRefresh} onPress={() => recommendationsStore.refreshAll(5, 0, 10)}>
+              <TouchableOpacity
+                style={styles.recoRefresh}
+                onPress={() => recommendationsStore.refreshAll(5, 0, 10)}
+              >
                 <Text style={styles.recoRefreshText}>Обновить</Text>
               </TouchableOpacity>
             </View>
             {recommendationsStore.mealPicks.map((p) => (
               <View key={p.id} style={styles.recoCard}>
                 <Text style={styles.recoName}>{p.name}</Text>
-                <Text style={styles.recoMeta}>Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories} ккал</Text>
-                <TouchableOpacity onPress={() => navigation.navigate('Search', {})}>
+                <Text style={styles.recoMeta}>
+                  Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories}{' '}
+                  ккал
+                </Text>
+                <TouchableOpacity
+                  onPress={() => navigation.navigate('Search', {})}
+                >
                   <Text style={styles.recoAction}>+ Добавить в приём</Text>
                 </TouchableOpacity>
               </View>
@@ -288,7 +339,10 @@ const ProductsScreen: React.FC = observer(() => {
             {recommendationsStore.productsPage?.content.map((p) => (
               <View key={p.id} style={styles.recoCard}>
                 <Text style={styles.recoName}>{p.name}</Text>
-                <Text style={styles.recoMeta}>Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories} ккал</Text>
+                <Text style={styles.recoMeta}>
+                  Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories}{' '}
+                  ккал
+                </Text>
               </View>
             ))}
 

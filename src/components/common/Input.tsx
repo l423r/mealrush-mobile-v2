@@ -1,6 +1,13 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, ViewStyle, TextStyle, TextInputProps } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import type { ViewStyle, TextStyle, TextInputProps } from 'react-native';
+import { View, TextInput, Text, StyleSheet } from 'react-native';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -47,10 +54,10 @@ const Input: React.FC<InputProps> = ({
   return (
     <View style={styles.container}>
       {label && <Text style={[styles.label, labelStyle]}>{label}</Text>}
-      
+
       <View style={inputContainerStyle}>
         {leftIcon && <View style={styles.leftIcon}>{leftIcon}</View>}
-        
+
         <TextInput
           style={inputStyleCombined}
           onFocus={() => setIsFocused(true)}
@@ -60,14 +67,14 @@ const Input: React.FC<InputProps> = ({
           accessibilityLabel={testID}
           {...props}
         />
-        
+
         {rightIcon && (
           <View style={styles.rightIcon} onTouchEnd={onRightIconPress}>
             {rightIcon}
           </View>
         )}
       </View>
-      
+
       {error && <Text style={[styles.error, errorStyle]}>{error}</Text>}
     </View>
   );

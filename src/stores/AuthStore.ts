@@ -1,12 +1,12 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { authService } from '../api/services/auth.service';
-import RootStore from './RootStore';
-import { User, LoginRequest, RegisterRequest } from '../types/api.types';
+import type RootStore from './RootStore';
+import type { User, LoginRequest, RegisterRequest } from '../types/api.types';
 import { saveToken, deleteToken } from '../api/axios.config';
 
 class AuthStore {
   rootStore: RootStore;
-  
+
   // State
   user: User | null = null;
   token: string | null = null;
@@ -23,35 +23,34 @@ class AuthStore {
   async login(credentials: LoginRequest) {
     this.loading = true;
     this.error = null;
-    
+
     try {
       const response = await authService.login(credentials);
-      
+
       console.log('Login response:', JSON.stringify(response.data, null, 2));
-      
+
       runInAction(() => {
         this.token = String(response.data.jwtToken);
         this.isAuthenticated = true;
         this.error = null;
       });
-      
+
       await saveToken(String(response.data.jwtToken));
-      
+
       // Get user data
       await this.getUser();
-      
+
       // Check if user has profile (не сбрасываем loading до завершения проверки профиля)
       await this.rootStore.profileStore.checkProfile();
-      
+
       runInAction(() => {
         this.loading = false;
       });
-      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
-        console.log("error" +error);
-        
+        console.log('error' + error);
+
         this.error = error.response?.data?.message || 'Ошибка входа';
       });
       throw error;
@@ -61,22 +60,21 @@ class AuthStore {
   async register(userData: RegisterRequest) {
     this.loading = true;
     this.error = null;
-    
+
     try {
       const response = await authService.register(userData);
-      
+
       runInAction(() => {
         this.user = response.data;
         this.loading = false;
         this.error = null;
       });
-      
+
       // После успешной регистрации автоматически входим в систему
       await this.login({
         email: userData.email,
-        password: userData.password
+        password: userData.password,
       });
-      
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
@@ -88,14 +86,13 @@ class AuthStore {
 
   async getUser() {
     if (!this.token) return;
-    
+
     try {
       const response = await authService.getUser();
-      
+
       runInAction(() => {
         this.user = response.data;
       });
-      
     } catch (error: any) {
       console.error('Error getting user:', error);
       // Don't throw error here to avoid breaking the app
@@ -109,9 +106,9 @@ class AuthStore {
       this.isAuthenticated = false;
       this.error = null;
     });
-    
+
     await deleteToken();
-    
+
     // Reset all stores
     this.rootStore.reset();
   }

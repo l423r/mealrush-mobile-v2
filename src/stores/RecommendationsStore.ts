@@ -1,6 +1,10 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import RootStore from './RootStore';
-import { InsightResponse, PageResponse, ProductResponse } from '../types/api.types';
+import type RootStore from './RootStore';
+import type {
+  InsightResponse,
+  PageResponse,
+  ProductResponse,
+} from '../types/api.types';
 import { recommendationsService } from '../api/services/recommendations.service';
 
 class RecommendationsStore {
@@ -30,7 +34,8 @@ class RecommendationsStore {
     } catch (e: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = e.response?.data?.message || 'Ошибка загрузки рекомендаций продуктов';
+        this.error =
+          e.response?.data?.message || 'Ошибка загрузки рекомендаций продуктов';
       });
       throw e;
     }
@@ -66,13 +71,19 @@ class RecommendationsStore {
     } catch (e: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = e.response?.data?.message || 'Ошибка загрузки подборки для приёма пищи';
+        this.error =
+          e.response?.data?.message ||
+          'Ошибка загрузки подборки для приёма пищи';
       });
       throw e;
     }
   }
 
-  async refreshAll(size: number = 5, page: number = 0, productsSize: number = 10) {
+  async refreshAll(
+    size: number = 5,
+    page: number = 0,
+    productsSize: number = 10
+  ) {
     try {
       await recommendationsService.refresh();
       await Promise.all([
@@ -80,7 +91,7 @@ class RecommendationsStore {
         this.loadInsights(),
         this.loadMealPicks(size),
       ]);
-    } catch (e) {
+    } catch {
       // error already set in specific loaders
       return;
     }
@@ -96,4 +107,3 @@ class RecommendationsStore {
 }
 
 export default RecommendationsStore;
-

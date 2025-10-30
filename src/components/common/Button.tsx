@@ -1,6 +1,18 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import type { ViewStyle, TextStyle } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 
 interface ButtonProps {
   title: string;
@@ -25,7 +37,6 @@ const Button: React.FC<ButtonProps> = ({
   textStyle,
   testID,
 }) => {
-
   const buttonStyle = [
     styles.button,
     styles[`${variant}Button`],
@@ -72,7 +83,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     ...shadows.sm,
   },
-  
+
   // Variants - Modern elevated buttons
   primaryButton: {
     backgroundColor: colors.primary,
@@ -90,7 +101,7 @@ const styles = StyleSheet.create({
   textButton: {
     backgroundColor: 'transparent',
   },
-  
+
   // Sizes - Generous padding
   smallButton: {
     paddingHorizontal: spacing.md,
@@ -107,12 +118,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     minHeight: 56,
   },
-  
+
   // Disabled
   disabledButton: {
     opacity: 0.6,
   },
-  
+
   // Text styles
   text: {
     ...typography.button,
@@ -130,7 +141,7 @@ const styles = StyleSheet.create({
   textText: {
     color: colors.primary,
   },
-  
+
   // Text sizes
   smallText: {
     fontSize: 14,
@@ -141,7 +152,7 @@ const styles = StyleSheet.create({
   largeText: {
     fontSize: 18,
   },
-  
+
   // Disabled text
   disabledText: {
     opacity: 0.6,

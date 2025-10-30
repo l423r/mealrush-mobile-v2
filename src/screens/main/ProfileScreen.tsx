@@ -1,18 +1,37 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
-import { formatGender, formatTargetWeightType, formatActivityLevel } from '../../utils/formatting';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
+import {
+  formatTargetWeightType,
+  formatActivityLevel,
+} from '../../utils/formatting';
 import { getBMICategory } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 
-type ProfileScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'HomeTabs'>;
+type ProfileScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'HomeTabs'
+>;
 
 const ProfileScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
@@ -22,7 +41,7 @@ const ProfileScreen: React.FC = observer(() => {
     if (!profileStore.profile) {
       profileStore.getProfile();
     }
-  }, []);
+  }, [profileStore]);
 
   const handleEditProfile = () => {
     navigation.navigate('ProfileEdit');
@@ -33,20 +52,16 @@ const ProfileScreen: React.FC = observer(() => {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Выход',
-      'Вы уверены, что хотите выйти из аккаунта?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Выйти',
-          style: 'destructive',
-          onPress: async () => {
-            await authStore.logout();
-          },
+    Alert.alert('Выход', 'Вы уверены, что хотите выйти из аккаунта?', [
+      { text: 'Отмена', style: 'cancel' },
+      {
+        text: 'Выйти',
+        style: 'destructive',
+        onPress: async () => {
+          await authStore.logout();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   if (profileStore.loading) {
@@ -84,7 +99,7 @@ const ProfileScreen: React.FC = observer(() => {
           </TouchableOpacity>
         }
       />
-      
+
       <ScrollView style={styles.content}>
         {/* User Info */}
         <View style={styles.userInfo}>
@@ -93,14 +108,16 @@ const ProfileScreen: React.FC = observer(() => {
               {profile.gender === 'MALE' ? '👨' : '👩'}
             </Text>
           </View>
-          <Text style={styles.userName}>{authStore.user?.name || 'Пользователь'}</Text>
+          <Text style={styles.userName}>
+            {authStore.user?.name || 'Пользователь'}
+          </Text>
           <Text style={styles.userEmail}>{authStore.user?.email}</Text>
         </View>
 
         {/* Current Stats */}
         <View style={styles.statsCard}>
           <Text style={styles.cardTitle}>Текущие показатели</Text>
-          
+
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{profile.weight}</Text>
@@ -121,7 +138,7 @@ const ProfileScreen: React.FC = observer(() => {
               <Text style={styles.statLabel}>ИМТ</Text>
             </View>
           </View>
-          
+
           {bmi && (
             <View style={styles.bmiInfo}>
               <Text style={styles.bmiCategory}>{bmiCategory}</Text>
@@ -132,21 +149,21 @@ const ProfileScreen: React.FC = observer(() => {
         {/* Goals */}
         <View style={styles.goalsCard}>
           <Text style={styles.cardTitle}>Цели и активность</Text>
-          
+
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>Цель</Text>
             <Text style={styles.goalValue}>
               {formatTargetWeightType(profile.targetWeightType)}
             </Text>
           </View>
-          
+
           {profile.targetWeightType !== 'SAVE' && (
             <View style={styles.goalItem}>
               <Text style={styles.goalLabel}>Целевой вес</Text>
               <Text style={styles.goalValue}>{profile.targetWeight} кг</Text>
             </View>
           )}
-          
+
           <View style={styles.goalItem}>
             <Text style={styles.goalLabel}>Активность</Text>
             <Text style={styles.goalValue}>
@@ -158,22 +175,25 @@ const ProfileScreen: React.FC = observer(() => {
         {/* Calorie Info */}
         <View style={styles.calorieCard}>
           <Text style={styles.cardTitle}>Калорийность</Text>
-          
+
           <View style={styles.calorieItem}>
             <Text style={styles.calorieLabel}>Установленный лимит</Text>
             <Text style={styles.calorieValue}>{profile.dayLimitCal} ккал</Text>
           </View>
-          
+
           {recommendedCalories && (
             <View style={styles.calorieItem}>
               <Text style={styles.calorieLabel}>Рекомендуемый лимит</Text>
-              <Text style={styles.calorieValue}>{recommendedCalories} ккал</Text>
+              <Text style={styles.calorieValue}>
+                {recommendedCalories} ккал
+              </Text>
             </View>
           )}
-          
+
           <View style={styles.calorieNote}>
             <Text style={styles.calorieNoteText}>
-              Рекомендуемая калорийность рассчитана на основе ваших параметров и целей
+              Рекомендуемая калорийность рассчитана на основе ваших параметров и
+              целей
             </Text>
           </View>
         </View>
@@ -185,7 +205,7 @@ const ProfileScreen: React.FC = observer(() => {
             onPress={handleEditProfile}
             style={styles.actionButton}
           />
-          
+
           <Button
             title="Выйти из аккаунта"
             onPress={handleLogout}

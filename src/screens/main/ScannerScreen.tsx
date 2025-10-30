@@ -1,39 +1,51 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Alert, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Alert,
+  // TouchableOpacity removed (unused)
+  Dimensions,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { CameraView, useCameraPermissions, BarcodeScanningResult } from 'expo-camera';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BarcodeScanningResult } from 'expo-camera';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 
-type ScannerScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Scanner'>;
+type ScannerScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'Scanner'
+>;
 type ScannerScreenRouteProp = RouteProp<MainStackParamList, 'Scanner'>;
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const ScannerScreen: React.FC = observer(() => {
   const navigation = useNavigation<ScannerScreenNavigationProp>();
   const route = useRoute<ScannerScreenRouteProp>();
   const { productStore } = useStores();
-  
+
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleBarCodeScanned = async ({ data }: BarcodeScanningResult) => {
     if (scanned) return;
-    
+
     setScanned(true);
     setIsProcessing(true);
 
     try {
       const products = await productStore.searchByBarcode(data);
-      
+
       if (products.length > 0) {
         // Navigate to product selection or directly to meal element
         const product = products[0];
@@ -62,7 +74,7 @@ const ScannerScreen: React.FC = observer(() => {
           ]
         );
       }
-    } catch (error) {
+    } catch {
       Alert.alert(
         'Ошибка сканирования',
         'Не удалось найти продукт. Попробуйте еще раз.',
@@ -98,12 +110,17 @@ const ScannerScreen: React.FC = observer(() => {
   if (!permission.granted) {
     return (
       <View style={styles.container}>
-        <Header title="Сканер штрихкодов" showBackButton onBackPress={handleBack} />
+        <Header
+          title="Сканер штрихкодов"
+          showBackButton
+          onBackPress={handleBack}
+        />
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionEmoji}>📷</Text>
           <Text style={styles.permissionTitle}>Нет доступа к камере</Text>
           <Text style={styles.permissionSubtitle}>
-            Для сканирования штрихкодов необходимо разрешение на использование камеры
+            Для сканирования штрихкодов необходимо разрешение на использование
+            камеры
           </Text>
           <Button
             title="Разрешить доступ"
@@ -117,8 +134,12 @@ const ScannerScreen: React.FC = observer(() => {
 
   return (
     <View style={styles.container}>
-      <Header title="Сканер штрихкодов" showBackButton onBackPress={handleBack} />
-      
+      <Header
+        title="Сканер штрихкодов"
+        showBackButton
+        onBackPress={handleBack}
+      />
+
       <View style={styles.cameraContainer}>
         <CameraView
           onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
@@ -127,7 +148,7 @@ const ScannerScreen: React.FC = observer(() => {
             barcodeTypes: ['ean13', 'ean8', 'qr', 'code128'],
           }}
         />
-        
+
         {/* Overlay */}
         <View style={styles.overlay}>
           <View style={styles.scanArea}>

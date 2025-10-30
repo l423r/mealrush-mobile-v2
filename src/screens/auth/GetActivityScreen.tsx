@@ -1,19 +1,34 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 
-type GetActivityScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetActivity'>;
-type GetActivityScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetActivity'>;
+type GetActivityScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'GetActivity'
+>;
+type GetActivityScreenRouteProp = RouteProp<
+  ProfileSetupStackParamList,
+  'GetActivity'
+>;
 
 const GetActivityScreen: React.FC = () => {
   const navigation = useNavigation<GetActivityScreenNavigationProp>();
   const route = useRoute<GetActivityScreenRouteProp>();
-  const [selectedActivity, setSelectedActivity] = useState<'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH' | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<
+    'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH' | null
+  >(null);
 
   const activities = [
     {
@@ -78,12 +93,14 @@ const GetActivityScreen: React.FC = () => {
         showBackButton
         onBackPress={handleBack}
       />
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.emoji}>🏃‍♂️</Text>
           <Text style={styles.title}>Какой у вас уровень активности?</Text>
-          <Text style={styles.subtitle}>Это поможет точно рассчитать вашу дневную норму калорий</Text>
+          <Text style={styles.subtitle}>
+            Это поможет точно рассчитать вашу дневную норму калорий
+          </Text>
         </View>
 
         <View style={styles.options}>
@@ -99,10 +116,13 @@ const GetActivityScreen: React.FC = () => {
               <View style={styles.optionHeader}>
                 <Text style={styles.optionEmoji}>{activity.emoji}</Text>
                 <View style={styles.optionTextContainer}>
-                  <Text style={[
-                    styles.optionTitle,
-                    selectedActivity === activity.value && styles.selectedOptionText,
-                  ]}>
+                  <Text
+                    style={[
+                      styles.optionTitle,
+                      selectedActivity === activity.value &&
+                        styles.selectedOptionText,
+                    ]}
+                  >
                     {activity.title}
                   </Text>
                   <Text style={styles.optionMultiplier}>
@@ -110,10 +130,13 @@ const GetActivityScreen: React.FC = () => {
                   </Text>
                 </View>
               </View>
-              <Text style={[
-                styles.optionDescription,
-                selectedActivity === activity.value && styles.selectedOptionDescription,
-              ]}>
+              <Text
+                style={[
+                  styles.optionDescription,
+                  selectedActivity === activity.value &&
+                    styles.selectedOptionDescription,
+                ]}
+              >
                 {activity.description}
               </Text>
             </TouchableOpacity>

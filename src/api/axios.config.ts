@@ -1,4 +1,9 @@
-import axios, { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios';
+import type {
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+  AxiosResponse,
+} from 'axios';
+import axios from 'axios';
 import { API_BASE_URL, REQUEST_TIMEOUT } from './endpoints';
 import * as SecureStore from 'expo-secure-store';
 
@@ -50,7 +55,9 @@ apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     // Log request details in development
     if (__DEV__) {
-      console.log(`🌐 [REQUEST] ${config.method?.toUpperCase()} ${API_BASE_URL}${config.url}`);
+      console.log(
+        `🌐 [REQUEST] ${config.method?.toUpperCase()} ${API_BASE_URL}${config.url}`
+      );
       if (config.params) {
         console.log('Query params:', config.params);
       }
@@ -58,14 +65,14 @@ apiClient.interceptors.request.use(
         console.log('Request body:', config.data);
       }
     }
-    
+
     // Skip adding token only for public auth endpoints (POST requests to login, register, reset password)
-    const isPublicAuthEndpoint = config.method === 'post' && (
-      config.url === '/auth/user' || 
-      config.url === '/auth/token' || 
-      config.url === '/auth/reset-password'
-    );
-    
+    const isPublicAuthEndpoint =
+      config.method === 'post' &&
+      (config.url === '/auth/user' ||
+        config.url === '/auth/token' ||
+        config.url === '/auth/reset-password');
+
     if (!isPublicAuthEndpoint) {
       const token = await getToken();
       if (token && config.headers) {
@@ -84,19 +91,23 @@ apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     // Log response details in development
     if (__DEV__) {
-      console.log(`✅ [RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`);
+      console.log(
+        `✅ [RESPONSE] ${response.status} ${response.config.method?.toUpperCase()} ${response.config.url}`
+      );
     }
     return response;
   },
   async (error) => {
     // Log error details in development
     if (__DEV__) {
-      console.error(`❌ [ERROR] ${error.response?.status || 'Network Error'} ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+      console.error(
+        `❌ [ERROR] ${error.response?.status || 'Network Error'} ${error.config?.method?.toUpperCase()} ${error.config?.url}`
+      );
       if (error.response?.data) {
         console.error('Error response:', error.response.data);
       }
     }
-    
+
     if (error.response?.status === 401) {
       // Token expired or invalid, redirect to login
       await deleteToken();

@@ -1,18 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import { registerSchema } from '../../utils/validation';
-import { AuthStackParamList } from '../../types/navigation.types';
+import type { AuthStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing } from '../../theme';
 import { useStores } from '../../stores';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type SimpleRegistrationScreenNavigationProp = NativeStackNavigationProp<AuthStackParamList, 'SimpleRegistration'>;
+type SimpleRegistrationScreenNavigationProp = NativeStackNavigationProp<
+  AuthStackParamList,
+  'SimpleRegistration'
+>;
 
 const SimpleRegistrationScreen: React.FC = () => {
   const navigation = useNavigation<SimpleRegistrationScreenNavigationProp>();
@@ -29,16 +39,24 @@ const SimpleRegistrationScreen: React.FC = () => {
     mode: 'onChange',
   });
 
-  const onSubmit = async (data: { email: string; password: string; confirmPassword: string; name: string }) => {
+  const onSubmit = async (data: {
+    email: string;
+    password: string;
+    confirmPassword: string;
+    name: string;
+  }) => {
     try {
       // Register user (this will automatically login the user)
       await authStore.register(data);
-      
+
       // Navigation will be handled by AppNavigator
       // If user doesn't have profile, they'll be redirected to ProfileSetup
     } catch (error) {
       console.error('Registration error:', error);
-      uiStore.showSnackbar(authStore.error || 'Не удалось зарегистрироваться', 'error');
+      uiStore.showSnackbar(
+        authStore.error || 'Не удалось зарегистрироваться',
+        'error'
+      );
     }
   };
 
@@ -51,12 +69,8 @@ const SimpleRegistrationScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <Header
-        title="Регистрация"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Регистрация" showBackButton onBackPress={handleBack} />
+
       <ScrollView
         contentContainerStyle={styles.content}
         keyboardShouldPersistTaps="handled"
@@ -64,7 +78,9 @@ const SimpleRegistrationScreen: React.FC = () => {
         <View style={styles.header}>
           <Text style={styles.emoji}>👋</Text>
           <Text style={styles.title}>Добро пожаловать!</Text>
-          <Text style={styles.subtitle}>Создайте аккаунт для начала работы</Text>
+          <Text style={styles.subtitle}>
+            Создайте аккаунт для начала работы
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -142,7 +158,9 @@ const SimpleRegistrationScreen: React.FC = () => {
                     {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
                   </Text>
                 }
-                onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                onRightIconPress={() =>
+                  setShowConfirmPassword(!showConfirmPassword)
+                }
               />
             )}
           />

@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { AuthStackParamList } from '../types/navigation.types';
+import type { AuthStackParamList } from '../types/navigation.types';
 import SignInScreen from '../screens/auth/SignInScreen';
 import GetGenderScreen from '../screens/auth/GetGenderScreen';
 import GetTargetScreen from '../screens/auth/GetTargetScreen';
@@ -23,7 +23,10 @@ const AuthNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen name="SignIn" component={SignInScreen} />
-      <Stack.Screen name="SimpleRegistration" component={SimpleRegistrationScreen} />
+      <Stack.Screen
+        name="SimpleRegistration"
+        component={SimpleRegistrationScreen}
+      />
       <Stack.Screen name="GetGender" component={GetGenderScreen} />
       <Stack.Screen name="GetTarget" component={GetTargetScreen} />
       <Stack.Screen name="GetWeight" component={GetWeightScreen} />

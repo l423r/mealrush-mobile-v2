@@ -1,13 +1,24 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Dimensions,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useStores } from '../../../stores';
 import { colors, spacing, typography } from '../../../theme';
-import { NutritionMetricType } from '../../../types/api.types';
+import type { NutritionMetricType } from '../../../types/api.types';
 import { LineChart } from 'react-native-gifted-charts';
 import { format } from 'date-fns';
 
-const METRICS: NutritionMetricType[] = ['CALORIES', 'PROTEINS', 'FATS', 'CARBOHYDRATES'];
+const METRICS: NutritionMetricType[] = [
+  'CALORIES',
+  'PROTEINS',
+  'FATS',
+  'CARBOHYDRATES',
+];
 
 const TrendTab: React.FC = observer(() => {
   const { nutritionStore } = useStores();
@@ -33,7 +44,6 @@ const TrendTab: React.FC = observer(() => {
 
   const screenWidth = Dimensions.get('window').width;
 
-
   return (
     <View style={styles.wrapper}>
       <Text style={styles.sectionTitle}>Тренд</Text>
@@ -44,7 +54,11 @@ const TrendTab: React.FC = observer(() => {
             onPress={() => setMetric(m)}
             style={[styles.chip, metric === m && styles.chipActive]}
           >
-            <Text style={[styles.chipText, metric === m && styles.chipTextActive]}>{m}</Text>
+            <Text
+              style={[styles.chipText, metric === m && styles.chipTextActive]}
+            >
+              {m}
+            </Text>
           </TouchableOpacity>
         ))}
       </View>
@@ -54,9 +68,15 @@ const TrendTab: React.FC = observer(() => {
 
       {nutritionStore.trend && (
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>Среднее: {nutritionStore.trend.averageValue?.toFixed(0) ?? '—'}</Text>
-          <Text style={styles.cardTitle}>Прогноз: {nutritionStore.trend.predictedValue?.toFixed(0) ?? '—'}</Text>
-          <Text style={styles.cardSubtitle}>Направление: {nutritionStore.trend.direction}</Text>
+          <Text style={styles.cardTitle}>
+            Среднее: {nutritionStore.trend.averageValue?.toFixed(0) ?? '—'}
+          </Text>
+          <Text style={styles.cardTitle}>
+            Прогноз: {nutritionStore.trend.predictedValue?.toFixed(0) ?? '—'}
+          </Text>
+          <Text style={styles.cardSubtitle}>
+            Направление: {nutritionStore.trend.direction}
+          </Text>
 
           {chartData.length > 0 && (
             <View style={{ marginTop: spacing.md }}>
@@ -86,8 +106,11 @@ const TrendTab: React.FC = observer(() => {
                 yAxisColor={colors.border.light}
                 xAxisColor={colors.border.light}
                 yAxisTextStyle={{ color: colors.text.secondary, fontSize: 11 }}
-                xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 11 }}
-                curve
+                xAxisLabelTextStyle={{
+                  color: colors.text.secondary,
+                  fontSize: 11,
+                }}
+                curved
               />
             </View>
           )}
@@ -158,4 +181,3 @@ const styles = StyleSheet.create({
 });
 
 export default TrendTab;
-

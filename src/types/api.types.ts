@@ -59,9 +59,25 @@ export interface User {
 // User Profile types
 export type Gender = 'MALE' | 'FEMALE';
 export type TargetWeightType = 'LOSE' | 'SAVE' | 'GAIN';
-export type PhysicalActivityLevel = 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH';
-export type MeasurementType = 'GRAM' | 'KILOGRAM' | 'LITER' | 'MILLILITER' | 'PIECE' | 'UNIT';
-export type MealType = 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER';
+export type PhysicalActivityLevel =
+  | 'FIRST'
+  | 'SECOND'
+  | 'THIRD'
+  | 'FOURTH'
+  | 'FIFTH';
+export type MeasurementType =
+  | 'GRAM'
+  | 'KILOGRAM'
+  | 'LITER'
+  | 'MILLILITER'
+  | 'PIECE'
+  | 'UNIT';
+export type MealType =
+  | 'BREAKFAST'
+  | 'LUNCH'
+  | 'DINNER'
+  | 'SUPPER'
+  | 'LATE_SUPPER';
 
 export interface UserProfile {
   id: number;
@@ -285,7 +301,11 @@ export interface MealSearchParams {
 // =========================
 
 export type NutritionPeriodType = 'DAY' | 'WEEK' | 'MONTH';
-export type NutritionMetricType = 'CALORIES' | 'PROTEINS' | 'FATS' | 'CARBOHYDRATES';
+export type NutritionMetricType =
+  | 'CALORIES'
+  | 'PROTEINS'
+  | 'FATS'
+  | 'CARBOHYDRATES';
 
 export interface NutritionTotals {
   totalProteins: number;
@@ -297,7 +317,7 @@ export interface NutritionTotals {
 export interface NutritionSummaryResponse extends NutritionTotals {
   periodType: NutritionPeriodType;
   startDate: string; // YYYY-MM-DD
-  endDate: string;   // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
   targetCalories: number;
   caloriesPercentage: number;
 }
@@ -360,7 +380,12 @@ export interface ProgressResponse {
 // Recommendations v2.1.0
 // =========================
 
-export type InsightType = 'EXCESS_CALORIES' | 'LOW_PROTEIN' | 'LOW_FATS' | 'LOW_CARBOHYDRATES' | string;
+export type InsightType =
+  | 'EXCESS_CALORIES'
+  | 'LOW_PROTEIN'
+  | 'LOW_FATS'
+  | 'LOW_CARBOHYDRATES'
+  | string;
 export type InsightSeverity = 'INFO' | 'WARNING' | 'CRITICAL' | string;
 
 export interface InsightResponse {

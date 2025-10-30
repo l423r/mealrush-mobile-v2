@@ -14,33 +14,33 @@ export const componentSpacing = {
   // Screen padding
   screenHorizontal: spacing.md,
   screenVertical: spacing.lg,
-  
+
   // Card padding
   cardPadding: spacing.md,
   cardMargin: spacing.sm,
-  
+
   // Button padding
   buttonPadding: {
     small: { horizontal: spacing.sm, vertical: spacing.xs },
     medium: { horizontal: spacing.md, vertical: spacing.sm },
     large: { horizontal: spacing.lg, vertical: spacing.md },
   },
-  
+
   // Input padding
   inputPadding: {
     horizontal: spacing.md,
     vertical: spacing.sm,
   },
-  
+
   // List item spacing
   listItemSpacing: spacing.sm,
-  
+
   // Section spacing
   sectionSpacing: spacing.lg,
-  
+
   // Icon spacing
   iconSpacing: spacing.sm,
-  
+
   // Divider spacing
   dividerSpacing: spacing.md,
 } as const;

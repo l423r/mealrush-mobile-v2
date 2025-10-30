@@ -25,13 +25,19 @@ const ProgressTab: React.FC = observer(() => {
       </TouchableOpacity>
       {p && (
         <View style={styles.card}>
-          <Text style={styles.row}>Среднесуточные ккал: {p.averageDailyCalories.toFixed(0)}</Text>
+          <Text style={styles.row}>
+            Среднесуточные ккал: {p.averageDailyCalories.toFixed(0)}
+          </Text>
           <Text style={styles.row}>Цель: {p.targetCalories}</Text>
-          <Text style={styles.row}>Достижение: {Math.round(p.caloriesAchievementPercentage)}%</Text>
+          <Text style={styles.row}>
+            Достижение: {Math.round(p.caloriesAchievementPercentage)}%
+          </Text>
           <Text style={styles.row}>Статус: {p.goalStatus}</Text>
           <Text style={styles.header}>Дни</Text>
           {p.dailyProgress.map((d) => (
-            <Text key={d.date} style={styles.row}>{d.date}: {d.calories.toFixed(0)} ({Math.round(d.percentage)}%)</Text>
+            <Text key={d.date} style={styles.row}>
+              {d.date}: {d.calories.toFixed(0)} ({Math.round(d.percentage)}%)
+            </Text>
           ))}
         </View>
       )}
@@ -79,4 +85,3 @@ const styles = StyleSheet.create({
 });
 
 export default ProgressTab;
-

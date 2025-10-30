@@ -19,9 +19,11 @@ const SummaryTab: React.FC = observer(() => {
   const { nutritionStore } = useStores();
 
   const today = React.useMemo(() => new Date(), []);
-  const [date, setDate] = React.useState<string>(formatDateForAPI(today));
-  const [weekStart, setWeekStart] = React.useState<string>(formatDateForAPI(new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000)));
-  const [month, setMonth] = React.useState<string>(`${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`);
+  const date = formatDateForAPI(today);
+  const weekStart = formatDateForAPI(
+    new Date(today.getTime() - 6 * 24 * 60 * 60 * 1000)
+  );
+  const month = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 
   const loadDaily = () => nutritionStore.loadDaily(date);
   const loadWeekly = () => nutritionStore.loadWeekly(weekStart);
@@ -38,7 +40,9 @@ const SummaryTab: React.FC = observer(() => {
         </TouchableOpacity>
         {nutritionStore.daily && (
           <View style={styles.metricsRow}>
-            <Text style={styles.metric}>Калории: {formatCalories(nutritionStore.daily.totalCalories)}</Text>
+            <Text style={styles.metric}>
+              Калории: {formatCalories(nutritionStore.daily.totalCalories)}
+            </Text>
             <ProgressBar percentage={nutritionStore.daily.caloriesPercentage} />
           </View>
         )}
@@ -51,7 +55,9 @@ const SummaryTab: React.FC = observer(() => {
         </TouchableOpacity>
         {nutritionStore.weekly && (
           <View style={styles.metricsRow}>
-            <Text style={styles.metric}>Калории: {formatCalories(nutritionStore.weekly.totalCalories)}</Text>
+            <Text style={styles.metric}>
+              Калории: {formatCalories(nutritionStore.weekly.totalCalories)}
+            </Text>
           </View>
         )}
       </View>
@@ -63,7 +69,9 @@ const SummaryTab: React.FC = observer(() => {
         </TouchableOpacity>
         {nutritionStore.monthly && (
           <View style={styles.metricsRow}>
-            <Text style={styles.metric}>Калории: {formatCalories(nutritionStore.monthly.totalCalories)}</Text>
+            <Text style={styles.metric}>
+              Калории: {formatCalories(nutritionStore.monthly.totalCalories)}
+            </Text>
           </View>
         )}
       </View>
@@ -131,4 +139,3 @@ const styles = StyleSheet.create({
 });
 
 export default SummaryTab;
-

@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { Text, StyleSheet, ScrollView } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useStores } from '../../../stores';
 import { colors, spacing, typography } from '../../../theme';
 import SummaryTab from './SummaryTab';
 import TrendTab from './TrendTab';
@@ -9,8 +8,6 @@ import StatisticsTab from './StatisticsTab';
 import ProgressTab from './ProgressTab';
 
 const AnalyticsScreen: React.FC = observer(() => {
-  const { nutritionStore } = useStores();
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <Text style={styles.title}>Аналитика</Text>
@@ -55,4 +52,3 @@ const styles = StyleSheet.create({
 });
 
 export default AnalyticsScreen;
-

@@ -178,6 +178,7 @@ pytest -n auto  # Автоматически определяет количес
 ### 4. Просмотр скриншотов
 
 Все скриншоты сохраняются в папке `e2e_tests/screenshots/`. Скриншоты автоматически создаются:
+
 - При начале каждого теста
 - При завершении каждого теста
 - При падении теста
@@ -214,19 +215,21 @@ e2e_tests/
 Если локаторы элементов не работают, проверьте:
 
 1. **Проверьте правильность package name** в `appium_config.py`:
+
    ```python
    'appPackage': 'com.l423r.foodapp'  # Замените на ваш
    ```
 
 2. **Используйте Appium Inspector** для поиска элементов:
+
    ```bash
    # Запустите Appium
    appium
-   
+
    # В другом терминале запустите Inspector
    appium inspector
    ```
-   
+
    Откройте браузер на `http://localhost:4723` и используйте Inspector для нахождения элементов.
 
 3. **Альтернативные стратегии поиска элементов**:
@@ -239,19 +242,21 @@ e2e_tests/
 ### Проблемы с запуском тестов
 
 1. **Appium не запускается:**
+
    ```bash
    # Проверьте, установлен ли Appium
    appium --version
-   
+
    # Проверьте драйверы
    appium driver list
    ```
 
 2. **Устройство не определяется:**
+
    ```bash
    # Для Android
    adb devices
-   
+
    # Перезапустите ADB
    adb kill-server
    adb start-server
@@ -288,52 +293,52 @@ name: E2E Tests
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
   schedule:
-    - cron: '0 2 * * *'  # Каждый день в 2:00
+    - cron: '0 2 * * *' # Каждый день в 2:00
 
 jobs:
   android-tests:
     runs-on: ubuntu-latest
-    
+
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.9'
-      
+
       - name: Install dependencies
         run: |
           cd e2e_tests
           pip install -r requirements.txt
-      
+
       - name: Start Appium
         run: |
           npm install -g appium uiautomator2-driver
           appium &
-      
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
-      
+
       - name: Start Emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 29
           target: default
           arch: x86_64
-      
+
       - name: Build APK
         run: |
           cd android
           ./gradlew assembleDebug
-      
+
       - name: Run Tests
         run: |
           cd e2e_tests
           pytest --html=report.html
-      
+
       - name: Upload results
         uses: actions/upload-artifact@v3
         if: always()
@@ -390,6 +395,7 @@ xcrun simctl list devices  # iOS
 ## Поддержка
 
 При возникновении проблем:
+
 1. Проверьте логи Appium
 2. Проверьте скриншоты в `screenshots/`
 3. Убедитесь, что все зависимости установлены
@@ -398,4 +404,3 @@ xcrun simctl list devices  # iOS
 ## Лицензия
 
 Этот проект является частью MealRush Mobile V2.
-

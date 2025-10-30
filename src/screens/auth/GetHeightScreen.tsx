@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type GetHeightScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetHeight'>;
-type GetHeightScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetHeight'>;
+type GetHeightScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'GetHeight'
+>;
+type GetHeightScreenRouteProp = RouteProp<
+  ProfileSetupStackParamList,
+  'GetHeight'
+>;
 
 const heightSchema = yup.object().shape({
   height: yup
@@ -60,7 +73,8 @@ const GetHeightScreen: React.FC = () => {
   };
 
   const onSubmit = (data: { height: number }) => {
-    const heightInCm = unit === 'ft' ? convertHeight(data.height, 'ft', 'cm') : data.height;
+    const heightInCm =
+      unit === 'ft' ? convertHeight(data.height, 'ft', 'cm') : data.height;
     navigation.navigate('GetBirthday', {
       gender: route.params?.gender,
       target: route.params?.target,
@@ -85,17 +99,15 @@ const GetHeightScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Ваш рост"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Ваш рост" showBackButton onBackPress={handleBack} />
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.emoji}>📏</Text>
           <Text style={styles.title}>Какой у вас рост?</Text>
-          <Text style={styles.subtitle}>Рост нужен для расчета ИМТ и базового метаболизма</Text>
+          <Text style={styles.subtitle}>
+            Рост нужен для расчета ИМТ и базового метаболизма
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -104,9 +116,13 @@ const GetHeightScreen: React.FC = () => {
               control={control}
               name="height"
               render={({ field: { onChange, onBlur, value } }) => (
-                <Input 
+                <Input
                   label="Рост"
-                  placeholder={unit === 'cm' ? 'Введите рост в сантиметрах' : 'Введите рост в футах'}
+                  placeholder={
+                    unit === 'cm'
+                      ? 'Введите рост в сантиметрах'
+                      : 'Введите рост в футах'
+                  }
                   value={value?.toString() || ''}
                   onChangeText={(text) => {
                     const numValue = parseFloat(text);
@@ -119,7 +135,7 @@ const GetHeightScreen: React.FC = () => {
                 />
               )}
             />
-            
+
             <TouchableOpacity
               style={styles.unitButton}
               onPress={handleUnitToggle}
@@ -131,10 +147,9 @@ const GetHeightScreen: React.FC = () => {
           {height && (
             <View style={styles.conversion}>
               <Text style={styles.conversionText}>
-                {unit === 'cm' 
+                {unit === 'cm'
                   ? formatHeightDisplay(convertHeight(height, 'cm', 'ft'), 'ft')
-                  : `${Math.round(convertHeight(height, 'ft', 'cm'))} см`
-                }
+                  : `${Math.round(convertHeight(height, 'ft', 'cm'))} см`}
               </Text>
             </View>
           )}
@@ -143,7 +158,9 @@ const GetHeightScreen: React.FC = () => {
             <View style={styles.bmiPreview}>
               <Text style={styles.bmiLabel}>Предварительный ИМТ:</Text>
               <Text style={styles.bmiValue}>
-                {Math.round((route.params.weight / Math.pow(height / 100, 2)) * 10) / 10}
+                {Math.round(
+                  (route.params.weight / Math.pow(height / 100, 2)) * 10
+                ) / 10}
               </Text>
             </View>
           )}

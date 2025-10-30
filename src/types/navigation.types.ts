@@ -1,5 +1,10 @@
-import { NavigatorScreenParams } from '@react-navigation/native';
-import { Product, MealElement, Meal, PhotoAnalysisResponse } from './api.types';
+import type { NavigatorScreenParams } from '@react-navigation/native';
+import type {
+  Product,
+  MealElement,
+  Meal,
+  PhotoAnalysisResponse,
+} from './api.types';
 
 // Root Stack
 export type RootStackParamList = {

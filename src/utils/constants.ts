@@ -112,11 +112,31 @@ export const TARGET_WEIGHT_TYPES = [
 
 // Physical activity levels
 export const ACTIVITY_LEVELS = [
-  { value: 'FIRST', label: 'Минимальная активность', description: 'Сидячий образ жизни' },
-  { value: 'SECOND', label: 'Легкая активность', description: 'Легкие упражнения 1-3 дня в неделю' },
-  { value: 'THIRD', label: 'Умеренная активность', description: 'Умеренные упражнения 3-5 дней в неделю' },
-  { value: 'FOURTH', label: 'Высокая активность', description: 'Интенсивные упражнения 6-7 дней в неделю' },
-  { value: 'FIFTH', label: 'Очень высокая активность', description: 'Очень интенсивные упражнения, физическая работа' },
+  {
+    value: 'FIRST',
+    label: 'Минимальная активность',
+    description: 'Сидячий образ жизни',
+  },
+  {
+    value: 'SECOND',
+    label: 'Легкая активность',
+    description: 'Легкие упражнения 1-3 дня в неделю',
+  },
+  {
+    value: 'THIRD',
+    label: 'Умеренная активность',
+    description: 'Умеренные упражнения 3-5 дней в неделю',
+  },
+  {
+    value: 'FOURTH',
+    label: 'Высокая активность',
+    description: 'Интенсивные упражнения 6-7 дней в неделю',
+  },
+  {
+    value: 'FIFTH',
+    label: 'Очень высокая активность',
+    description: 'Очень интенсивные упражнения, физическая работа',
+  },
 ] as const;
 
 // Measurement types

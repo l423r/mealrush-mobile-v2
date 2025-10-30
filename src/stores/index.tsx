@@ -5,7 +5,9 @@ const StoreContext = React.createContext<RootStore | null>(null);
 
 export const StoreProvider = ({ children }: { children: React.ReactNode }) => {
   const rootStore = React.useMemo(() => new RootStore(), []);
-  return <StoreContext.Provider value={rootStore}>{children}</StoreContext.Provider>;
+  return (
+    <StoreContext.Provider value={rootStore}>{children}</StoreContext.Provider>
+  );
 };
 
 export const useStores = () => {

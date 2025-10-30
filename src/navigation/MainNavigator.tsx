@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../types/navigation.types';
+import type { MainStackParamList } from '../types/navigation.types';
 import HomeTabs from './HomeTabs';
 import SearchScreen from '../screens/main/SearchScreen';
 import ScannerScreen from '../screens/main/ScannerScreen';
@@ -36,8 +36,14 @@ const MainNavigator: React.FC = () => {
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="SettingsName" component={SettingsNameScreen} />
       <Stack.Screen name="SettingsEmail" component={SettingsEmailScreen} />
-      <Stack.Screen name="SettingsPassword" component={SettingsPasswordScreen} />
-      <Stack.Screen name="SettingsDeleteAccount" component={SettingsDeleteAccountScreen} />
+      <Stack.Screen
+        name="SettingsPassword"
+        component={SettingsPasswordScreen}
+      />
+      <Stack.Screen
+        name="SettingsDeleteAccount"
+        component={SettingsDeleteAccountScreen}
+      />
     </Stack.Navigator>
   );
 };

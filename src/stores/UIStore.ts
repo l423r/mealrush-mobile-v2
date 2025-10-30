@@ -1,10 +1,10 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { Appearance } from 'react-native';
-import RootStore from './RootStore';
+import type RootStore from './RootStore';
 
 class UIStore {
   rootStore: RootStore;
-  
+
   // State
   isDark: boolean = false;
   loading: boolean = false;
@@ -22,7 +22,7 @@ class UIStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeAutoObservable(this);
-    
+
     // Listen to system theme changes
     this.initializeTheme();
   }
@@ -33,7 +33,7 @@ class UIStore {
     runInAction(() => {
       this.isDark = colorScheme === 'dark';
     });
-    
+
     // Listen for theme changes
     Appearance.addChangeListener(({ colorScheme }) => {
       runInAction(() => {
@@ -72,7 +72,10 @@ class UIStore {
     });
   }
 
-  showSnackbar(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') {
+  showSnackbar(
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning' = 'info'
+  ) {
     runInAction(() => {
       this.snackbar = {
         visible: true,

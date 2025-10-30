@@ -1,5 +1,6 @@
 import React from 'react';
-import { Image, ImageProps, View, ActivityIndicator, StyleSheet } from 'react-native';
+import type { ImageProps } from 'react-native';
+import { Image, View, ActivityIndicator, StyleSheet } from 'react-native';
 
 interface CachedImageProps extends Omit<ImageProps, 'source'> {
   uri: string;
@@ -14,11 +15,11 @@ interface CachedImageProps extends Omit<ImageProps, 'source'> {
  * - Error handling
  * - Optimized headers for external APIs
  */
-export const CachedImage: React.FC<CachedImageProps> = ({ 
-  uri, 
+export const CachedImage: React.FC<CachedImageProps> = ({
+  uri,
   placeholder,
   style,
-  ...props 
+  ...props
 }) => {
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
@@ -43,14 +44,14 @@ export const CachedImage: React.FC<CachedImageProps> = ({
         <>
           <Image
             {...props}
-            source={{ 
+            source={{
               uri,
               cache: 'force-cache', // Enable aggressive caching
               headers: {
                 // Optimize for OpenFoodFacts and other CDNs
-                'Accept': 'image/webp,image/apng,image/*,*/*',
+                Accept: 'image/webp,image/apng,image/*,*/*',
                 'Accept-Encoding': 'gzip, deflate, br',
-              }
+              },
             }}
             style={style}
             onLoadStart={handleLoadStart}

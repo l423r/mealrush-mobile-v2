@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { HomeTabParamList } from '../types/navigation.types';
+import type { HomeTabParamList } from '../types/navigation.types';
 import { colors, typography } from '../theme';
 import MainScreen from '../screens/main/MainScreen';
 import ProductsScreen from '../screens/main/ProductsScreen';

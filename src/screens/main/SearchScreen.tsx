@@ -1,15 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
-import { MainStackParamList } from '../../types/navigation.types';
-import { Product } from '../../types/api.types';
+import type { MainStackParamList } from '../../types/navigation.types';
+import type { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
-import { requestCameraPermission, requestMediaLibraryPermission, imageUriToBase64 } from '../../utils/imageUtils';
+import {
+  requestCameraPermission,
+  requestMediaLibraryPermission,
+  imageUriToBase64,
+} from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
@@ -19,7 +37,10 @@ import PhotoAnalysisDialog from '../../components/common/PhotoAnalysisDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert, useImageSource } from '../../hooks/useAlert';
 
-type SearchScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Search'>;
+type SearchScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'Search'
+>;
 type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
 
 const SearchScreen: React.FC = observer(() => {
@@ -28,7 +49,7 @@ const SearchScreen: React.FC = observer(() => {
   const { productStore, mealStore, uiStore } = useStores();
   const { alertState, showError, hideAlert } = useAlert();
   const imageSource = useImageSource();
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const [isSearching, setIsSearching] = useState(false);
@@ -36,32 +57,28 @@ const SearchScreen: React.FC = observer(() => {
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [showPhotoAnalysisDialog, setShowPhotoAnalysisDialog] = useState(false);
 
-  const debounceSearch = useCallback(
-    (() => {
-      let timeoutId: NodeJS.Timeout;
-      return (query: string) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          if (query.trim().length >= 2) {
-            setIsSearching(true);
-            productStore.searchProducts(query).finally(() => setIsSearching(false));
-          } else {
-            productStore.clearSearch();
-          }
-        }, 300);
-      };
-    })(),
-    []
-  );
+  const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Load favorites on mount
     productStore.getFavorites();
-  }, []);
+  }, [productStore]);
 
   useEffect(() => {
-    debounceSearch(searchQuery);
-  }, [searchQuery, debounceSearch]);
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      const query = searchQuery;
+      if (query.trim().length >= 2) {
+        setIsSearching(true);
+        productStore.searchProducts(query).finally(() => setIsSearching(false));
+      } else {
+        productStore.clearSearch();
+      }
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQuery, productStore]);
 
   const handleSearchChange = (text: string) => {
     setSearchQuery(text);
@@ -93,7 +110,7 @@ const SearchScreen: React.FC = observer(() => {
     if (!selectedImageUri) return;
 
     setShowPhotoAnalysisDialog(false);
-    
+
     try {
       setIsAnalyzing(true);
 
@@ -106,7 +123,11 @@ const SearchScreen: React.FC = observer(() => {
       }
 
       // Вызываем API анализа с комментарием
-      const analysisResult = await mealStore.analyzePhoto(base64, 'ru', comment);
+      const analysisResult = await mealStore.analyzePhoto(
+        base64,
+        'ru',
+        comment
+      );
 
       setIsAnalyzing(false);
 
@@ -120,13 +141,12 @@ const SearchScreen: React.FC = observer(() => {
 
       // Очищаем состояние
       setSelectedImageUri(null);
-    } catch (error: unknown) {
+    } catch {
       setIsAnalyzing(false);
-      const errorMessage = mealStore.photoAnalysisError || 'Не удалось проанализировать фотографию';
-      showError(
-        'Ошибка анализа',
-        errorMessage
-      );
+      const errorMessage =
+        mealStore.photoAnalysisError ||
+        'Не удалось проанализировать фотографию';
+      showError('Ошибка анализа', errorMessage);
       // Очищаем состояние при ошибке
       setSelectedImageUri(null);
     }
@@ -186,27 +206,27 @@ const SearchScreen: React.FC = observer(() => {
 
   const handleFavoriteToggle = async (product: Product) => {
     try {
-      if (productStore.favorites.find(f => f.id === product.id)) {
+      if (productStore.favorites.find((f) => f.id === product.id)) {
         await productStore.removeFromFavorites(product.id);
       } else {
         await productStore.addToFavorites(product.id);
       }
-    } catch (error) {
+    } catch {
       uiStore.showSnackbar('Не удалось обновить избранное', 'error');
     }
   };
 
   const renderProductItem = ({ item: product }: { item: Product }) => {
-    const isFavorite = productStore.favorites.some(f => f.id === product.id);
-    
+    const isFavorite = productStore.favorites.some((f) => f.id === product.id);
+
     return (
       <TouchableOpacity
         style={styles.productCard}
         onPress={() => handleProductPress(product)}
       >
         {product.imageUrl ? (
-          <CachedImage 
-            uri={product.imageUrl} 
+          <CachedImage
+            uri={product.imageUrl}
             style={styles.productImage}
             resizeMode="cover"
             placeholder={
@@ -220,24 +240,28 @@ const SearchScreen: React.FC = observer(() => {
             <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
           </View>
         )}
-        
+
         <View style={styles.productInfo}>
           <Text style={styles.productName} numberOfLines={2}>
             {product.name}
           </Text>
           <Text style={styles.productMacros}>
-            Б: {product.proteins}г • Ж: {product.fats}г • У: {product.carbohydrates}г
+            Б: {product.proteins}г • Ж: {product.fats}г • У:{' '}
+            {product.carbohydrates}г
           </Text>
           <Text style={styles.productCalories}>
-            {formatCalories(product.calories)} на {formatWeight(parseFloat(product.quantity))}
+            {formatCalories(product.calories)} на{' '}
+            {formatWeight(parseFloat(product.quantity))}
           </Text>
         </View>
-        
+
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={() => handleFavoriteToggle(product)}
         >
-          <Text style={[styles.favoriteIcon, isFavorite && styles.favoriteActive]}>
+          <Text
+            style={[styles.favoriteIcon, isFavorite && styles.favoriteActive]}
+          >
             {isFavorite ? '⭐' : '☆'}
           </Text>
         </TouchableOpacity>
@@ -305,7 +329,7 @@ const SearchScreen: React.FC = observer(() => {
           </TouchableOpacity>
         }
       />
-      
+
       <View style={styles.content}>
         {/* Search Input */}
         <View style={styles.searchContainer}>
@@ -324,7 +348,12 @@ const SearchScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'all' && styles.activeTab]}
             onPress={() => setActiveTab('all')}
           >
-            <Text style={[styles.tabText, activeTab === 'all' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'all' && styles.activeTabText,
+              ]}
+            >
               Все
             </Text>
           </TouchableOpacity>
@@ -332,7 +361,12 @@ const SearchScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
             onPress={() => setActiveTab('favorites')}
           >
-            <Text style={[styles.tabText, activeTab === 'favorites' && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'favorites' && styles.activeTabText,
+              ]}
+            >
               Избранное
             </Text>
           </TouchableOpacity>
@@ -373,12 +407,12 @@ const SearchScreen: React.FC = observer(() => {
           }
           return (
             <FlatList
-            data={getData()}
-            renderItem={renderProductItem}
-            keyExtractor={(item) => item.id.toString()}
-            ListEmptyComponent={renderEmptyState}
-            contentContainerStyle={styles.listContainer}
-            showsVerticalScrollIndicator={false}
+              data={getData()}
+              renderItem={renderProductItem}
+              keyExtractor={(item) => item.id.toString()}
+              ListEmptyComponent={renderEmptyState}
+              contentContainerStyle={styles.listContainer}
+              showsVerticalScrollIndicator={false}
             />
           );
         })()}

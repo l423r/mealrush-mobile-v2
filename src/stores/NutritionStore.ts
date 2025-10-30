@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import RootStore from './RootStore';
-import {
+import type RootStore from './RootStore';
+import type {
   NutritionSummaryResponse,
   NutritionTrendResponse,
   StatisticsResponse,
@@ -39,7 +39,8 @@ class NutritionStore {
     } catch (e: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = e.response?.data?.message || 'Ошибка загрузки дневной сводки';
+        this.error =
+          e.response?.data?.message || 'Ошибка загрузки дневной сводки';
       });
       throw e;
     }
@@ -57,7 +58,8 @@ class NutritionStore {
     } catch (e: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = e.response?.data?.message || 'Ошибка загрузки недельной сводки';
+        this.error =
+          e.response?.data?.message || 'Ошибка загрузки недельной сводки';
       });
       throw e;
     }
@@ -75,17 +77,26 @@ class NutritionStore {
     } catch (e: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = e.response?.data?.message || 'Ошибка загрузки месячной сводки';
+        this.error =
+          e.response?.data?.message || 'Ошибка загрузки месячной сводки';
       });
       throw e;
     }
   }
 
-  async loadTrend(startDate: string, endDate: string, metric: NutritionMetricType) {
+  async loadTrend(
+    startDate: string,
+    endDate: string,
+    metric: NutritionMetricType
+  ) {
     this.loading = true;
     this.error = null;
     try {
-      const data = await nutritionService.getTrend({ startDate, endDate, metric });
+      const data = await nutritionService.getTrend({
+        startDate,
+        endDate,
+        metric,
+      });
       runInAction(() => {
         this.trend = data;
         this.loading = false;
@@ -148,4 +159,3 @@ class NutritionStore {
 }
 
 export default NutritionStore;
-

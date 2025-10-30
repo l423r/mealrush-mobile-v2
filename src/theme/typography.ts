@@ -89,7 +89,7 @@ export const typography = {
     lineHeight: lineHeights.sm,
     fontWeight: fontWeights.medium,
   },
-  
+
   // Body text
   body1: {
     fontFamily: fontFamilies.regular,
@@ -103,7 +103,7 @@ export const typography = {
     lineHeight: lineHeights.sm,
     fontWeight: fontWeights.regular,
   },
-  
+
   // Caption
   caption: {
     fontFamily: fontFamilies.regular,
@@ -111,7 +111,7 @@ export const typography = {
     lineHeight: lineHeights.xs,
     fontWeight: fontWeights.regular,
   },
-  
+
   // Button text
   button: {
     fontFamily: fontFamilies.medium,
@@ -119,7 +119,7 @@ export const typography = {
     lineHeight: lineHeights.md,
     fontWeight: fontWeights.medium,
   },
-  
+
   // Overline
   overline: {
     fontFamily: fontFamilies.regular,

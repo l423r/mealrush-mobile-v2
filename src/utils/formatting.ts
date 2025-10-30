@@ -2,7 +2,10 @@ import { format, parseISO, isValid } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
 // Date formatting
-export const formatDate = (date: string | Date, formatString: string = 'dd.MM.yyyy'): string => {
+export const formatDate = (
+  date: string | Date,
+  formatString: string = 'dd.MM.yyyy'
+): string => {
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date;
     if (!isValid(dateObj)) return '';
@@ -126,7 +129,9 @@ export const formatErrorMessage = (error: any): string => {
 };
 
 // Validation error formatting
-export const formatValidationErrors = (errors: any[]): Record<string, string> => {
+export const formatValidationErrors = (
+  errors: any[]
+): Record<string, string> => {
   const formattedErrors: Record<string, string> = {};
   errors.forEach((error) => {
     if (error.field && error.message) {

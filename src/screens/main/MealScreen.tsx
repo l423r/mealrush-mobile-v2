@@ -1,24 +1,41 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Alert,
+  Image,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { formatTime, formatMealType, formatCalories, formatWeight } from '../../utils/formatting';
+import {
+  formatTime,
+  formatMealType,
+  formatCalories,
+  formatWeight,
+} from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 
-type MealScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Meal'>;
+type MealScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'Meal'
+>;
 type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
 
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
   const { mealStore } = useStores();
-  
+
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
 
@@ -27,7 +44,7 @@ const MealScreen: React.FC = observer(() => {
     if (!elements.length) {
       mealStore.loadMealElements(meal.id);
     }
-  }, [meal.id]);
+  }, [elements.length, mealStore, meal.id]);
 
   const handleAddElement = () => {
     navigation.navigate('Search', {
@@ -54,7 +71,7 @@ const MealScreen: React.FC = observer(() => {
           onPress: async () => {
             try {
               await mealStore.deleteMealElement(elementId);
-            } catch (error) {
+            } catch {
               Alert.alert('Ошибка', 'Не удалось удалить блюдо');
             }
           },
@@ -76,7 +93,7 @@ const MealScreen: React.FC = observer(() => {
             try {
               await mealStore.deleteMeal(meal.id);
               navigation.goBack();
-            } catch (error) {
+            } catch {
               Alert.alert('Ошибка', 'Не удалось удалить прием пищи');
             }
           },
@@ -96,8 +113,8 @@ const MealScreen: React.FC = observer(() => {
         onPress={() => handleElementPress(element)}
       >
         {element.imageUrl ? (
-          <Image 
-            source={{ uri: element.imageUrl }} 
+          <Image
+            source={{ uri: element.imageUrl }}
             style={styles.elementImage}
             resizeMode="cover"
           />
@@ -106,7 +123,7 @@ const MealScreen: React.FC = observer(() => {
             <Text style={styles.elementImagePlaceholderIcon}>🍽️</Text>
           </View>
         )}
-        
+
         <View style={styles.elementInfo}>
           <Text style={styles.elementName} numberOfLines={2}>
             {element.name}
@@ -115,10 +132,11 @@ const MealScreen: React.FC = observer(() => {
             {formatWeight(parseFloat(element.quantity))}
           </Text>
           <Text style={styles.elementMacros}>
-            Б: {element.proteins}г • Ж: {element.fats}г • У: {element.carbohydrates}г
+            Б: {element.proteins}г • Ж: {element.fats}г • У:{' '}
+            {element.carbohydrates}г
           </Text>
         </View>
-        
+
         <View style={styles.elementRight}>
           <Text style={styles.elementCalories}>
             {formatCalories(element.calories)}
@@ -138,9 +156,7 @@ const MealScreen: React.FC = observer(() => {
     <View style={styles.emptyState}>
       <Text style={styles.emptyEmoji}>🍽️</Text>
       <Text style={styles.emptyTitle}>Нет блюд</Text>
-      <Text style={styles.emptySubtitle}>
-        Добавьте блюда в этот прием пищи
-      </Text>
+      <Text style={styles.emptySubtitle}>Добавьте блюда в этот прием пищи</Text>
       <Button
         title="Добавить блюдо"
         onPress={handleAddElement}
@@ -150,10 +166,19 @@ const MealScreen: React.FC = observer(() => {
   );
 
   // Calculate totals
-  const totalCalories = elements.reduce((sum, element) => sum + element.calories, 0);
-  const totalProteins = elements.reduce((sum, element) => sum + element.proteins, 0);
+  const totalCalories = elements.reduce(
+    (sum, element) => sum + element.calories,
+    0
+  );
+  const totalProteins = elements.reduce(
+    (sum, element) => sum + element.proteins,
+    0
+  );
   const totalFats = elements.reduce((sum, element) => sum + element.fats, 0);
-  const totalCarbohydrates = elements.reduce((sum, element) => sum + element.carbohydrates, 0);
+  const totalCarbohydrates = elements.reduce(
+    (sum, element) => sum + element.carbohydrates,
+    0
+  );
 
   if (mealStore.loading) {
     return <Loading message="Загрузка приема пищи..." />;
@@ -171,7 +196,7 @@ const MealScreen: React.FC = observer(() => {
           </TouchableOpacity>
         }
       />
-      
+
       <FlatList
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
@@ -183,9 +208,7 @@ const MealScreen: React.FC = observer(() => {
             {/* Meal Info */}
             <View style={styles.mealInfo}>
               <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
-              {meal.name && (
-                <Text style={styles.mealName}>{meal.name}</Text>
-              )}
+              {meal.name && <Text style={styles.mealName}>{meal.name}</Text>}
             </View>
 
             {/* Summary */}
@@ -193,19 +216,27 @@ const MealScreen: React.FC = observer(() => {
               <Text style={styles.summaryTitle}>Итого</Text>
               <View style={styles.summaryGrid}>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>{Math.round(totalCalories)}</Text>
+                  <Text style={styles.summaryValue}>
+                    {Math.round(totalCalories)}
+                  </Text>
                   <Text style={styles.summaryLabel}>ккал</Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>{Math.round(totalProteins)}</Text>
+                  <Text style={styles.summaryValue}>
+                    {Math.round(totalProteins)}
+                  </Text>
                   <Text style={styles.summaryLabel}>белки</Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>{Math.round(totalFats)}</Text>
+                  <Text style={styles.summaryValue}>
+                    {Math.round(totalFats)}
+                  </Text>
                   <Text style={styles.summaryLabel}>жиры</Text>
                 </View>
                 <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>{Math.round(totalCarbohydrates)}</Text>
+                  <Text style={styles.summaryValue}>
+                    {Math.round(totalCarbohydrates)}
+                  </Text>
                   <Text style={styles.summaryLabel}>углеводы</Text>
                 </View>
               </View>

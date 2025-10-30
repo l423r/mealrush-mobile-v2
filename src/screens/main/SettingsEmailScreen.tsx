@@ -1,19 +1,22 @@
 import React from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing } from '../../theme';
+import { colors, spacing } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 
-type SettingsEmailScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'SettingsEmail'>;
+type SettingsEmailScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'SettingsEmail'
+>;
 
 const emailSchema = yup.object().shape({
   email: yup
@@ -38,12 +41,12 @@ const SettingsEmailScreen: React.FC = observer(() => {
     },
   });
 
-  const onSubmit = async (data: { email: string }) => {
+  const onSubmit = async () => {
     try {
       // TODO: Implement email update API
       Alert.alert('Успех', 'Email обновлен');
       navigation.goBack();
-    } catch (error) {
+    } catch {
       Alert.alert('Ошибка', 'Не удалось обновить email');
     }
   };
@@ -54,12 +57,8 @@ const SettingsEmailScreen: React.FC = observer(() => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Изменение email"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Изменение email" showBackButton onBackPress={handleBack} />
+
       <View style={styles.content}>
         <View style={styles.form}>
           <Controller

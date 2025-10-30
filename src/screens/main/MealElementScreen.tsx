@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { MainStackParamList } from '../../types/navigation.types';
-import { Product, MealElement } from '../../types/api.types';
+import type { MainStackParamList } from '../../types/navigation.types';
+import type { Product, MealElement } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
@@ -15,15 +23,15 @@ import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
-import Loading from '../../components/common/Loading';
 
-type MealElementScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'MealElement'>;
+type MealElementScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'MealElement'
+>;
 type MealElementScreenRouteProp = RouteProp<MainStackParamList, 'MealElement'>;
 
 const mealElementSchema = yup.object().shape({
-  quantity: yup
-    .string()
-    .required('Количество обязательно'),
+  quantity: yup.string().required('Количество обязательно'),
   proteins: yup
     .number()
     .min(0, 'Белки не могут быть отрицательными')
@@ -45,14 +53,16 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, productStore, uiStore } = useStores();
-  
+  const { mealStore, uiStore } = useStores();
+
   const item = route.params?.item;
   const isEditing = !!item && 'mealId' in item; // MealElement has mealId
   const isFromSearch = route.params?.fromSearch;
-  
-  const [mealType, setMealType] = useState<'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'>('BREAKFAST');
-  const [mealTime, setMealTime] = useState(new Date());
+
+  const [mealType, setMealType] = useState<
+    'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'
+  >('BREAKFAST');
+  const [mealTime] = useState(new Date());
   const [isCalculating, setIsCalculating] = useState(false);
 
   const {
@@ -66,17 +76,22 @@ const MealElementScreen: React.FC = observer(() => {
     mode: 'onChange',
     defaultValues: {
       quantity: isEditing ? (item as MealElement).quantity : '100',
-      proteins: isEditing ? (item as MealElement).proteins : (item as Product)?.proteins || 0,
-      fats: isEditing ? (item as MealElement).fats : (item as Product)?.fats || 0,
-      carbohydrates: isEditing ? (item as MealElement).carbohydrates : (item as Product)?.carbohydrates || 0,
-      calories: isEditing ? (item as MealElement).calories : (item as Product)?.calories || 0,
+      proteins: isEditing
+        ? (item as MealElement).proteins
+        : (item as Product)?.proteins || 0,
+      fats: isEditing
+        ? (item as MealElement).fats
+        : (item as Product)?.fats || 0,
+      carbohydrates: isEditing
+        ? (item as MealElement).carbohydrates
+        : (item as Product)?.carbohydrates || 0,
+      calories: isEditing
+        ? (item as MealElement).calories
+        : (item as Product)?.calories || 0,
     },
   });
 
   const watchedQuantity = watch('quantity');
-  const watchedProteins = watch('proteins');
-  const watchedFats = watch('fats');
-  const watchedCarbohydrates = watch('carbohydrates');
   const watchedCalories = watch('calories');
 
   useEffect(() => {
@@ -85,7 +100,7 @@ const MealElementScreen: React.FC = observer(() => {
       const product = item as Product;
       const quantity = parseFloat(watchedQuantity) || 100;
       const baseQuantity = parseFloat(product.quantity) || 100;
-      
+
       const recalculated = recalculateNutrients(
         product.proteins,
         product.fats,
@@ -94,7 +109,7 @@ const MealElementScreen: React.FC = observer(() => {
         baseQuantity,
         quantity
       );
-      
+
       setValue('proteins', recalculated.proteins);
       setValue('fats', recalculated.fats);
       setValue('carbohydrates', recalculated.carbohydrates);
@@ -107,9 +122,9 @@ const MealElementScreen: React.FC = observer(() => {
       const product = item as Product;
       const quantityNum = parseFloat(quantity) || 0;
       const baseQuantity = parseFloat(product.quantity) || 100;
-      
+
       setIsCalculating(true);
-      
+
       const recalculated = recalculateNutrients(
         product.proteins,
         product.fats,
@@ -118,12 +133,12 @@ const MealElementScreen: React.FC = observer(() => {
         baseQuantity,
         quantityNum
       );
-      
+
       setValue('proteins', recalculated.proteins);
       setValue('fats', recalculated.fats);
       setValue('carbohydrates', recalculated.carbohydrates);
       setValue('calories', recalculated.calories);
-      
+
       setTimeout(() => setIsCalculating(false), 300);
     }
   };
@@ -144,7 +159,7 @@ const MealElementScreen: React.FC = observer(() => {
       } else {
         // Create new meal element
         let mealId = route.params?.mealId;
-        
+
         if (!mealId) {
           // Create new meal
           const meal = await mealStore.createMeal({
@@ -176,8 +191,11 @@ const MealElementScreen: React.FC = observer(() => {
       }
 
       navigation.goBack();
-    } catch (error) {
-      uiStore.showSnackbar(mealStore.error || 'Не удалось сохранить блюдо', 'error');
+    } catch {
+      uiStore.showSnackbar(
+        mealStore.error || 'Не удалось сохранить блюдо',
+        'error'
+      );
     }
   };
 
@@ -193,19 +211,15 @@ const MealElementScreen: React.FC = observer(() => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title={getTitle()}
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title={getTitle()} showBackButton onBackPress={handleBack} />
+
       <ScrollView style={styles.content}>
         {/* Product Info */}
         {item && (
           <View style={styles.productInfo}>
             {item.imageUrl ? (
-              <Image 
-                source={{ uri: item.imageUrl }} 
+              <Image
+                source={{ uri: item.imageUrl }}
                 style={styles.productImage}
                 resizeMode="cover"
               />
@@ -222,30 +236,39 @@ const MealElementScreen: React.FC = observer(() => {
         {!isEditing && !route.params?.mealId && (
           <View style={styles.mealSettings}>
             <Text style={styles.sectionTitle}>Настройки приема пищи</Text>
-            
+
             <View style={styles.mealTypeContainer}>
               <Text style={styles.label}>Тип приема пищи</Text>
               <View style={styles.mealTypeButtons}>
-                {['BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER'].map((type) => (
-                  <TouchableOpacity
-                    key={type}
-                    style={[
-                      styles.mealTypeButton,
-                      mealType === type && styles.mealTypeButtonActive,
-                    ]}
-                    onPress={() => setMealType(type as any)}
-                  >
-                    <Text style={[
-                      styles.mealTypeButtonText,
-                      mealType === type && styles.mealTypeButtonTextActive,
-                    ]}>
-                      {type === 'BREAKFAST' ? 'Завтрак' :
-                       type === 'LUNCH' ? 'Обед' :
-                       type === 'DINNER' ? 'Ужин' :
-                       type === 'SUPPER' ? 'Полдник' : 'Поздний ужин'}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {['BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER'].map(
+                  (type) => (
+                    <TouchableOpacity
+                      key={type}
+                      style={[
+                        styles.mealTypeButton,
+                        mealType === type && styles.mealTypeButtonActive,
+                      ]}
+                      onPress={() => setMealType(type as any)}
+                    >
+                      <Text
+                        style={[
+                          styles.mealTypeButtonText,
+                          mealType === type && styles.mealTypeButtonTextActive,
+                        ]}
+                      >
+                        {type === 'BREAKFAST'
+                          ? 'Завтрак'
+                          : type === 'LUNCH'
+                            ? 'Обед'
+                            : type === 'DINNER'
+                              ? 'Ужин'
+                              : type === 'SUPPER'
+                                ? 'Полдник'
+                                : 'Поздний ужин'}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                )}
               </View>
             </View>
           </View>
@@ -254,7 +277,7 @@ const MealElementScreen: React.FC = observer(() => {
         {/* Quantity and Nutrients */}
         <View style={styles.nutrientsSection}>
           <Text style={styles.sectionTitle}>Количество и пищевая ценность</Text>
-          
+
           <Controller
             control={control}
             name="quantity"
@@ -291,7 +314,7 @@ const MealElementScreen: React.FC = observer(() => {
                 />
               )}
             />
-            
+
             <Controller
               control={control}
               name="fats"
@@ -327,7 +350,7 @@ const MealElementScreen: React.FC = observer(() => {
                 />
               )}
             />
-            
+
             <Controller
               control={control}
               name="calories"
@@ -358,7 +381,8 @@ const MealElementScreen: React.FC = observer(() => {
         <View style={styles.summary}>
           <Text style={styles.summaryTitle}>Итого</Text>
           <Text style={styles.summaryText}>
-            {formatWeight(parseFloat(watchedQuantity) || 0)} • {formatCalories(watchedCalories || 0)}
+            {formatWeight(parseFloat(watchedQuantity) || 0)} •{' '}
+            {formatCalories(watchedCalories || 0)}
           </Text>
         </View>
       </ScrollView>

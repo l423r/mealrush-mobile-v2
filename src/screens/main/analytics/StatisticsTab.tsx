@@ -25,23 +25,42 @@ const StatisticsTab: React.FC = observer(() => {
       </TouchableOpacity>
       {s && (
         <View style={styles.card}>
-          <Text style={styles.row}>Средние ккал: {s.averageCalories.toFixed(0)}</Text>
+          <Text style={styles.row}>
+            Средние ккал: {s.averageCalories.toFixed(0)}
+          </Text>
           <Text style={styles.row}>Белки: {s.averageProteins.toFixed(1)}</Text>
           <Text style={styles.row}>Жиры: {s.averageFats.toFixed(1)}</Text>
-          <Text style={styles.row}>Углеводы: {s.averageCarbohydrates.toFixed(1)}</Text>
+          <Text style={styles.row}>
+            Углеводы: {s.averageCarbohydrates.toFixed(1)}
+          </Text>
           <Text style={styles.header}>Категории</Text>
           {Object.entries(s.categoryUsageStats).map(([k, v]) => (
             <View key={k} style={styles.barRow}>
               <Text style={styles.barLabel}>{k}</Text>
-              <View style={styles.barOuter}><View style={[styles.barInner, { width: `${Math.min(100, v * 10)}%` } as any]} /></View>
+              <View style={styles.barOuter}>
+                <View
+                  style={[
+                    styles.barInner,
+                    { width: `${Math.min(100, v * 10)}%` } as any,
+                  ]}
+                />
+              </View>
               <Text style={styles.barValue}>{v}</Text>
             </View>
           ))}
           <Text style={styles.header}>Топ продукты</Text>
           {s.topProducts.map((t) => (
-            <Text style={styles.row} key={t.productId}>{t.productName} — {t.usageCount}</Text>
+            <Text style={styles.row} key={t.productId}>
+              {t.productName} — {t.usageCount}
+            </Text>
           ))}
-          <View style={{ flexDirection: 'row', gap: spacing.md, marginTop: spacing.sm }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              gap: spacing.md,
+              marginTop: spacing.sm,
+            }}
+          >
             <Text style={styles.badge}>Всего приёмов: {s.totalMeals}</Text>
             <Text style={styles.badge}>Дней: {s.totalDays}</Text>
           </View>
@@ -126,4 +145,3 @@ const styles = StyleSheet.create({
 });
 
 export default StatisticsTab;
-

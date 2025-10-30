@@ -8,7 +8,13 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 
 export type AlertType = 'success' | 'error' | 'warning' | 'info';
 
@@ -88,8 +94,17 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
             <View style={styles.dialogContainer}>
               <View style={styles.dialog}>
                 <View style={styles.iconContainer}>
-                  <View style={[styles.iconBackground, { backgroundColor: getIconColor() + '20' }]}>
-                    <MaterialIcons name={getIconName()} size={48} color={getIconColor()} />
+                  <View
+                    style={[
+                      styles.iconBackground,
+                      { backgroundColor: getIconColor() + '20' },
+                    ]}
+                  >
+                    <MaterialIcons
+                      name={getIconName()}
+                      size={48}
+                      color={getIconColor()}
+                    />
                   </View>
                 </View>
 
@@ -209,4 +224,3 @@ const styles = StyleSheet.create({
 });
 
 export default AlertDialog;
-

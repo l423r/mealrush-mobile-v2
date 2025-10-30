@@ -1,4 +1,7 @@
-import { PhysicalActivityLevel, TargetWeightType } from '../types/api.types';
+import type {
+  PhysicalActivityLevel,
+  TargetWeightType,
+} from '../types/api.types';
 
 // Calculate calories per gram for each macronutrient
 export const CALORIES_PER_GRAM = {
@@ -51,21 +54,23 @@ export const calculateBMR = (
 // Get activity multiplier
 export const getActivityMultiplier = (level: PhysicalActivityLevel): number => {
   const multipliers = {
-    FIRST: 1.2,    // Минимальная активность
+    FIRST: 1.2, // Минимальная активность
     SECOND: 1.375, // Легкая активность
-    THIRD: 1.55,   // Умеренная активность
+    THIRD: 1.55, // Умеренная активность
     FOURTH: 1.725, // Высокая активность
-    FIFTH: 1.9,    // Очень высокая активность
+    FIFTH: 1.9, // Очень высокая активность
   };
   return multipliers[level];
 };
 
 // Get target weight multiplier
-export const getTargetWeightMultiplier = (targetType: TargetWeightType): number => {
+export const getTargetWeightMultiplier = (
+  targetType: TargetWeightType
+): number => {
   const multipliers = {
-    LOSE: 0.8,   // Дефицит калорий
-    SAVE: 1.0,   // Поддержание веса
-    GAIN: 1.2,   // Профицит калорий
+    LOSE: 0.8, // Дефицит калорий
+    SAVE: 1.0, // Поддержание веса
+    GAIN: 1.2, // Профицит калорий
   };
   return multipliers[targetType];
 };
@@ -82,7 +87,7 @@ export const calculateRecommendedCalories = (
   const bmr = calculateBMR(weight, height, age, gender);
   const activityMultiplier = getActivityMultiplier(activityLevel);
   const targetMultiplier = getTargetWeightMultiplier(targetType);
-  
+
   return Math.round(bmr * activityMultiplier * targetMultiplier);
 };
 
@@ -96,12 +101,12 @@ export const recalculateNutrients = (
   newQuantity: number
 ) => {
   const multiplier = newQuantity / baseQuantity;
-  
+
   return {
-    proteins: Math.round((baseProteins * multiplier) * 100) / 100,
-    fats: Math.round((baseFats * multiplier) * 100) / 100,
-    carbohydrates: Math.round((baseCarbohydrates * multiplier) * 100) / 100,
-    calories: Math.round((baseCalories * multiplier) * 100) / 100,
+    proteins: Math.round(baseProteins * multiplier * 100) / 100,
+    fats: Math.round(baseFats * multiplier * 100) / 100,
+    carbohydrates: Math.round(baseCarbohydrates * multiplier * 100) / 100,
+    calories: Math.round(baseCalories * multiplier * 100) / 100,
   };
 };
 
@@ -120,11 +125,14 @@ export const calculateAge = (birthday: string): number => {
   const birthDate = new Date(birthday);
   let age = today.getFullYear() - birthDate.getFullYear();
   const monthDiff = today.getMonth() - birthDate.getMonth();
-  
-  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
-  
+
   return age;
 };
 

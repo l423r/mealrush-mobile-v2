@@ -2,23 +2,23 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { MainStackParamList } from '../../types/navigation.types';
-import { useStores } from '../../stores';
-import { colors, typography, spacing } from '../../theme';
+import type { MainStackParamList } from '../../types/navigation.types';
+import { colors, spacing } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 
-type SettingsPasswordScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'SettingsPassword'>;
+type SettingsPasswordScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'SettingsPassword'
+>;
 
 const passwordSchema = yup.object().shape({
-  currentPassword: yup
-    .string()
-    .required('Текущий пароль обязателен'),
+  currentPassword: yup.string().required('Текущий пароль обязателен'),
   newPassword: yup
     .string()
     .min(8, 'Новый пароль должен содержать минимум 8 символов')
@@ -31,8 +31,8 @@ const passwordSchema = yup.object().shape({
 
 const SettingsPasswordScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsPasswordScreenNavigationProp>();
-  const { authStore } = useStores();
-  
+  // store not used here; intentionally omitted
+
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -46,12 +46,12 @@ const SettingsPasswordScreen: React.FC = observer(() => {
     mode: 'onChange',
   });
 
-  const onSubmit = async (data: { currentPassword: string; newPassword: string; confirmPassword: string }) => {
+  const onSubmit = async () => {
     try {
       // TODO: Implement password update API
       Alert.alert('Успех', 'Пароль обновлен');
       navigation.goBack();
-    } catch (error) {
+    } catch {
       Alert.alert('Ошибка', 'Не удалось обновить пароль');
     }
   };
@@ -67,7 +67,7 @@ const SettingsPasswordScreen: React.FC = observer(() => {
         showBackButton
         onBackPress={handleBack}
       />
-      
+
       <View style={styles.content}>
         <View style={styles.form}>
           <Controller
@@ -87,7 +87,9 @@ const SettingsPasswordScreen: React.FC = observer(() => {
                     {showCurrentPassword ? '👁️' : '👁️‍🗨️'}
                   </Text>
                 }
-                onRightIconPress={() => setShowCurrentPassword(!showCurrentPassword)}
+                onRightIconPress={() =>
+                  setShowCurrentPassword(!showCurrentPassword)
+                }
               />
             )}
           />
@@ -131,7 +133,9 @@ const SettingsPasswordScreen: React.FC = observer(() => {
                     {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
                   </Text>
                 }
-                onRightIconPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                onRightIconPress={() =>
+                  setShowConfirmPassword(!showConfirmPassword)
+                }
               />
             )}
           />

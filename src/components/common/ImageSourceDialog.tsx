@@ -8,7 +8,13 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 
 interface ImageSourceDialogProps {
   visible: boolean;
@@ -55,7 +61,11 @@ const ImageSourceDialog: React.FC<ImageSourceDialogProps> = ({
                     activeOpacity={0.7}
                   >
                     <View style={[styles.iconContainer, styles.cameraIcon]}>
-                      <MaterialIcons name="camera-alt" size={32} color={colors.primary} />
+                      <MaterialIcons
+                        name="camera-alt"
+                        size={32}
+                        color={colors.primary}
+                      />
                     </View>
                     <Text style={styles.optionText}>Камера</Text>
                     <Text style={styles.optionSubtext}>Сфотографировать</Text>
@@ -67,7 +77,11 @@ const ImageSourceDialog: React.FC<ImageSourceDialogProps> = ({
                     activeOpacity={0.7}
                   >
                     <View style={[styles.iconContainer, styles.galleryIcon]}>
-                      <MaterialIcons name="photo-library" size={32} color={colors.secondary} />
+                      <MaterialIcons
+                        name="photo-library"
+                        size={32}
+                        color={colors.secondary}
+                      />
                     </View>
                     <Text style={styles.optionText}>Галерея</Text>
                     <Text style={styles.optionSubtext}>Выбрать из галереи</Text>
@@ -177,4 +191,3 @@ const styles = StyleSheet.create({
 });
 
 export default ImageSourceDialog;
-

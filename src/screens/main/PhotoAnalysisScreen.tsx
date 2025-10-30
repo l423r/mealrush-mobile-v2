@@ -1,20 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
+  TouchableOpacity,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
-import { PhotoAnalysisIngredient } from '../../types/api.types';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
+import type { PhotoAnalysisIngredient } from '../../types/api.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 import { formatNumber, formatMeasurementType } from '../../utils/formatting';
 import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 
-type PhotoAnalysisScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'PhotoAnalysis'>;
-type PhotoAnalysisScreenRouteProp = RouteProp<MainStackParamList, 'PhotoAnalysis'>;
+type PhotoAnalysisScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'PhotoAnalysis'
+>;
+type PhotoAnalysisScreenRouteProp = RouteProp<
+  MainStackParamList,
+  'PhotoAnalysis'
+>;
 
 interface EditableIngredient extends PhotoAnalysisIngredient {
   editedQuantity: number;
@@ -31,10 +51,12 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
 
   const { analysisResult, imageUri, mealId } = route.params;
 
-  const [mealType, setMealType] = useState<'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'>('BREAKFAST');
+  const [mealType, setMealType] = useState<
+    'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'
+  >('BREAKFAST');
   const [mealTime] = useState(new Date());
   const [ingredients, setIngredients] = useState<EditableIngredient[]>(
-    analysisResult.ingredients.map(ing => ({
+    analysisResult.ingredients.map((ing) => ({
       ...ing,
       editedQuantity: ing.quantity,
       originalProteins: ing.proteins,
@@ -43,7 +65,9 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
       originalCalories: ing.calories,
     }))
   );
-  const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(new Set());
+  const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(
+    new Set()
+  );
 
   const toggleIngredientExpansion = (index: number) => {
     const newExpanded = new Set(expandedIngredients);
@@ -160,7 +184,11 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Photo */}
         <View style={styles.photoContainer}>
-          <Image source={{ uri: imageUri }} style={styles.photo} resizeMode="cover" />
+          <Image
+            source={{ uri: imageUri }}
+            style={styles.photo}
+            resizeMode="cover"
+          />
           {analysisResult.notes && (
             <View style={styles.notesContainer}>
               <Text style={styles.notesLabel}>Примечание:</Text>
@@ -200,7 +228,7 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
         {!mealId && (
           <View style={styles.mealSettings}>
             <Text style={styles.sectionTitle}>Настройки приема пищи</Text>
-            
+
             {/* Meal Type */}
             <View style={styles.mealTypeContainer}>
               <Text style={styles.label}>Тип приема пищи</Text>
@@ -208,10 +236,19 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
                 {mealTypeOptions.map((option) => (
                   <TouchableOpacity
                     key={option.value}
-                    style={[styles.mealTypeButton, mealType === option.value && styles.mealTypeButtonActive]}
+                    style={[
+                      styles.mealTypeButton,
+                      mealType === option.value && styles.mealTypeButtonActive,
+                    ]}
                     onPress={() => setMealType(option.value)}
                   >
-                    <Text style={[styles.mealTypeButtonText, mealType === option.value && styles.mealTypeButtonTextActive]}>
+                    <Text
+                      style={[
+                        styles.mealTypeButtonText,
+                        mealType === option.value &&
+                          styles.mealTypeButtonTextActive,
+                      ]}
+                    >
                       {option.label}
                     </Text>
                   </TouchableOpacity>
@@ -226,19 +263,27 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
           <Text style={styles.summaryTitle}>Итого</Text>
           <View style={styles.summaryGrid}>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{formatNumber(totals.calories, 0)}</Text>
+              <Text style={styles.summaryValue}>
+                {formatNumber(totals.calories, 0)}
+              </Text>
               <Text style={styles.summaryLabel}>ккал</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{formatNumber(totals.proteins, 1)}</Text>
+              <Text style={styles.summaryValue}>
+                {formatNumber(totals.proteins, 1)}
+              </Text>
               <Text style={styles.summaryLabel}>белки</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{formatNumber(totals.fats, 1)}</Text>
+              <Text style={styles.summaryValue}>
+                {formatNumber(totals.fats, 1)}
+              </Text>
               <Text style={styles.summaryLabel}>жиры</Text>
             </View>
             <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{formatNumber(totals.carbohydrates, 1)}</Text>
+              <Text style={styles.summaryValue}>
+                {formatNumber(totals.carbohydrates, 1)}
+              </Text>
               <Text style={styles.summaryLabel}>углеводы</Text>
             </View>
           </View>
@@ -246,7 +291,9 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
 
         {/* Ingredients List */}
         <View style={styles.ingredientsContainer}>
-          <Text style={styles.sectionTitle}>Ингредиенты ({ingredients.length})</Text>
+          <Text style={styles.sectionTitle}>
+            Ингредиенты ({ingredients.length})
+          </Text>
           {ingredients.map((ingredient, index) => {
             const isExpanded = expandedIngredients.has(index);
             const ingredientKey = `${ingredient.name}-${index}`;
@@ -259,13 +306,16 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
                   <View style={styles.ingredientInfo}>
                     <Text style={styles.ingredientName}>{ingredient.name}</Text>
                     <Text style={styles.ingredientQuantity}>
-                      {formatNumber(ingredient.editedQuantity, 0)} {formatMeasurementType(ingredient.measurementType)}
+                      {formatNumber(ingredient.editedQuantity, 0)}{' '}
+                      {formatMeasurementType(ingredient.measurementType)}
                     </Text>
                   </View>
                   <Text style={styles.ingredientCalories}>
                     {formatNumber(ingredient.calories, 0)} ккал
                   </Text>
-                  <Text style={styles.expandIcon}>{isExpanded ? '▼' : '▶'}</Text>
+                  <Text style={styles.expandIcon}>
+                    {isExpanded ? '▼' : '▶'}
+                  </Text>
                 </TouchableOpacity>
 
                 {isExpanded && (
@@ -281,19 +331,27 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
                     <View style={styles.nutrientsGrid}>
                       <View style={styles.nutrientItem}>
                         <Text style={styles.nutrientLabel}>Белки</Text>
-                        <Text style={styles.nutrientValue}>{formatNumber(ingredient.proteins, 1)}г</Text>
+                        <Text style={styles.nutrientValue}>
+                          {formatNumber(ingredient.proteins, 1)}г
+                        </Text>
                       </View>
                       <View style={styles.nutrientItem}>
                         <Text style={styles.nutrientLabel}>Жиры</Text>
-                        <Text style={styles.nutrientValue}>{formatNumber(ingredient.fats, 1)}г</Text>
+                        <Text style={styles.nutrientValue}>
+                          {formatNumber(ingredient.fats, 1)}г
+                        </Text>
                       </View>
                       <View style={styles.nutrientItem}>
                         <Text style={styles.nutrientLabel}>Углеводы</Text>
-                        <Text style={styles.nutrientValue}>{formatNumber(ingredient.carbohydrates, 1)}г</Text>
+                        <Text style={styles.nutrientValue}>
+                          {formatNumber(ingredient.carbohydrates, 1)}г
+                        </Text>
                       </View>
                       <View style={styles.nutrientItem}>
                         <Text style={styles.nutrientLabel}>Калории</Text>
-                        <Text style={styles.nutrientValue}>{formatNumber(ingredient.calories, 0)}</Text>
+                        <Text style={styles.nutrientValue}>
+                          {formatNumber(ingredient.calories, 0)}
+                        </Text>
                       </View>
                     </View>
                   </View>
@@ -541,4 +599,3 @@ const styles = StyleSheet.create({
 });
 
 export default PhotoAnalysisScreen;
-

@@ -1,17 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 
-type GetGenderScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetGender'>;
+type GetGenderScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'GetGender'
+>;
 
 const GetGenderScreen: React.FC = () => {
   const navigation = useNavigation<GetGenderScreenNavigationProp>();
-  const [selectedGender, setSelectedGender] = useState<'MALE' | 'FEMALE' | null>(null);
+  const [selectedGender, setSelectedGender] = useState<
+    'MALE' | 'FEMALE' | null
+  >(null);
 
   const handleNext = () => {
     if (selectedGender) {
@@ -26,16 +37,14 @@ const GetGenderScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Выберите пол"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Выберите пол" showBackButton onBackPress={handleBack} />
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Какой у вас пол?</Text>
-          <Text style={styles.subtitle}>Это поможет рассчитать вашу дневную норму калорий</Text>
+          <Text style={styles.subtitle}>
+            Это поможет рассчитать вашу дневную норму калорий
+          </Text>
         </View>
 
         <View style={styles.options}>
@@ -47,10 +56,12 @@ const GetGenderScreen: React.FC = () => {
             onPress={() => setSelectedGender('MALE')}
           >
             <Text style={styles.optionEmoji}>👨</Text>
-            <Text style={[
-              styles.optionText,
-              selectedGender === 'MALE' && styles.selectedOptionText,
-            ]}>
+            <Text
+              style={[
+                styles.optionText,
+                selectedGender === 'MALE' && styles.selectedOptionText,
+              ]}
+            >
               Мужской
             </Text>
           </TouchableOpacity>
@@ -63,10 +74,12 @@ const GetGenderScreen: React.FC = () => {
             onPress={() => setSelectedGender('FEMALE')}
           >
             <Text style={styles.optionEmoji}>👩</Text>
-            <Text style={[
-              styles.optionText,
-              selectedGender === 'FEMALE' && styles.selectedOptionText,
-            ]}>
+            <Text
+              style={[
+                styles.optionText,
+                selectedGender === 'FEMALE' && styles.selectedOptionText,
+              ]}
+            >
               Женский
             </Text>
           </TouchableOpacity>
@@ -74,11 +87,7 @@ const GetGenderScreen: React.FC = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          title="Далее"
-          onPress={handleNext}
-          disabled={!selectedGender}
-        />
+        <Button title="Далее" onPress={handleNext} disabled={!selectedGender} />
       </View>
     </View>
   );

@@ -24,7 +24,7 @@ class RootStore {
     this.uiStore = new UIStore(this);
     this.nutritionStore = new NutritionStore(this);
     this.recommendationsStore = new RecommendationsStore(this);
-    
+
     makeAutoObservable(this);
   }
 

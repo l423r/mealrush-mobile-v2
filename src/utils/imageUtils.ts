@@ -82,7 +82,7 @@ export async function imageUriToBase64(uri: string): Promise<string | null> {
     // Используем FileReader для чтения файла
     const response = await fetch(uri);
     const blob = await response.blob();
-    
+
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -125,7 +125,7 @@ export async function getImageBase64(): Promise<string | null> {
   // Если нужно, конвертируем вручную
   const response = await fetch(imageUri);
   const blob = await response.blob();
-  
+
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -141,7 +141,10 @@ export async function getImageBase64(): Promise<string | null> {
  * Упрощенная функция получения base64 из ImagePicker
  * ImagePicker уже возвращает base64, нужно только проверить результат
  */
-export async function pickImageWithBase64(): Promise<{ uri: string; base64: string } | null> {
+export async function pickImageWithBase64(): Promise<{
+  uri: string;
+  base64: string;
+} | null> {
   const source = await pickImageSource();
   if (!source) {
     return null;
@@ -178,9 +181,7 @@ export async function pickImageWithBase64(): Promise<{ uri: string; base64: stri
   }
 
   const asset = result.assets[0];
-  const base64 = asset.base64 
-    ? `data:image/jpeg;base64,${asset.base64}`
-    : null;
+  const base64 = asset.base64 ? `data:image/jpeg;base64,${asset.base64}` : null;
 
   if (!base64) {
     // Если base64 нет, пытаемся получить его из URI
@@ -196,4 +197,3 @@ export async function pickImageWithBase64(): Promise<{ uri: string; base64: stri
     base64,
   };
 }
-

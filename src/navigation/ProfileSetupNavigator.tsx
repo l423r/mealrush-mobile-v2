@@ -1,6 +1,6 @@
 import React from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { ProfileSetupStackParamList } from '../types/navigation.types';
+import type { ProfileSetupStackParamList } from '../types/navigation.types';
 import GetGenderScreen from '../screens/auth/GetGenderScreen';
 import GetTargetScreen from '../screens/auth/GetTargetScreen';
 import GetWeightScreen from '../screens/auth/GetWeightScreen';

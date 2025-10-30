@@ -3,15 +3,19 @@
 ## Выводы из диагностического теста:
 
 ### ✅ Работает отлично:
+
 1. **AppiumBy.ACCESSIBILITY_ID** - ЛУЧШИЙ СПОСОБ
+
    ```
    ✅ testID AppiumBy.ACCESSIBILITY_ID: FOUND
    ```
+
    - Работает для email, password, buttons
    - Быстрый поиск
    - Надежный в production
 
 2. **XPath по text** - работает
+
    ```
    ✅ text XPath: FOUND
    ✅ text contained XPath: FOUND
@@ -24,6 +28,7 @@
    ```
 
 ### ❌ Не работает:
+
 1. **By.ID** - НЕ ИСПОЛЬЗУЙТЕ
    ```
    ❌ testID By.ID: NOT FOUND (везде!)
@@ -32,6 +37,7 @@
 ## Оптимальная конфигурация:
 
 ### В компонентах (уже сделано ✅):
+
 ```tsx
 // Button.tsx
 <TouchableOpacity
@@ -48,6 +54,7 @@
 ```
 
 ### В тестах (обновлено):
+
 ```python
 EMAIL_INPUT = [
     (AppiumBy.ACCESSIBILITY_ID, "sign_in_email_input"),  # Основной
@@ -65,6 +72,7 @@ LOGIN_BUTTON = [
 Проблема была в том, что `testID` был на `<Text>`, а не на кликабельном элементе.
 
 **Было (❌):**
+
 ```tsx
 rightIcon={
   <Text testID="password_toggle_icon">  {/* testID на Text! */}
@@ -74,6 +82,7 @@ rightIcon={
 ```
 
 **Стало (✅):**
+
 ```tsx
 rightIcon={
   <TouchableOpacity
@@ -89,6 +98,7 @@ rightIcon={
 ## Правило:
 
 **testID, accessibilityLabel и accessible должны быть на том элементе, с которым взаимодействуете:**
+
 - ✅ Кнопка → на TouchableOpacity
 - ✅ Input → на TextInput
 - ✅ Контейнер → на View
@@ -99,4 +109,3 @@ rightIcon={
 2. Добавьте XPath как fallback
 3. Уберите неработающий `By.ID`
 4. Обновите иконку password toggle (сделано ✅)
-

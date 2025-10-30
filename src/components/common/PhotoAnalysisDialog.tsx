@@ -9,7 +9,13 @@ import {
   TextInput,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 import Button from './Button';
 
 interface PhotoAnalysisDialogProps {
@@ -65,8 +71,14 @@ const PhotoAnalysisDialog: React.FC<PhotoAnalysisDialogProps> = ({
                     onPress={() => setShowComment(true)}
                     activeOpacity={0.7}
                   >
-                    <MaterialIcons name="add-comment" size={20} color={colors.primary} />
-                    <Text style={styles.commentToggleText}>Добавить комментарий</Text>
+                    <MaterialIcons
+                      name="add-comment"
+                      size={20}
+                      color={colors.primary}
+                    />
+                    <Text style={styles.commentToggleText}>
+                      Добавить комментарий
+                    </Text>
                   </TouchableOpacity>
                 )}
 
@@ -94,7 +106,11 @@ const PhotoAnalysisDialog: React.FC<PhotoAnalysisDialogProps> = ({
                         }}
                         activeOpacity={0.7}
                       >
-                        <MaterialIcons name="close" size={18} color={colors.text.secondary} />
+                        <MaterialIcons
+                          name="close"
+                          size={18}
+                          color={colors.text.secondary}
+                        />
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -223,4 +239,3 @@ const styles = StyleSheet.create({
 });
 
 export default PhotoAnalysisDialog;
-

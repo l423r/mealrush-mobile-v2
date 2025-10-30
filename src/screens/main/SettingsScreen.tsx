@@ -1,15 +1,25 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 
-type SettingsScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'Settings'>;
+type SettingsScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'Settings'
+>;
 
 const SettingsScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
@@ -36,20 +46,16 @@ const SettingsScreen: React.FC = observer(() => {
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      'Выход',
-      'Вы уверены, что хотите выйти из аккаунта?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Выйти',
-          style: 'destructive',
-          onPress: async () => {
-            await authStore.logout();
-          },
+    Alert.alert('Выход', 'Вы уверены, что хотите выйти из аккаунта?', [
+      { text: 'Отмена', style: 'cancel' },
+      {
+        text: 'Выйти',
+        style: 'destructive',
+        onPress: async () => {
+          await authStore.logout();
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const settingsOptions = [
@@ -82,12 +88,8 @@ const SettingsScreen: React.FC = observer(() => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Настройки"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Настройки" showBackButton onBackPress={handleBack} />
+
       <ScrollView style={styles.content}>
         {/* User Info */}
         <View style={styles.userInfo}>
@@ -96,7 +98,9 @@ const SettingsScreen: React.FC = observer(() => {
               {authStore.user?.name?.charAt(0) || 'U'}
             </Text>
           </View>
-          <Text style={styles.userName}>{authStore.user?.name || 'Пользователь'}</Text>
+          <Text style={styles.userName}>
+            {authStore.user?.name || 'Пользователь'}
+          </Text>
           <Text style={styles.userEmail}>{authStore.user?.email}</Text>
         </View>
 
@@ -113,16 +117,16 @@ const SettingsScreen: React.FC = observer(() => {
             >
               <View style={styles.optionLeft}>
                 <Text style={styles.optionIcon}>{option.icon}</Text>
-                <Text style={[
-                  styles.optionTitle,
-                  option.isDestructive && styles.destructiveText,
-                ]}>
+                <Text
+                  style={[
+                    styles.optionTitle,
+                    option.isDestructive && styles.destructiveText,
+                  ]}
+                >
                   {option.title}
                 </Text>
               </View>
-              {option.showArrow && (
-                <Text style={styles.optionArrow}>›</Text>
-              )}
+              {option.showArrow && <Text style={styles.optionArrow}>›</Text>}
             </TouchableOpacity>
           ))}
         </View>

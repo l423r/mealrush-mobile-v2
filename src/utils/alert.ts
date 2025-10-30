@@ -56,4 +56,3 @@ export const pickImageSource = (): Promise<'camera' | 'gallery' | null> => {
     );
   });
 };
-

@@ -47,9 +47,7 @@ export const userProfileSchema = yup.object().shape({
     .string()
     .oneOf(['MALE', 'FEMALE'], 'Выберите пол')
     .required('Пол обязателен'),
-  birthday: yup
-    .string()
-    .required('Дата рождения обязательна'),
+  birthday: yup.string().required('Дата рождения обязательна'),
   targetWeightType: yup
     .string()
     .oneOf(['LOSE', 'SAVE', 'GAIN'], 'Выберите цель')
@@ -64,7 +62,10 @@ export const userProfileSchema = yup.object().shape({
     }),
   physicalActivityLevel: yup
     .string()
-    .oneOf(['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'], 'Выберите уровень активности')
+    .oneOf(
+      ['FIRST', 'SECOND', 'THIRD', 'FOURTH', 'FIFTH'],
+      'Выберите уровень активности'
+    )
     .required('Уровень активности обязателен'),
   dayLimitCal: yup
     .number()
@@ -99,16 +100,12 @@ export const productSchema = yup.object().shape({
     .min(0, 'Калории не могут быть отрицательными')
     .max(1000, 'Калории не могут быть более 1000 ккал на 100 г')
     .required('Калории обязательны'),
-  quantity: yup
-    .string()
-    .required('Количество обязательно'),
+  quantity: yup.string().required('Количество обязательно'),
 });
 
 // Meal element validation schemas
 export const mealElementSchema = yup.object().shape({
-  quantity: yup
-    .string()
-    .required('Количество обязательно'),
+  quantity: yup.string().required('Количество обязательно'),
   proteins: yup
     .number()
     .min(0, 'Белки не могут быть отрицательными')

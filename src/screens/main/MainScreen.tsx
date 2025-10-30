@@ -1,35 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  FlatList,
+  RefreshControl,
+} from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { MainStackParamList } from '../../types/navigation.types';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
+import {
+  colors,
+  typography,
+  spacing,
+  borderRadius,
+  shadows,
+} from '../../theme';
 import { formatDate, formatTime, formatMealType } from '../../utils/formatting';
 import { calculateProgressPercentage } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 
-type MainScreenNavigationProp = NativeStackNavigationProp<MainStackParamList, 'HomeTabs'>;
+type MainScreenNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'HomeTabs'
+>;
 
 const MainScreen: React.FC = observer(() => {
   const navigation = useNavigation<MainScreenNavigationProp>();
   const { mealStore, profileStore } = useStores();
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
+  const loadData = React.useCallback(async () => {
     try {
       await mealStore.loadMealsForDate(mealStore.selectedDate);
     } catch (error) {
       console.error('Error loading meals:', error);
     }
-  };
+  }, [mealStore]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleRefresh = async () => {
     setRefreshing(true);
@@ -56,10 +73,19 @@ const MainScreen: React.FC = observer(() => {
 
   const renderMealCard = ({ item: meal }: { item: any }) => {
     const elements = mealStore.mealElements[meal.id] || [];
-    const totalCalories = elements.reduce((sum, element) => sum + element.calories, 0);
-    const totalProteins = elements.reduce((sum, element) => sum + element.proteins, 0);
+    const totalCalories = elements.reduce(
+      (sum, element) => sum + element.calories,
+      0
+    );
+    const totalProteins = elements.reduce(
+      (sum, element) => sum + element.proteins,
+      0
+    );
     const totalFats = elements.reduce((sum, element) => sum + element.fats, 0);
-    const totalCarbohydrates = elements.reduce((sum, element) => sum + element.carbohydrates, 0);
+    const totalCarbohydrates = elements.reduce(
+      (sum, element) => sum + element.carbohydrates,
+      0
+    );
 
     return (
       <TouchableOpacity
@@ -70,14 +96,17 @@ const MainScreen: React.FC = observer(() => {
           <Text style={styles.mealType}>{formatMealType(meal.mealType)}</Text>
           <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
         </View>
-        
+
         <View style={styles.mealContent}>
-          <Text style={styles.mealCalories}>{Math.round(totalCalories)} ккал</Text>
+          <Text style={styles.mealCalories}>
+            {Math.round(totalCalories)} ккал
+          </Text>
           <Text style={styles.mealMacros}>
-            Б: {Math.round(totalProteins)}г • Ж: {Math.round(totalFats)}г • У: {Math.round(totalCarbohydrates)}г
+            Б: {Math.round(totalProteins)}г • Ж: {Math.round(totalFats)}г • У:{' '}
+            {Math.round(totalCarbohydrates)}г
           </Text>
         </View>
-        
+
         <Text style={styles.mealArrow}>›</Text>
       </TouchableOpacity>
     );
@@ -112,7 +141,7 @@ const MainScreen: React.FC = observer(() => {
           </TouchableOpacity>
         }
       />
-      
+
       <ScrollView
         style={styles.content}
         refreshControl={
@@ -127,7 +156,7 @@ const MainScreen: React.FC = observer(() => {
           >
             <Text style={styles.dateButtonText}>‹</Text>
           </TouchableOpacity>
-          
+
           <View style={styles.dateInfo}>
             <Text style={styles.dateText}>
               {formatDate(mealStore.selectedDate, 'dd MMMM yyyy')}
@@ -136,7 +165,7 @@ const MainScreen: React.FC = observer(() => {
               {formatDate(mealStore.selectedDate, 'EEEE')}
             </Text>
           </View>
-          
+
           <TouchableOpacity
             style={styles.dateButton}
             onPress={() => handleDateChange('next')}
@@ -148,7 +177,7 @@ const MainScreen: React.FC = observer(() => {
         {/* Daily Stats */}
         <View style={styles.statsContainer}>
           <Text style={styles.statsTitle}>Дневная статистика</Text>
-          
+
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
@@ -169,21 +198,21 @@ const MainScreen: React.FC = observer(() => {
                 />
               </View>
             </View>
-            
+
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
                 {Math.round(mealStore.dailyProteins)}
               </Text>
               <Text style={styles.statLabel}>белки</Text>
             </View>
-            
+
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
                 {Math.round(mealStore.dailyFats)}
               </Text>
               <Text style={styles.statLabel}>жиры</Text>
             </View>
-            
+
             <View style={styles.statItem}>
               <Text style={styles.statValue}>
                 {Math.round(mealStore.dailyCarbohydrates)}
@@ -196,7 +225,7 @@ const MainScreen: React.FC = observer(() => {
         {/* Meals List */}
         <View style={styles.mealsContainer}>
           <Text style={styles.mealsTitle}>Приемы пищи</Text>
-          
+
           {mealStore.mealsForSelectedDate.length === 0 ? (
             renderEmptyState()
           ) : (

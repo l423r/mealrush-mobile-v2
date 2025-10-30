@@ -1,18 +1,31 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
 
-type GetTargetWeightScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetTargetWeight'>;
-type GetTargetWeightScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetTargetWeight'>;
+type GetTargetWeightScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'GetTargetWeight'
+>;
+type GetTargetWeightScreenRouteProp = RouteProp<
+  ProfileSetupStackParamList,
+  'GetTargetWeight'
+>;
 
 const targetWeightSchema = yup.object().shape({
   targetWeight: yup
@@ -30,16 +43,17 @@ const GetTargetWeightScreen: React.FC = () => {
   const currentWeight = route.params?.weight || 0;
   const target = route.params?.target;
 
-  // Skip this screen if target is SAVE
-  if (target === 'SAVE') {
-    navigation.navigate('GetHeight', {
-      gender: route.params?.gender,
-      target,
-      weight: currentWeight,
-      targetWeight: currentWeight,
-    });
-    return null;
-  }
+  // If target is SAVE, navigate next step after first render
+  React.useEffect(() => {
+    if (target === 'SAVE') {
+      navigation.navigate('GetHeight', {
+        gender: route.params?.gender,
+        target,
+        weight: currentWeight,
+        targetWeight: currentWeight,
+      });
+    }
+  }, [target, currentWeight, navigation, route.params?.gender]);
 
   const {
     control,
@@ -53,7 +67,11 @@ const GetTargetWeightScreen: React.FC = () => {
 
   const targetWeight = watch('targetWeight');
 
-  const convertWeight = (value: number, from: 'kg' | 'lbs', to: 'kg' | 'lbs') => {
+  const convertWeight = (
+    value: number,
+    from: 'kg' | 'lbs',
+    to: 'kg' | 'lbs'
+  ) => {
     if (from === to) return value;
     if (from === 'kg' && to === 'lbs') return value * 2.20462;
     if (from === 'lbs' && to === 'kg') return value / 2.20462;
@@ -65,7 +83,10 @@ const GetTargetWeightScreen: React.FC = () => {
   };
 
   const onSubmit = (data: { targetWeight: number }) => {
-    const targetWeightInKg = unit === 'lbs' ? convertWeight(data.targetWeight, 'lbs', 'kg') : data.targetWeight;
+    const targetWeightInKg =
+      unit === 'lbs'
+        ? convertWeight(data.targetWeight, 'lbs', 'kg')
+        : data.targetWeight;
     navigation.navigate('GetHeight', {
       gender: route.params?.gender,
       target: route.params?.target,
@@ -102,12 +123,8 @@ const GetTargetWeightScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Целевой вес"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Целевой вес" showBackButton onBackPress={handleBack} />
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.emoji}>{getTargetEmoji()}</Text>
@@ -138,7 +155,7 @@ const GetTargetWeightScreen: React.FC = () => {
                 />
               )}
             />
-            
+
             <TouchableOpacity
               style={styles.unitButton}
               onPress={handleUnitToggle}
@@ -150,10 +167,9 @@ const GetTargetWeightScreen: React.FC = () => {
           {targetWeight && (
             <View style={styles.conversion}>
               <Text style={styles.conversionText}>
-                {unit === 'kg' 
+                {unit === 'kg'
                   ? `${Math.round(convertWeight(targetWeight, 'kg', 'lbs') * 10) / 10} фунтов`
-                  : `${Math.round(convertWeight(targetWeight, 'lbs', 'kg') * 10) / 10} кг`
-                }
+                  : `${Math.round(convertWeight(targetWeight, 'lbs', 'kg') * 10) / 10} кг`}
               </Text>
             </View>
           )}
@@ -161,10 +177,9 @@ const GetTargetWeightScreen: React.FC = () => {
           {targetWeight && currentWeight && (
             <View style={styles.difference}>
               <Text style={styles.differenceText}>
-                {targetWeight > currentWeight 
+                {targetWeight > currentWeight
                   ? `Нужно набрать: ${Math.round((targetWeight - currentWeight) * 10) / 10} кг`
-                  : `Нужно сбросить: ${Math.round((currentWeight - targetWeight) * 10) / 10} кг`
-                }
+                  : `Нужно сбросить: ${Math.round((currentWeight - targetWeight) * 10) / 10} кг`}
               </Text>
             </View>
           )}

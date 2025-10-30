@@ -1,25 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from 'react-native';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 
-type GetTargetScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'GetTarget'>;
-type GetTargetScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'GetTarget'>;
+type GetTargetScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'GetTarget'
+>;
+type GetTargetScreenRouteProp = RouteProp<
+  ProfileSetupStackParamList,
+  'GetTarget'
+>;
 
 const GetTargetScreen: React.FC = () => {
   const navigation = useNavigation<GetTargetScreenNavigationProp>();
   const route = useRoute<GetTargetScreenRouteProp>();
-  const [selectedTarget, setSelectedTarget] = useState<'LOSE' | 'SAVE' | 'GAIN' | null>(null);
+  const [selectedTarget, setSelectedTarget] = useState<
+    'LOSE' | 'SAVE' | 'GAIN' | null
+  >(null);
 
   const handleNext = () => {
     if (selectedTarget) {
-      navigation.navigate('GetWeight', { 
+      navigation.navigate('GetWeight', {
         gender: route.params?.gender,
-        target: selectedTarget 
+        target: selectedTarget,
       });
     }
   };
@@ -51,16 +66,14 @@ const GetTargetScreen: React.FC = () => {
 
   return (
     <View style={styles.container}>
-      <Header
-        title="Выберите цель"
-        showBackButton
-        onBackPress={handleBack}
-      />
-      
+      <Header title="Выберите цель" showBackButton onBackPress={handleBack} />
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>Какую цель вы преследуете?</Text>
-          <Text style={styles.subtitle}>Это поможет рассчитать оптимальную калорийность рациона</Text>
+          <Text style={styles.subtitle}>
+            Это поможет рассчитать оптимальную калорийность рациона
+          </Text>
         </View>
 
         <View style={styles.options}>
@@ -74,16 +87,21 @@ const GetTargetScreen: React.FC = () => {
               onPress={() => setSelectedTarget(target.value)}
             >
               <Text style={styles.optionEmoji}>{target.emoji}</Text>
-              <Text style={[
-                styles.optionTitle,
-                selectedTarget === target.value && styles.selectedOptionText,
-              ]}>
+              <Text
+                style={[
+                  styles.optionTitle,
+                  selectedTarget === target.value && styles.selectedOptionText,
+                ]}
+              >
                 {target.title}
               </Text>
-              <Text style={[
-                styles.optionDescription,
-                selectedTarget === target.value && styles.selectedOptionDescription,
-              ]}>
+              <Text
+                style={[
+                  styles.optionDescription,
+                  selectedTarget === target.value &&
+                    styles.selectedOptionDescription,
+                ]}
+              >
                 {target.description}
               </Text>
             </TouchableOpacity>
@@ -92,11 +110,7 @@ const GetTargetScreen: React.FC = () => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button
-          title="Далее"
-          onPress={handleNext}
-          disabled={!selectedTarget}
-        />
+        <Button title="Далее" onPress={handleNext} disabled={!selectedTarget} />
       </View>
     </View>
   );

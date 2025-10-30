@@ -79,11 +79,7 @@ export const useAlert = () => {
       onConfirm?: () => void,
       onCancel?: () => void
     ) => {
-      showAlert(
-        { title, message, type: 'warning' },
-        onConfirm,
-        onCancel
-      );
+      showAlert({ title, message, type: 'warning' }, onConfirm, onCancel);
     },
     [showAlert]
   );
@@ -156,4 +152,3 @@ export const useImageSource = () => {
     handleClose,
   };
 };
-

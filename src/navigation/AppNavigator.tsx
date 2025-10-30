@@ -3,7 +3,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { observer } from 'mobx-react-lite';
 import { useStores } from '../stores';
-import { RootStackParamList } from '../types/navigation.types';
+import type { RootStackParamList } from '../types/navigation.types';
 import AuthNavigator from './AuthNavigator';
 import ProfileSetupNavigator from './ProfileSetupNavigator';
 import MainNavigator from './MainNavigator';
@@ -18,7 +18,7 @@ const AppNavigator: React.FC = observer(() => {
   useEffect(() => {
     // Check if user is already authenticated
     authStore.checkAuth();
-  }, []);
+  }, [authStore]);
 
   // Показываем загрузку, пока проверяется авторизация или профиль
   if (authStore.loading || profileStore.checkingProfile) {
@@ -29,12 +29,14 @@ const AppNavigator: React.FC = observer(() => {
     if (!authStore.isAuthenticated) {
       return <Stack.Screen name="Auth" component={AuthNavigator} />;
     }
-    
+
     // Экран настройки профиля показываем только если профиль действительно отсутствует
     if (profileStore.needsProfileSetup) {
-      return <Stack.Screen name="ProfileSetup" component={ProfileSetupNavigator} />;
+      return (
+        <Stack.Screen name="ProfileSetup" component={ProfileSetupNavigator} />
+      );
     }
-    
+
     // Показываем главный экран, если профиль настроен
     return <Stack.Screen name="Main" component={MainNavigator} />;
   };

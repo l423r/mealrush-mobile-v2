@@ -1,17 +1,27 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { ProfileSetupStackParamList } from '../../types/navigation.types';
+import type { RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import { useStores } from '../../stores';
-import { UserProfileCreate } from '../../types/api.types';
-import { calculateRecommendedCalories, calculateAge } from '../../utils/calculations';
+import type { UserProfileCreate } from '../../types/api.types';
+import {
+  calculateRecommendedCalories,
+  calculateAge,
+} from '../../utils/calculations';
 
-type CompleteProfileScreenNavigationProp = NativeStackNavigationProp<ProfileSetupStackParamList, 'CompleteProfile'>;
-type CompleteProfileScreenRouteProp = RouteProp<ProfileSetupStackParamList, 'CompleteProfile'>;
+type CompleteProfileScreenNavigationProp = NativeStackNavigationProp<
+  ProfileSetupStackParamList,
+  'CompleteProfile'
+>;
+type CompleteProfileScreenRouteProp = RouteProp<
+  ProfileSetupStackParamList,
+  'CompleteProfile'
+>;
 
 const CompleteProfileScreen: React.FC = () => {
   const navigation = useNavigation<CompleteProfileScreenNavigationProp>();
@@ -19,35 +29,35 @@ const CompleteProfileScreen: React.FC = () => {
   const { profileStore } = useStores();
   const [loading, setLoading] = useState(false);
 
-  const {
-    gender,
-    target,
-    weight,
-    targetWeight,
-    height,
-    birthday,
-    activity,
-  } = route.params;
+  const { gender, target, weight, targetWeight, height, birthday, activity } =
+    route.params;
 
   const age = birthday ? calculateAge(birthday) : null;
-  
+
   const getRecommendedCalories = () => {
     if (!age || !weight || !height || !gender || !activity || !target) {
       return 2000; // Default value
     }
-    return calculateRecommendedCalories(weight, height, age, gender as 'MALE' | 'FEMALE', activity as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH', target as 'LOSE' | 'SAVE' | 'GAIN');
+    return calculateRecommendedCalories(
+      weight,
+      height,
+      age,
+      gender as 'MALE' | 'FEMALE',
+      activity as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH',
+      target as 'LOSE' | 'SAVE' | 'GAIN'
+    );
   };
-  
+
   const getGenderText = () => {
     return gender === 'MALE' ? 'Мужской' : 'Женский';
   };
-  
+
   const getTargetText = () => {
     if (target === 'LOSE') return 'Похудеть';
     if (target === 'GAIN') return 'Набрать вес';
     return 'Поддержать вес';
   };
-  
+
   const getActivityText = () => {
     if (activity === 'FIRST') return 'Минимальная';
     if (activity === 'SECOND') return 'Легкая';
@@ -55,11 +65,19 @@ const CompleteProfileScreen: React.FC = () => {
     if (activity === 'FOURTH') return 'Высокая';
     return 'Очень высокая';
   };
-  
+
   const recommendedCalories = getRecommendedCalories();
 
   const handleComplete = async () => {
-    if (!gender || !target || !weight || !targetWeight || !height || !birthday || !activity) {
+    if (
+      !gender ||
+      !target ||
+      !weight ||
+      !targetWeight ||
+      !height ||
+      !birthday ||
+      !activity
+    ) {
       Alert.alert('Ошибка', 'Не все данные заполнены');
       return;
     }
@@ -74,15 +92,19 @@ const CompleteProfileScreen: React.FC = () => {
         birthday,
         targetWeightType: target as 'LOSE' | 'SAVE' | 'GAIN',
         targetWeight: targetWeight,
-        physicalActivityLevel: activity as 'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH',
+        physicalActivityLevel: activity as
+          | 'FIRST'
+          | 'SECOND'
+          | 'THIRD'
+          | 'FOURTH'
+          | 'FIFTH',
         dayLimitCal: recommendedCalories,
       };
 
       await profileStore.createProfile(profileData);
-      
+
       // Profile created successfully, navigation will be handled by AppNavigator
       // The user will be redirected to Main screen automatically
-      
     } catch (error: any) {
       Alert.alert(
         'Ошибка',
@@ -104,7 +126,7 @@ const CompleteProfileScreen: React.FC = () => {
         showBackButton
         onBackPress={handleBack}
       />
-      
+
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
           <Text style={styles.emoji}>🎉</Text>
@@ -116,51 +138,47 @@ const CompleteProfileScreen: React.FC = () => {
 
         <View style={styles.summary}>
           <Text style={styles.summaryTitle}>Ваши данные:</Text>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Пол:</Text>
-            <Text style={styles.summaryValue}>
-              {getGenderText()}
-            </Text>
+            <Text style={styles.summaryValue}>{getGenderText()}</Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Цель:</Text>
-            <Text style={styles.summaryValue}>
-              {getTargetText()}
-            </Text>
+            <Text style={styles.summaryValue}>{getTargetText()}</Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Текущий вес:</Text>
             <Text style={styles.summaryValue}>{weight} кг</Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Целевой вес:</Text>
             <Text style={styles.summaryValue}>{targetWeight} кг</Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Рост:</Text>
             <Text style={styles.summaryValue}>{height} см</Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Возраст:</Text>
             <Text style={styles.summaryValue}>{age} лет</Text>
           </View>
-          
+
           <View style={styles.summaryItem}>
             <Text style={styles.summaryLabel}>Активность:</Text>
-            <Text style={styles.summaryValue}>
-              {getActivityText()}
-            </Text>
+            <Text style={styles.summaryValue}>{getActivityText()}</Text>
           </View>
-          
+
           <View style={[styles.summaryItem, styles.caloriesItem]}>
             <Text style={styles.summaryLabel}>Рекомендуемые калории:</Text>
-            <Text style={styles.caloriesValue}>{Math.round(recommendedCalories)} ккал/день</Text>
+            <Text style={styles.caloriesValue}>
+              {Math.round(recommendedCalories)} ккал/день
+            </Text>
           </View>
         </View>
       </ScrollView>
