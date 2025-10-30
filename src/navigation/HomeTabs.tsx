@@ -6,7 +6,8 @@ import { colors, typography } from '../theme';
 import MainScreen from '../screens/main/MainScreen';
 import ProductsScreen from '../screens/main/ProductsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
-import AnalyticsScreen from '../screens/main/analytics/AnalyticsScreen';
+// Use the new compact analytics screen
+import AnalyticsScreen from '../screens/main/AnalyticsScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
