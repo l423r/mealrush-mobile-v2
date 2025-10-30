@@ -146,6 +146,7 @@ export type MainStackParamList = {
 export type HomeTabParamList = {
   Main: undefined;
   Products: undefined;
+  Analytics: undefined;
   Profile: undefined;
 };
 

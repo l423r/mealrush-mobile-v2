@@ -6,6 +6,7 @@ import { colors, typography } from '../theme';
 import MainScreen from '../screens/main/MainScreen';
 import ProductsScreen from '../screens/main/ProductsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import AnalyticsScreen from '../screens/main/analytics/AnalyticsScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
@@ -47,6 +48,16 @@ const HomeTabs: React.FC = () => {
           tabBarLabel: 'Продукты',
           tabBarIcon: ({ color, size }) => (
             <Text style={{ color, fontSize: size }}>🥗</Text>
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Analytics"
+        component={AnalyticsScreen}
+        options={{
+          tabBarLabel: 'Аналитика',
+          tabBarIcon: ({ color, size }) => (
+            <Text style={{ color, fontSize: size }}>📊</Text>
           ),
         }}
       />

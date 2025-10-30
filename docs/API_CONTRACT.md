@@ -1447,7 +1447,29 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.0.0 (текущая - 23 октября 2024)
+### Версия 2.1.0 (текущая)
+
+Новые возможности метрик и рекомендаций.
+
+**Новые эндпоинты:**
+- `GET /my-food/nutrition/daily?date=YYYY-MM-DD`
+- `GET /my-food/nutrition/weekly?startDate=YYYY-MM-DD`
+- `GET /my-food/nutrition/monthly?month=YYYY-MM`
+- `GET /my-food/nutrition/trend?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&metric=CALORIES|PROTEINS|FATS|CARBOHYDRATES`
+- `GET /my-food/nutrition/statistics?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+- `GET /my-food/nutrition/progress?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD`
+- `GET /my-food/recommendations/products?page=0&size=10`
+- `GET /my-food/recommendations/insights`
+- `POST /my-food/recommendations/refresh`
+
+**Изменения:**
+- Добавлена агрегация метрик по неделе и месяцу
+- Добавлены тренды и прогресс к цели
+- Добавлены инсайты и улучшенные рекомендации продуктов
+
+---
+
+### Версия 2.0.0 (23 октября 2024)
 
 **Новые эндпоинты:**
 - `POST /my-food/auth/user` - регистрация пользователя
@@ -1480,6 +1502,176 @@ GET /my-food/swagger-ui/index.html
 - Поля в camelCase
 
 ---
+
+## 18. Nutrition API
+
+### 18.1. Дневная сводка
+Endpoint:
+```
+GET /my-food/nutrition/daily?date=YYYY-MM-DD
+Headers: Authorization: Bearer {token}
+```
+Response (200 OK):
+```json
+{
+  "periodType": "DAY",
+  "startDate": "2025-10-30",
+  "endDate": "2025-10-30",
+  "totalProteins": 120.0,
+  "totalFats": 70.0,
+  "totalCarbohydrates": 250.0,
+  "totalCalories": 2200.0,
+  "targetCalories": 2000,
+  "caloriesPercentage": 110.0
+}
+```
+
+### 18.2. Недельная сводка
+```
+GET /my-food/nutrition/weekly?startDate=YYYY-MM-DD
+```
+Агрегирует 7 дней начиная с `startDate`.
+
+### 18.3. Месячная сводка
+```
+GET /my-food/nutrition/monthly?month=YYYY-MM
+```
+Агрегирует месяц.
+
+### 18.4. Тренд
+```
+GET /my-food/nutrition/trend?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&metric=CALORIES|PROTEINS|FATS|CARBOHYDRATES
+```
+Response (200 OK):
+```json
+{
+  "metricType": "CALORIES",
+  "startDate": "2025-10-01",
+  "endDate": "2025-10-07",
+  "dailyValues": [ { "date": "2025-10-01", "value": 1800.0 } ],
+  "direction": "INCREASING",
+  "averageValue": 1950.0,
+  "predictedValue": 2000.0
+}
+```
+
+### 18.5. Статистика
+```
+GET /my-food/nutrition/statistics?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+```
+Response (200 OK):
+```json
+{
+  "startDate": "2025-10-01",
+  "endDate": "2025-10-07",
+  "averageCalories": 1950.0,
+  "averageProteins": 110.0,
+  "averageFats": 60.0,
+  "averageCarbohydrates": 210.0,
+  "categoryUsageStats": { "meat": 5, "vegetables": 7 },
+  "topProducts": [ { "productId": 123, "productName": "Куриная грудка", "usageCount": 3 } ],
+  "totalMeals": 18,
+  "totalDays": 6
+}
+```
+
+### 18.6. Прогресс к цели
+```
+GET /my-food/nutrition/progress?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+```
+Response (200 OK):
+```json
+{
+  "startDate": "2025-10-01",
+  "endDate": "2025-10-07",
+  "averageDailyCalories": 1950.0,
+  "targetCalories": 2000,
+  "caloriesAchievementPercentage": 97.5,
+  "weightChange": null,
+  "targetWeightChange": null,
+  "goalStatus": "ON_TRACK",
+  "dailyProgress": [ { "date": "2025-10-01", "calories": 1900.0, "percentage": 95.0 } ]
+}
+```
+
+Примечания:
+- Даты в ISO 8601, UTC
+- Пустые дни могут отсутствовать в массиве `dailyValues`
+
+---
+
+## 19. Recommendations API
+
+### 19.1. Рекомендованные продукты
+```
+GET /my-food/recommendations/products?page=0&size=10
+Headers: Authorization: Bearer {token}
+```
+Возвращает страницу `ProductResponse`.
+
+### 19.2. Инсайты
+```
+GET /my-food/recommendations/insights
+```
+Response (200 OK):
+```json
+[
+  { "id": 1, "insightType": "EXCESS_CALORIES", "severity": "WARNING", "title": "Превышение нормы", "description": "...", "createdAt": "2025-10-30T10:00:00" }
+]
+```
+
+### 19.3. Обновить рекомендации
+```
+POST /my-food/recommendations/refresh
+```
+Очищает кеш рекомендаций текущего пользователя.
+
+### 19.4. Meal-рекомендации (подбор продуктов)
+```
+GET /my-food/recommendations/meals?size=5
+Headers: Authorization: Bearer {token}
+```
+Response (200 OK):
+```json
+[
+  {
+    "id": 123,
+    "name": "Творог 5%",
+    "proteins": 17.0,
+    "fats": 5.0,
+    "carbohydrates": 3.0,
+    "calories": 121.0,
+    "measurementType": "GRAM",
+    "quantity": "100",
+    "productCategoryId": "dairy"
+  }
+]
+```
+
+Notes:
+- Алгоритм: GAIN — приоритет белку; LOSE — низкокалорийные; SAVE — смешанный скоринг.
+- Кеш: recommendationsCache инвалидируется `POST /recommendations/refresh`.
+
+---
+
+## 20. Design Notes (Metrics & Recommendations)
+
+### 20.1. NutritionTrendAnalyzer
+- Источник данных: агрегации по дням за период
+- Направление тренда: сравнение средних половин периода (порог 5%)
+- Простая модель прогноза: скользящее среднее последних 3 дней
+
+### 20.2. ProductStatisticsAnalyzer
+- Средние значения считаются как total/кол-во дней с данными
+- Категории и топ-продукты — по использованию в meal_elements
+
+### 20.3. InsightGenerator
+- Пороговые правила: 80%/95-105%/120% от дневной цели калорий
+- Для GAIN: рекомендация по белку ≈ 1.8 г/кг веса
+
+### 20.4. ProductRecommendationEngine
+- Факторы ранжирования: предпочтительные категории, цели, полнота КБЖУ
+- Исключения: уже использованные и избранные продукты
 
 ## 16. Соглашения о взаимодействии Frontend-Backend
 

@@ -14,6 +14,9 @@ export interface PaginatedResponse<T> {
   last: boolean;
 }
 
+// Backward-compatible alias matching backend Page shape
+export type PageResponse<T> = PaginatedResponse<T>;
+
 export interface ApiError {
   timestamp: string;
   status: number;
@@ -275,4 +278,119 @@ export interface MealSearchParams {
   date: string;
   page?: number;
   size?: number;
+}
+
+// =========================
+// Nutrition (Metrics) v2.1.0
+// =========================
+
+export type NutritionPeriodType = 'DAY' | 'WEEK' | 'MONTH';
+export type NutritionMetricType = 'CALORIES' | 'PROTEINS' | 'FATS' | 'CARBOHYDRATES';
+
+export interface NutritionTotals {
+  totalProteins: number;
+  totalFats: number;
+  totalCarbohydrates: number;
+  totalCalories: number;
+}
+
+export interface NutritionSummaryResponse extends NutritionTotals {
+  periodType: NutritionPeriodType;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;   // YYYY-MM-DD
+  targetCalories: number;
+  caloriesPercentage: number;
+}
+
+export interface NutritionTrendPoint {
+  date: string; // YYYY-MM-DD
+  value: number;
+}
+
+export type TrendDirection = 'INCREASING' | 'DECREASING' | 'STABLE';
+
+export interface NutritionTrendResponse {
+  metricType: NutritionMetricType;
+  startDate: string;
+  endDate: string;
+  dailyValues: NutritionTrendPoint[];
+  direction: TrendDirection;
+  averageValue: number | null;
+  predictedValue: number | null;
+}
+
+export interface TopProductStatItem {
+  productId: number;
+  productName: string;
+  usageCount: number;
+}
+
+export interface StatisticsResponse {
+  startDate: string;
+  endDate: string;
+  averageCalories: number;
+  averageProteins: number;
+  averageFats: number;
+  averageCarbohydrates: number;
+  categoryUsageStats: Record<string, number>;
+  topProducts: TopProductStatItem[];
+  totalMeals: number;
+  totalDays: number;
+}
+
+export type GoalStatus = 'ON_TRACK' | 'BEHIND' | 'AHEAD';
+
+export interface DailyProgressItem {
+  date: string; // YYYY-MM-DD
+  calories: number;
+  percentage: number;
+}
+
+export interface ProgressResponse {
+  startDate: string;
+  endDate: string;
+  averageDailyCalories: number;
+  targetCalories: number;
+  caloriesAchievementPercentage: number;
+  goalStatus: GoalStatus;
+  dailyProgress: DailyProgressItem[];
+}
+
+// =========================
+// Recommendations v2.1.0
+// =========================
+
+export type InsightType = 'EXCESS_CALORIES' | 'LOW_PROTEIN' | 'LOW_FATS' | 'LOW_CARBOHYDRATES' | string;
+export type InsightSeverity = 'INFO' | 'WARNING' | 'CRITICAL' | string;
+
+export interface InsightResponse {
+  id: number;
+  insightType: InsightType;
+  severity: InsightSeverity;
+  title: string;
+  description: string;
+  createdAt: string;
+}
+
+// Lightweight product shape returned by recommendations endpoints
+export interface ProductResponse {
+  id: number;
+  name: string;
+  proteins: number;
+  fats: number;
+  carbohydrates: number;
+  calories: number;
+  measurementType: MeasurementType;
+  quantity: string;
+  productCategoryId?: string;
+  imageUrl?: string;
+}
+
+export interface RecommendationsProductsParams {
+  page?: number;
+  size?: number;
+}
+
+export interface MealPicksParams {
+  size?: number; // default decided by backend
 }

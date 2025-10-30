@@ -15,9 +15,9 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<MainStackParamList
 
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
-  const { productStore } = useStores();
+  const { productStore, recommendationsStore } = useStores();
   
-  const [activeTab, setActiveTab] = useState<'my' | 'favorites' | 'search'>('search');
+  const [activeTab, setActiveTab] = useState<'my' | 'favorites' | 'search' | 'reco'>('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
 
@@ -27,11 +27,13 @@ const ProductsScreen: React.FC = observer(() => {
     // Don't load data on mount for search tab, only for my and favorites
     if (activeTab === 'my' || activeTab === 'favorites') {
       loadData(activeTab);
+    } else if (activeTab === 'reco') {
+      loadRecommendations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only on mount
 
-  const loadData = async (tab?: 'my' | 'favorites' | 'search') => {
+  const loadData = async (tab?: 'my' | 'favorites' | 'search' | 'reco') => {
     const targetTab = tab || activeTab;
     console.log(`📦 [ProductsScreen] loadData() called for tab: ${targetTab}`);
     try {
@@ -44,6 +46,8 @@ const ProductsScreen: React.FC = observer(() => {
       } else if (targetTab === 'search') {
         console.log('🔍 [ProductsScreen] Search tab - will be handled by searchQuery effect');
         // Search will be handled by searchQuery effect
+      } else if (targetTab === 'reco') {
+        await loadRecommendations();
       }
     } catch (error) {
       console.error('❌ [ProductsScreen] Error loading products:', error);
@@ -56,13 +60,15 @@ const ProductsScreen: React.FC = observer(() => {
     setRefreshing(false);
   };
 
-  const handleTabChange = (tab: 'my' | 'favorites' | 'search') => {
+  const handleTabChange = (tab: 'my' | 'favorites' | 'search' | 'reco') => {
     console.log(`🔄 [ProductsScreen] Tab changed from ${activeTab} to ${tab}`);
     setActiveTab(tab);
     if (tab === 'search') {
       setSearchQuery('');
     } else if (tab === 'my' || tab === 'favorites') {
       loadData(tab); // Load data only for my and favorites tabs
+    } else if (tab === 'reco') {
+      loadRecommendations();
     }
   };
 
@@ -77,6 +83,18 @@ const ProductsScreen: React.FC = observer(() => {
       productStore.clearSearch();
     }
   }, [searchQuery, activeTab]);
+
+  const loadRecommendations = async () => {
+    try {
+      await Promise.all([
+        recommendationsStore.loadProducts(0, 10),
+        recommendationsStore.loadInsights(),
+        recommendationsStore.loadMealPicks(5),
+      ]);
+    } catch (e) {
+      // handled in store
+    }
+  };
 
   const handleProductPress = (product: any) => {
     navigation.navigate('Product', { product });
@@ -212,6 +230,14 @@ const ProductsScreen: React.FC = observer(() => {
               Мои продукты
             </Text>
           </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'reco' && styles.activeTab]}
+            onPress={() => handleTabChange('reco')}
+          >
+            <Text style={[styles.tabText, activeTab === 'reco' && styles.activeTabText]}>
+              Рекомендации
+            </Text>
+          </TouchableOpacity>
         </View>
 
         {/* Search Input (only for search tab) */}
@@ -227,18 +253,58 @@ const ProductsScreen: React.FC = observer(() => {
           </View>
         )}
 
-        {/* Products List */}
-        <FlatList
-          data={getData()}
-          renderItem={renderProductItem}
-          keyExtractor={(item) => item.id.toString()}
-          ListEmptyComponent={renderEmptyState}
-          contentContainerStyle={styles.listContainer}
-          showsVerticalScrollIndicator={false}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-          }
-        />
+        {/* Products List or Recommendations */}
+        {activeTab !== 'reco' ? (
+          <FlatList
+            data={getData()}
+            renderItem={renderProductItem}
+            keyExtractor={(item) => item.id.toString()}
+            ListEmptyComponent={renderEmptyState}
+            contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+            }
+          />
+        ) : (
+          <View style={styles.recoContainer}>
+            <View style={styles.recoHeaderRow}>
+              <Text style={styles.recoHeader}>Подборки для приёма</Text>
+              <TouchableOpacity style={styles.recoRefresh} onPress={() => recommendationsStore.refreshAll(5, 0, 10)}>
+                <Text style={styles.recoRefreshText}>Обновить</Text>
+              </TouchableOpacity>
+            </View>
+            {recommendationsStore.mealPicks.map((p) => (
+              <View key={p.id} style={styles.recoCard}>
+                <Text style={styles.recoName}>{p.name}</Text>
+                <Text style={styles.recoMeta}>Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories} ккал</Text>
+                <TouchableOpacity onPress={() => navigation.navigate('Search', {})}>
+                  <Text style={styles.recoAction}>+ Добавить в приём</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+
+            <Text style={styles.recoHeader}>Рекомендованные продукты</Text>
+            {recommendationsStore.productsPage?.content.map((p) => (
+              <View key={p.id} style={styles.recoCard}>
+                <Text style={styles.recoName}>{p.name}</Text>
+                <Text style={styles.recoMeta}>Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories} ккал</Text>
+              </View>
+            ))}
+
+            <Text style={styles.recoHeader}>Инсайты</Text>
+            {recommendationsStore.insights.length === 0 ? (
+              <Text style={styles.recoEmpty}>Нет инсайтов</Text>
+            ) : (
+              recommendationsStore.insights.map((i) => (
+                <View key={i.id} style={styles.recoCard}>
+                  <Text style={styles.recoName}>{i.title}</Text>
+                  <Text style={styles.recoMeta}>{i.description}</Text>
+                </View>
+              ))
+            )}
+          </View>
+        )}
       </View>
 
       {/* Add Button - показываем только на вкладке "Мои продукты" */}
@@ -396,6 +462,54 @@ const styles = StyleSheet.create({
   },
   addButton: {
     width: '100%',
+  },
+  recoContainer: {
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  recoHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  recoHeader: {
+    ...typography.h4,
+    color: colors.text.primary,
+  },
+  recoRefresh: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.background.light,
+    borderRadius: 8,
+  },
+  recoRefreshText: {
+    ...typography.caption,
+    color: colors.text.primary,
+  },
+  recoCard: {
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  recoName: {
+    ...typography.body1,
+    color: colors.text.primary,
+  },
+  recoMeta: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  recoAction: {
+    ...typography.button,
+    color: colors.primary,
+    marginTop: spacing.sm,
+  },
+  recoEmpty: {
+    ...typography.caption,
+    color: colors.text.secondary,
   },
 });
 
