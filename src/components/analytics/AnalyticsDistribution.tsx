@@ -36,13 +36,16 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
     { x: 'Углеводы', y: macro.carbsPct || 0 },
   ];
 
-  const categories = byMeal.map((i) => i.mealType);
-  const calories = byMeal.map((i) => i.calories);
+  // Filter out meal types with zero calories for better visualization
+  // Sort by calories descending for better chart readability
+  const mealDataWithValues = byMeal
+    .filter((i) => (i.calories || 0) > 0)
+    .sort((a, b) => (b.calories || 0) - (a.calories || 0));
 
   // Check if there's any data to display
   const hasMacroData =
     pieData.some((p) => (p.y || 0) > 0) && data?.macroShare != null;
-  const hasMealData = byMeal.length > 0;
+  const hasMealData = mealDataWithValues.length > 0;
 
   return (
     <View style={styles.container}>
@@ -107,9 +110,9 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
       {hasMealData ? (
         <BarChart
           height={220}
-          data={categories.map((c, idx) => ({
-            label: formatMealTypeLabel(c),
-            value: calories[idx] || 0,
+          data={mealDataWithValues.map((item) => ({
+            label: formatMealTypeLabel(item.mealType),
+            value: Math.round(item.calories || 0),
             frontColor: colors.primary,
           }))}
           barWidth={28}
@@ -118,7 +121,7 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
           yAxisThickness={0}
           xAxisThickness={0}
           noOfSections={4}
-          spacing={categories.length > 3 ? 20 : 40}
+          spacing={mealDataWithValues.length > 3 ? 20 : 40}
         />
       ) : (
         <Text style={styles.emptyText}>Недостаточно данных</Text>

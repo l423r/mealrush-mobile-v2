@@ -33,7 +33,7 @@ export interface MacroShare {
 }
 
 export interface DistributionByMealTypeItem {
-  mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack';
+  mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER';
   calories: number;
 }
 

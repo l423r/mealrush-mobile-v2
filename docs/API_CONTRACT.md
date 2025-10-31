@@ -11,13 +11,11 @@
 ### 1.1. Base URL
 
 **Development:**
-
 ```
 http://localhost:8081/my-food
 ```
 
 **Production (через Gateway):**
-
 ```
 http://80.87.201.75:8079/gateway/my-food
 ```
@@ -31,7 +29,6 @@ Authorization: Bearer {JWT_TOKEN}
 ```
 
 JWT токен получается через эндпоинт:
-
 ```
 POST /my-food/auth/token
 ```
@@ -39,20 +36,17 @@ POST /my-food/auth/token
 ### 1.3. Общие форматы
 
 **Даты:**
-
 - Date only: `YYYY-MM-DD` (пример: `2024-10-20`)
 - DateTime: ISO 8601 `YYYY-MM-DDTHH:mm:ss` (пример: `2024-10-20T15:30:00`)
 - Все даты в UTC на сервере, клиент конвертирует в локальное время
 
 **Pagination:**
-
 - Query параметры: `?page=0&size=20&sort=created,desc`
 - Page - номер страницы (с 0)
 - Size - количество элементов (default: 20, max: 100)
 - Sort - поле для сортировки
 
 **Pagination Response:**
-
 ```json
 {
   "content": [...],
@@ -67,17 +61,17 @@ POST /my-food/auth/token
 
 ### 1.4. HTTP Status Codes
 
-| Код | Описание              | Когда используется                   |
-| --- | --------------------- | ------------------------------------ |
-| 200 | OK                    | Успешное получение/обновление        |
-| 201 | Created               | Успешное создание ресурса            |
-| 204 | No Content            | Успешное удаление                    |
-| 400 | Bad Request           | Ошибка валидации входных данных      |
-| 401 | Unauthorized          | Отсутствует или невалидный JWT токен |
-| 403 | Forbidden             | Нет прав доступа к ресурсу           |
-| 404 | Not Found             | Ресурс не найден                     |
-| 409 | Conflict              | Конфликт (дубликат)                  |
-| 500 | Internal Server Error | Ошибка сервера                       |
+| Код | Описание | Когда используется |
+|-----|----------|-------------------|
+| 200 | OK | Успешное получение/обновление |
+| 201 | Created | Успешное создание ресурса |
+| 204 | No Content | Успешное удаление |
+| 400 | Bad Request | Ошибка валидации входных данных |
+| 401 | Unauthorized | Отсутствует или невалидный JWT токен |
+| 403 | Forbidden | Нет прав доступа к ресурсу |
+| 404 | Not Found | Ресурс не найден |
+| 409 | Conflict | Конфликт (дубликат) |
+| 500 | Internal Server Error | Ошибка сервера |
 
 ### 1.5. Формат ошибок
 
@@ -107,13 +101,11 @@ POST /my-food/auth/token
 ### 2.1. Получение токена (вход)
 
 **Endpoint:**
-
 ```
 POST /my-food/auth/token
 ```
 
 **Request Body:**
-
 ```json
 {
   "email": "user@example.com",
@@ -122,7 +114,6 @@ POST /my-food/auth/token
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "jwt_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
@@ -132,20 +123,17 @@ POST /my-food/auth/token
 ```
 
 **Errors:**
-
 - 401: Неверный email или пароль
 - 400: Невалидные данные
 
 ### 2.2. Регистрация пользователя
 
 **Endpoint:**
-
 ```
 POST /my-food/auth/user
 ```
 
 **Request Body:**
-
 ```json
 {
   "email": "user@example.com",
@@ -155,7 +143,6 @@ POST /my-food/auth/user
 ```
 
 **Response (201 Created):**
-
 ```json
 {
   "id": 1,
@@ -167,21 +154,18 @@ POST /my-food/auth/user
 ```
 
 **Errors:**
-
 - 409: Email уже зарегистрирован
 - 400: Невалидные данные (пароль < 8 символов, некорректный email)
 
 ### 2.3. Получение данных пользователя
 
 **Endpoint:**
-
 ```
 GET /my-food/auth/user
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 1,
@@ -194,13 +178,11 @@ Headers: Authorization: Bearer {token}
 ### 2.4. Восстановление пароля
 
 **Endpoint:**
-
 ```
 POST /my-food/auth/reset-password
 ```
 
 **Request Body:**
-
 ```json
 {
   "email": "user@example.com"
@@ -208,7 +190,6 @@ POST /my-food/auth/reset-password
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "message": "Новый пароль отправлен на email. Dev mode - новый пароль: abc123xyz456"
@@ -224,14 +205,12 @@ POST /my-food/auth/reset-password
 ### 3.1. Создание профиля
 
 **Endpoint:**
-
 ```
 POST /my-food/user-profile
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "height": 180,
@@ -246,13 +225,11 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Enum значения:**
-
 - `gender`: `MALE`, `FEMALE`
 - `target_weight_type`: `LOSE` (0.8), `SAVE` (1.0), `GAIN` (1.2)
 - `physical_activity_level`: `FIRST` (1.2), `SECOND` (1.375), `THIRD` (1.55), `FOURTH` (1.725), `FIFTH` (1.9)
 
 **Response (201 Created):**
-
 ```json
 {
   "id": 1,
@@ -273,21 +250,18 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 409: Профиль уже существует для этого пользователя
 - 400: Невалидные данные (вес < 30, рост < 100, и т.д.)
 
 ### 3.2. Получение профиля
 
 **Endpoint:**
-
 ```
 GET /my-food/user-profile
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 1,
@@ -308,20 +282,17 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 404: Профиль не найден
 
 ### 3.3. Обновление профиля
 
 **Endpoint:**
-
 ```
 PUT /my-food/user-profile
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:** (все поля опциональны, отправлять только измененные)
-
 ```json
 {
   "weight": 73,
@@ -330,7 +301,6 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 1,
@@ -345,7 +315,6 @@ Headers: Authorization: Bearer {token}
 ### 3.4. Удаление профиля
 
 **Endpoint:**
-
 ```
 DELETE /my-food/user-profile
 Headers: Authorization: Bearer {token}
@@ -354,7 +323,6 @@ Headers: Authorization: Bearer {token}
 **Response (204 No Content)**
 
 **Errors:**
-
 - 404: Профиль не найден
 
 ---
@@ -364,14 +332,12 @@ Headers: Authorization: Bearer {token}
 ### 4.1. Создание продукта
 
 **Endpoint:**
-
 ```
 POST /my-food/product
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "name": "Гречка отварная",
@@ -389,11 +355,9 @@ Headers: Authorization: Bearer {token}
 **Примечание:** Поле `imageBase64` опционально.
 
 **Measurement types:**
-
 - `GRAM`, `KILOGRAM`, `LITER`, `MILLILITER`, `PIECE`, `UNIT`
 
 **Response (201 Created):**
-
 ```json
 {
   "id": 123,
@@ -413,21 +377,18 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 400: Невалидные данные
 - 409: Продукт с таким кодом уже существует (если указан code)
 
 ### 4.2. Получение продукта
 
 **Endpoint:**
-
 ```
 GET /my-food/product/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 123,
@@ -438,21 +399,18 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 404: Продукт не найден
 - 403: Продукт принадлежит другому пользователю (для пользовательских)
 
 ### 4.3. Обновление продукта
 
 **Endpoint:**
-
 ```
 PUT /my-food/product/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "name": "Гречка отварная домашняя",
@@ -464,7 +422,6 @@ Headers: Authorization: Bearer {token}
 **Примечание:** Все поля опциональны. ID передается в URL path.
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 123,
@@ -475,14 +432,12 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 403: Можно редактировать только свои продукты
 - 404: Продукт не найден
 
 ### 4.4. Удаление продукта
 
 **Endpoint:**
-
 ```
 DELETE /my-food/product/{id}
 Headers: Authorization: Bearer {token}
@@ -491,7 +446,6 @@ Headers: Authorization: Bearer {token}
 **Response (204 No Content)**
 
 **Errors:**
-
 - 403: Можно удалять только свои продукты
 - 404: Продукт не найден
 - 409: Продукт используется в meal_elements (нельзя удалить)
@@ -499,14 +453,12 @@ Headers: Authorization: Bearer {token}
 ### 4.5. Список своих продуктов
 
 **Endpoint:**
-
 ```
 GET /my-food/product?page=0&size=20
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -527,27 +479,23 @@ Headers: Authorization: Bearer {token}
 ### 4.6. Поиск продуктов по названию
 
 **Endpoint:**
-
 ```
 GET /my-food/product/search/name?name={query}&page=0&size=20
 Headers: Authorization: Bearer {token}
 ```
 
 **Примеры:**
-
 ```
 /product/search/name?name=гречка
 /product/search/name?name=молоко&page=0&size=10
 ```
 
 **Логика поиска:**
-
 - Поиск по подстроке (case-insensitive)
 - Сначала пользовательские продукты, потом общие
 - Сортировка по релевантности
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -575,21 +523,18 @@ Headers: Authorization: Bearer {token}
 ### 4.7. Поиск по штрихкоду
 
 **Endpoint:**
-
 ```
 GET /my-food/product/search/barcode/{barcode}?page=0&size=20
 Headers: Authorization: Bearer {token}
 ```
 
 **Примеры:**
-
 ```
 /product/search/barcode/4607065597924
 /product/search/barcode/7290002066454
 ```
 
 **Логика:**
-
 1. Поиск в собственной БД
 2. Если не найден → запрос к Open Food Facts
 3. Если не найден → запрос к EAN-DB
@@ -597,7 +542,6 @@ Headers: Authorization: Bearer {token}
 5. Если найден во внешнем источнике → сохранение в БД как общий продукт
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -615,7 +559,6 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 404: Продукт с таким штрихкодом не найден ни в одном источнике
 
 ---
@@ -625,14 +568,12 @@ Headers: Authorization: Bearer {token}
 ### 5.1. Получение списка категорий
 
 **Endpoint:**
-
 ```
 GET /my-food/product_category?page=0&size=100
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -687,21 +628,18 @@ Headers: Authorization: Bearer {token}
 ### 5.2. Получение категории по ID
 
 **Endpoint:**
-
 ```
 GET /my-food/product_category/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Примеры:**
-
 ```
 /product_category/dairy
 /product_category/cereals
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": "dairy",
@@ -710,7 +648,6 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 404: Категория не найдена
 
 ---
@@ -720,14 +657,12 @@ Headers: Authorization: Bearer {token}
 ### 6.1. Создание приема пищи
 
 **Endpoint:**
-
 ```
 POST /my-food/meal
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "mealType": "BREAKFAST",
@@ -739,7 +674,6 @@ Headers: Authorization: Bearer {token}
 **Примечание:** Поле `name` опционально.
 
 **Meal types:**
-
 - `BREAKFAST` - завтрак
 - `LUNCH` - обед
 - `DINNER` - ужин
@@ -747,7 +681,6 @@ Headers: Authorization: Bearer {token}
 - `LATE_SUPPER` - поздний ужин
 
 **Response (201 Created):**
-
 ```json
 {
   "id": 1,
@@ -762,21 +695,18 @@ Headers: Authorization: Bearer {token}
 ### 6.2. Получение списка приемов пищи (с пагинацией)
 
 **Endpoint:**
-
 ```
 GET /my-food/meal?page=0&size=20
 Headers: Authorization: Bearer {token}
 ```
 
 **Примеры:**
-
 ```
 /meal?page=0&size=20
 /meal?page=1&size=50
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -805,14 +735,12 @@ Headers: Authorization: Bearer {token}
 ### 6.3. Получение приемов пищи за дату
 
 **Endpoint:**
-
 ```
 GET /my-food/meal/findByDate?date={YYYY-MM-DD}
 Headers: Authorization: Bearer {token}
 ```
 
 **Примеры:**
-
 ```
 /meal/findByDate?date=2024-10-20
 /meal/findByDate?date=2024-10-21
@@ -821,7 +749,6 @@ Headers: Authorization: Bearer {token}
 **Примечание:** Возвращает список БЕЗ пагинации (обычно за день мало приемов пищи)
 
 **Response (200 OK):**
-
 ```json
 [
   {
@@ -844,14 +771,12 @@ Headers: Authorization: Bearer {token}
 ### 6.4. Получение приема пищи
 
 **Endpoint:**
-
 ```
 GET /my-food/meal/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 1,
@@ -863,21 +788,18 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 404: Прием пищи не найден
 - 403: Нет доступа к приему пищи
 
 ### 6.5. Обновление приема пищи
 
 **Endpoint:**
-
 ```
 PUT /my-food/meal/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "mealType": "BREAKFAST",
@@ -893,7 +815,6 @@ Headers: Authorization: Bearer {token}
 ### 6.6. Удаление приема пищи
 
 **Endpoint:**
-
 ```
 DELETE /my-food/meal/{id}
 Headers: Authorization: Bearer {token}
@@ -910,14 +831,12 @@ Headers: Authorization: Bearer {token}
 ### 7.1. Создание элемента
 
 **Endpoint:**
-
 ```
 POST /my-food/meal_element
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "mealId": 1,
@@ -938,13 +857,11 @@ Headers: Authorization: Bearer {token}
 }
 ```
 
-**Примечание:**
-
+**Примечание:** 
 - `parentProductId` опционально, если элемент создается из продукта
 - `imageBase64` опционально для загрузки изображения
 
 **Расчет actual vs default:**
-
 ```javascript
 // Клиент должен рассчитать:
 const actual_proteins = (default_proteins / 100) * quantity;
@@ -952,7 +869,6 @@ const actual_proteins = (default_proteins / 100) * quantity;
 ```
 
 **Response (201 Created):**
-
 ```json
 {
   "id": 1,
@@ -978,14 +894,12 @@ const actual_proteins = (default_proteins / 100) * quantity;
 ### 7.2. Получение элемента приема пищи по ID
 
 **Endpoint:**
-
 ```
 GET /my-food/meal_element/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "id": 1,
@@ -1003,21 +917,18 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 404: Элемент не найден
 - 403: Нет доступа к элементу
 
 ### 7.3. Получение элементов приема пищи
 
 **Endpoint:**
-
 ```
 GET /my-food/meal_element/meal/{mealId}?page=0&size=50
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -1042,14 +953,12 @@ Headers: Authorization: Bearer {token}
 ### 7.4. Обновление элемента
 
 **Endpoint:**
-
 ```
 PUT /my-food/meal_element/{id}
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "quantity": "200",
@@ -1067,7 +976,6 @@ Headers: Authorization: Bearer {token}
 ### 7.5. Удаление элемента
 
 **Endpoint:**
-
 ```
 DELETE /my-food/meal_element/{id}
 Headers: Authorization: Bearer {token}
@@ -1082,7 +990,6 @@ Headers: Authorization: Bearer {token}
 ### 8.1. Добавление в избранное
 
 **Endpoint:**
-
 ```
 POST /my-food/favorite/{productId}
 Headers: Authorization: Bearer {token}
@@ -1091,14 +998,12 @@ Headers: Authorization: Bearer {token}
 **Response (201 Created)**
 
 **Errors:**
-
 - 404: Продукт не найден
 - 409: Продукт уже в избранном
 
 ### 8.2. Удаление из избранного
 
 **Endpoint:**
-
 ```
 DELETE /my-food/favorite/{productId}
 Headers: Authorization: Bearer {token}
@@ -1107,20 +1012,17 @@ Headers: Authorization: Bearer {token}
 **Response (204 No Content)**
 
 **Errors:**
-
 - 404: Продукт не найден в избранном
 
 ### 8.3. Получение избранных продуктов
 
 **Endpoint:**
-
 ```
 GET /my-food/favorite?page=0&size=20
 Headers: Authorization: Bearer {token}
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "content": [
@@ -1152,14 +1054,12 @@ Headers: Authorization: Bearer {token}
 ### 9.1. Регистрация устройства
 
 **Endpoint:**
-
 ```
 POST /my-food/device
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "device_token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
@@ -1168,12 +1068,10 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Device types:**
-
 - `ANDROID`
 - `IOS`
 
 **Response (201 Created):**
-
 ```json
 {
   "id": 1,
@@ -1185,20 +1083,17 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 409: Устройство уже зарегистрировано (можно игнорировать)
 
 ### 9.2. Удаление устройства
 
 **Endpoint:**
-
 ```
 DELETE /my-food/device/{deviceToken}
 Headers: Authorization: Bearer {token}
 ```
 
 **Примеры:**
-
 ```
 /device/ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
 ```
@@ -1206,7 +1101,6 @@ Headers: Authorization: Bearer {token}
 **Response (204 No Content)**
 
 **Errors:**
-
 - 404: Устройство не найдено
 - 403: Устройство принадлежит другому пользователю
 
@@ -1217,29 +1111,24 @@ Headers: Authorization: Bearer {token}
 ### 10.1. Получение изображения
 
 **Endpoint:**
-
 ```
 GET /my-food/images/{filename}
 ```
 
 **Примеры:**
-
 ```
 /images/123.jpg
 /images/product_456.png
 ```
 
 **Response (200 OK):**
-
 - Content-Type: image/jpeg, image/png, и т.д.
 - Body: бинарные данные изображения
 
 **Errors:**
-
 - 404: Изображение не найдено
 
-**Примечание:**
-
+**Примечание:** 
 - Эндпоинт используется для получения изображений продуктов и блюд
 - Изображения загружаются через `image_base64` в других эндпоинтах (POST /product, POST /meal_element)
 - URL изображений возвращается в поле `image_url` (например: `http://80.87.201.75:8079/gateway/my-food/images/123.jpg`)
@@ -1251,14 +1140,12 @@ GET /my-food/images/{filename}
 ### 11.1. Анализ блюда по фотографии
 
 **Endpoint:**
-
 ```
 POST /my-food/meal_element/analyze-photo
 Headers: Authorization: Bearer {token}
 ```
 
 **Request Body:**
-
 ```json
 {
   "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
@@ -1268,13 +1155,11 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Поля:**
-
 - `imageBase64` (обязательное) - base64 строка изображения
 - `language` (опциональное) - язык для распознавания (`ru`/`en`, по умолчанию `ru`)
 - `comment` (опциональное) - комментарий пользователя для более точного анализа блюда (макс. 500 символов)
 
 **Response (200 OK):**
-
 ```json
 {
   "ingredients": [
@@ -1318,13 +1203,11 @@ Headers: Authorization: Bearer {token}
 ```
 
 **Errors:**
-
 - 400: Изображение не предоставлено или невалидный формат
 - 408: Timeout (> 40 сек)
 - 503: OpenAI API недоступен
 
 **Примечания:**
-
 - Клиент должен позволить пользователю откорректировать данные перед сохранением
 - Комментарий пользователя помогает AI более точно определить ингредиенты и их количество
 
@@ -1467,7 +1350,6 @@ POST /my-food/meal_element (для каждого ингредиента или 
 ### 13.1. Типы ошибок и реакция
 
 **401 Unauthorized:**
-
 ```javascript
 if (error.response?.status === 401) {
   // Удалить токен из Secure Store
@@ -1478,32 +1360,28 @@ if (error.response?.status === 401) {
 ```
 
 **403 Forbidden:**
-
 ```javascript
 // Показать сообщение "Нет прав доступа"
 showSnackbar('У вас нет прав для выполнения этой операции', 'error');
 ```
 
 **404 Not Found:**
-
 ```javascript
 // Показать сообщение "Не найдено"
 showSnackbar('Ресурс не найден', 'error');
 ```
 
 **400 Bad Request (валидация):**
-
 ```javascript
 // Показать ошибки под полями формы
 if (error.response?.data?.errors) {
-  error.response.data.errors.forEach((err) => {
+  error.response.data.errors.forEach(err => {
     setFieldError(err.field, err.message);
   });
 }
 ```
 
 **500 Internal Server Error:**
-
 ```javascript
 // Показать общее сообщение
 showSnackbar('Произошла ошибка на сервере. Попробуйте позже', 'error');
@@ -1511,7 +1389,6 @@ showSnackbar('Произошла ошибка на сервере. Попроб�
 ```
 
 **Network Error:**
-
 ```javascript
 // Нет соединения с сервером
 showSnackbar('Проверьте подключение к интернету', 'error');
@@ -1520,7 +1397,6 @@ showSnackbar('Проверьте подключение к интернету', 
 ### 13.2. Retry механизм
 
 **Для критичных операций:**
-
 ```javascript
 const apiCall = async (retries = 3) => {
   for (let i = 0; i < retries; i++) {
@@ -1528,14 +1404,13 @@ const apiCall = async (retries = 3) => {
       return await api.get('/meal/findByDate', { params: { date } });
     } catch (error) {
       if (i === retries - 1) throw error;
-      await new Promise((resolve) => setTimeout(resolve, 1000 * (i + 1)));
+      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
     }
   }
 };
 ```
 
 **Не использовать retry для:**
-
 - POST/PUT/DELETE операций (чтобы избежать дубликатов)
 - Операций с долгим выполнением (анализ фото)
 
@@ -1546,13 +1421,11 @@ const apiCall = async (retries = 3) => {
 ### 14.1. Health Check
 
 **Endpoint:**
-
 ```
 GET /my-food/actuator/health
 ```
 
 **Response (200 OK):**
-
 ```json
 {
   "status": "UP"
@@ -1564,7 +1437,6 @@ GET /my-food/actuator/health
 ### 14.2. API Documentation
 
 **Endpoint:**
-
 ```
 GET /my-food/swagger-ui/index.html
 ```
@@ -1580,7 +1452,6 @@ GET /my-food/swagger-ui/index.html
 Новые возможности метрик и рекомендаций.
 
 **Новые эндпоинты:**
-
 - `GET /my-food/nutrition/daily?date=YYYY-MM-DD`
 - `GET /my-food/nutrition/weekly?startDate=YYYY-MM-DD`
 - `GET /my-food/nutrition/monthly?month=YYYY-MM`
@@ -1592,7 +1463,6 @@ GET /my-food/swagger-ui/index.html
 - `POST /my-food/recommendations/refresh`
 
 **Изменения:**
-
 - Добавлена агрегация метрик по неделе и месяцу
 - Добавлены тренды и прогресс к цели
 - Добавлены инсайты и улучшенные рекомендации продуктов
@@ -1602,7 +1472,6 @@ GET /my-food/swagger-ui/index.html
 ### Версия 2.0.0 (23 октября 2024)
 
 **Новые эндпоинты:**
-
 - `POST /my-food/auth/user` - регистрация пользователя
 - `POST /my-food/auth/token` - получение JWT токена
 - `GET /my-food/auth/user` - получение данных текущего пользователя
@@ -1616,7 +1485,6 @@ GET /my-food/swagger-ui/index.html
 - `GET /product_category/{id}` - получение категории по ID
 
 **Изменения:**
-
 - **Аутентификация теперь встроена в сервис** - отдельный auth service не требуется
 - Все auth эндпоинты находятся в `/my-food/auth/*`
 - Миграция на новый стек (Java 21, Spring Boot 3.4, JOOQ)
@@ -1628,7 +1496,6 @@ GET /my-food/swagger-ui/index.html
 - Полная поддержка пагинации для всех списочных эндпоинтов
 
 **Breaking changes:**
-
 - Полная переписка API с нуля
 - Auth эндпоинты перенесены с `/gateway/auth/*` на `/my-food/auth/*`
 - Формат дат: ISO 8601
@@ -1639,16 +1506,12 @@ GET /my-food/swagger-ui/index.html
 ## 18. Nutrition API
 
 ### 18.1. Дневная сводка
-
 Endpoint:
-
 ```
 GET /my-food/nutrition/daily?date=YYYY-MM-DD
 Headers: Authorization: Bearer {token}
 ```
-
 Response (200 OK):
-
 ```json
 {
   "periodType": "DAY",
@@ -1664,35 +1527,28 @@ Response (200 OK):
 ```
 
 ### 18.2. Недельная сводка
-
 ```
 GET /my-food/nutrition/weekly?startDate=YYYY-MM-DD
 ```
-
 Агрегирует 7 дней начиная с `startDate`.
 
 ### 18.3. Месячная сводка
-
 ```
 GET /my-food/nutrition/monthly?month=YYYY-MM
 ```
-
 Агрегирует месяц.
 
 ### 18.4. Тренд
-
 ```
 GET /my-food/nutrition/trend?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&metric=CALORIES|PROTEINS|FATS|CARBOHYDRATES
 ```
-
 Response (200 OK):
-
 ```json
 {
   "metricType": "CALORIES",
   "startDate": "2025-10-01",
   "endDate": "2025-10-07",
-  "dailyValues": [{ "date": "2025-10-01", "value": 1800.0 }],
+  "dailyValues": [ { "date": "2025-10-01", "value": 1800.0 } ],
   "direction": "INCREASING",
   "averageValue": 1950.0,
   "predictedValue": 2000.0
@@ -1700,13 +1556,10 @@ Response (200 OK):
 ```
 
 ### 18.5. Статистика
-
 ```
 GET /my-food/nutrition/statistics?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 ```
-
 Response (200 OK):
-
 ```json
 {
   "startDate": "2025-10-01",
@@ -1715,23 +1568,30 @@ Response (200 OK):
   "averageProteins": 110.0,
   "averageFats": 60.0,
   "averageCarbohydrates": 210.0,
-  "categoryUsageStats": { "meat": 5, "vegetables": 7 },
-  "topProducts": [
-    { "productId": 123, "productName": "Куриная грудка", "usageCount": 3 }
+  "byMealType": [
+    { "mealType": "BREAKFAST", "calories": 1450.0 },
+    { "mealType": "DINNER", "calories": 1800.0 },
+    { "mealType": "LATE_SUPPER", "calories": 200.0 },
+    { "mealType": "LUNCH", "calories": 2100.0 },
+    { "mealType": "SUPPER", "calories": 350.0 }
   ],
+  "categoryUsageStats": { "meat": 5, "vegetables": 7 },
+  "topProducts": [ { "productId": 123, "productName": "Куриная грудка", "usageCount": 3 } ],
   "totalMeals": 18,
   "totalDays": 6
 }
 ```
 
-### 18.6. Прогресс к цели
+Примечания:
+- `byMealType` - массив объектов с суммарными калориями по каждому типу приёма пищи за период
+- Типы приёмов пищи: `BREAKFAST`, `LUNCH`, `DINNER`, `SUPPER`, `LATE_SUPPER`
+- Если для типа приёма пищи нет данных, калории будут равны 0
 
+### 18.6. Прогресс к цели
 ```
 GET /my-food/nutrition/progress?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
 ```
-
 Response (200 OK):
-
 ```json
 {
   "startDate": "2025-10-01",
@@ -1742,14 +1602,11 @@ Response (200 OK):
   "weightChange": null,
   "targetWeightChange": null,
   "goalStatus": "ON_TRACK",
-  "dailyProgress": [
-    { "date": "2025-10-01", "calories": 1900.0, "percentage": 95.0 }
-  ]
+  "dailyProgress": [ { "date": "2025-10-01", "calories": 1900.0, "percentage": 95.0 } ]
 }
 ```
 
 Примечания:
-
 - Даты в ISO 8601, UTC
 - Пустые дни могут отсутствовать в массиве `dailyValues`
 
@@ -1758,52 +1615,35 @@ Response (200 OK):
 ## 19. Recommendations API
 
 ### 19.1. Рекомендованные продукты
-
 ```
 GET /my-food/recommendations/products?page=0&size=10
 Headers: Authorization: Bearer {token}
 ```
-
 Возвращает страницу `ProductResponse`.
 
 ### 19.2. Инсайты
-
 ```
 GET /my-food/recommendations/insights
 ```
-
 Response (200 OK):
-
 ```json
 [
-  {
-    "id": 1,
-    "insightType": "EXCESS_CALORIES",
-    "severity": "WARNING",
-    "title": "Превышение нормы",
-    "description": "...",
-    "createdAt": "2025-10-30T10:00:00"
-  }
+  { "id": 1, "insightType": "EXCESS_CALORIES", "severity": "WARNING", "title": "Превышение нормы", "description": "...", "createdAt": "2025-10-30T10:00:00" }
 ]
 ```
 
 ### 19.3. Обновить рекомендации
-
 ```
 POST /my-food/recommendations/refresh
 ```
-
 Очищает кеш рекомендаций текущего пользователя.
 
 ### 19.4. Meal-рекомендации (подбор продуктов)
-
 ```
 GET /my-food/recommendations/meals?size=5
 Headers: Authorization: Bearer {token}
 ```
-
 Response (200 OK):
-
 ```json
 [
   {
@@ -1821,7 +1661,6 @@ Response (200 OK):
 ```
 
 Notes:
-
 - Алгоритм: GAIN — приоритет белку; LOSE — низкокалорийные; SAVE — смешанный скоринг.
 - Кеш: recommendationsCache инвалидируется `POST /recommendations/refresh`.
 
@@ -1830,23 +1669,19 @@ Notes:
 ## 20. Design Notes (Metrics & Recommendations)
 
 ### 20.1. NutritionTrendAnalyzer
-
 - Источник данных: агрегации по дням за период
 - Направление тренда: сравнение средних половин периода (порог 5%)
 - Простая модель прогноза: скользящее среднее последних 3 дней
 
 ### 20.2. ProductStatisticsAnalyzer
-
 - Средние значения считаются как total/кол-во дней с данными
 - Категории и топ-продукты — по использованию в meal_elements
 
 ### 20.3. InsightGenerator
-
 - Пороговые правила: 80%/95-105%/120% от дневной цели калорий
 - Для GAIN: рекомендация по белку ≈ 1.8 г/кг веса
 
 ### 20.4. ProductRecommendationEngine
-
 - Факторы ранжирования: предпочтительные категории, цели, полнота КБЖУ
 - Исключения: уже использованные и избранные продукты
 
@@ -1855,27 +1690,23 @@ Notes:
 ### 16.1. Формат полей
 
 **Согласованные форматы:**
-
 - Даты: ISO 8601 (YYYY-MM-DD, YYYY-MM-DDTHH:mm:ss)
 - Числа: Double для КБЖУ (до 2 знаков после запятой)
 - ID: Long (числовые)
 - Enum: String в UPPER_CASE
 
 **Nullable поля:**
-
 - Опциональные поля могут быть null в ответе
 - Клиент должен проверять на null перед использованием
 
 ### 16.2. Validation rules
 
 **Backend валидирует (серверная валидация - обязательно):**
-
 - Все входные данные
 - Права доступа
 - Бизнес-правила
 
 **Frontend валидирует (клиентская валидация - для UX):**
-
 - Формат полей перед отправкой
 - Обязательные поля
 - Показывает ошибки пользователю
@@ -1883,7 +1714,6 @@ Notes:
 ### 16.3. Синхронизация изменений
 
 **Процесс:**
-
 1. Backend реализует эндпоинт
 2. Backend обновляет Swagger
 3. Backend обновляет API_CONTRACT.md
@@ -1891,7 +1721,6 @@ Notes:
 5. Frontend адаптирует код под новый контракт
 
 **Communication:**
-
 - Изменения в API обсуждаются заранее
 - Breaking changes требуют согласования
 - Версионирование API (в будущем)
@@ -1901,7 +1730,6 @@ Notes:
 ## 17. Приоритеты реализации эндпоинтов
 
 ### Неделя 1 (P0):
-
 - POST /my-food/auth/user (регистрация)
 - POST /my-food/auth/token (вход)
 - GET /my-food/auth/user
@@ -1910,7 +1738,6 @@ Notes:
 - PUT /my-food/user-profile
 
 ### Неделя 2 (P1):
-
 - GET /product_category
 - POST /product
 - GET /product/search/name
@@ -1919,7 +1746,6 @@ Notes:
 - DELETE /favorite/{id}
 
 ### Неделя 2-3 (P1):
-
 - POST /meal
 - GET /meal/findByDate
 - DELETE /meal/{id}
@@ -1929,13 +1755,11 @@ Notes:
 - DELETE /meal_element/{id}
 
 ### Неделя 3 (P2):
-
 - GET /product/search/barcode/{barcode}
 - PUT /product
 - DELETE /product/{id}
 
 ### Неделя 3-4 (P3):
-
 - POST /meal_element/analyze-photo
 - POST /device
 
@@ -1946,13 +1770,11 @@ Notes:
 Данный API контракт является обязательным документом для синхронизации Frontend и Backend разработки. Все изменения должны отражаться в этом документе.
 
 **При реализации:**
-
 - Backend реализует согласно контракту
 - Frontend использует согласно контракту
 - Любые отклонения обсуждаются и документируются
 
 **Вопросы:**
-
 - Backend: L423r
 - Frontend: Knois
 
