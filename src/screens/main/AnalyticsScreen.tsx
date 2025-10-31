@@ -14,6 +14,7 @@ import type { AnalyticsPeriod, TrendMetric } from '../../types/analytics.types';
 import { colors, spacing, componentSpacing, typography } from '../../theme';
 import AnalyticsTrendChart from '../../components/analytics/AnalyticsTrendChart';
 import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribution';
+import Header from '../../components/common/Header';
 
 type TabKey = 'trend' | 'distributions';
 
@@ -41,6 +42,7 @@ const AnalyticsScreen: React.FC = observer(() => {
         <RefreshControl refreshing={store.loading} onRefresh={onRefresh} />
       }
     >
+      <Header title="Сводка" />
       <AnalyticsHeader
         period={store.period}
         onChangePeriod={onChangePeriod}

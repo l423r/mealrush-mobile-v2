@@ -2,6 +2,8 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import type { AnalyticsPeriod, SummaryKpi } from '../../types/analytics.types';
 import { colors, spacing, typography, componentSpacing } from '../../theme';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { ru } from 'date-fns/locale';
 
 interface AnalyticsHeaderProps {
   period: AnalyticsPeriod;
@@ -10,11 +12,22 @@ interface AnalyticsHeaderProps {
   collapsed?: boolean; // reduces vertical paddings when true
 }
 
-const PERIODS: Array<{ key: AnalyticsPeriod; label: string }> = [
-  { key: 'day', label: 'День' },
-  { key: 'week', label: 'Неделя' },
-  { key: 'month', label: 'Месяц' },
-];
+function formatRangeLabel(key: AnalyticsPeriod): string {
+  const today = new Date();
+  if (key === 'day') return format(today, 'd MMMM', { locale: ru });
+  if (key === 'week') {
+    const start = startOfWeek(today, { weekStartsOn: 1 });
+    const end = endOfWeek(today, { weekStartsOn: 1 });
+    return `${format(start, 'd MMM', { locale: ru })} — ${format(end, 'd MMM', { locale: ru })}`;
+  }
+  if (key === 'month') {
+    const start = startOfMonth(today);
+    const end = endOfMonth(today);
+    return `${format(start, 'd MMM', { locale: ru })} — ${format(end, 'd MMM', { locale: ru })}`;
+  }
+  // custom range
+  return `${key.from} — ${key.to}`;
+}
 
 export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
   period,
@@ -29,26 +42,23 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
   return (
     <View style={containerStyle}>
-      <Text style={styles.title}>Сводка</Text>
       <View style={styles.segment}>
-        {PERIODS.map((p) => (
+        {(['day', 'week', 'month'] as AnalyticsPeriod[]).map((p) => (
           <TouchableOpacity
-            key={
-              typeof p.key === 'string' ? p.key : `${p.key.from}-${p.key.to}`
-            }
+            key={typeof p === 'string' ? p : `${(p as any).from}-${(p as any).to}`}
             style={[
               styles.segmentItem,
-              isActive(period, p.key) && styles.segmentItemActive,
+              isActive(period, p) && styles.segmentItemActive,
             ]}
-            onPress={() => onChangePeriod(p.key)}
+            onPress={() => onChangePeriod(p)}
           >
             <Text
               style={[
                 styles.segmentText,
-                isActive(period, p.key) && styles.segmentTextActive,
+                isActive(period, p) && styles.segmentTextActive,
               ]}
             >
-              {p.label}
+              {formatRangeLabel(p)}
             </Text>
           </TouchableOpacity>
         ))}
@@ -103,11 +113,6 @@ const styles = StyleSheet.create({
   containerCollapsed: {
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
   },
   segment: {
     flexDirection: 'row',
