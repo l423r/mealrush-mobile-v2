@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 0,
+    borderWidth: 1,
     borderColor: colors.border.light,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.background.light,
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     paddingLeft: spacing.sm,
   },
   inputWithRightIcon: {
-    paddingRight: spacing.sm,
+    paddingRight: spacing.md,
   },
   leftIcon: {
     paddingLeft: spacing.md,

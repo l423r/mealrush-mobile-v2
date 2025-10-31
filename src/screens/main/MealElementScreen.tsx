@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  Platform,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
@@ -18,7 +20,7 @@ import type { MainStackParamList } from '../../types/navigation.types';
 import type { Product, MealElement } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { formatCalories, formatWeight } from '../../utils/formatting';
+import { formatCalories, formatWeight, formatMealType } from '../../utils/formatting';
 import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -98,8 +100,8 @@ const MealElementScreen: React.FC = observer(() => {
     if (item && 'proteins' in item) {
       // It's a Product, calculate nutrients for default quantity
       const product = item as Product;
-      const quantity = parseFloat(watchedQuantity) || 100;
-      const baseQuantity = parseFloat(product.quantity) || 100;
+      const quantity = Number.parseFloat(watchedQuantity) || 100;
+      const baseQuantity = Number.parseFloat(product.quantity) || 100;
 
       const recalculated = recalculateNutrients(
         product.proteins,
@@ -120,8 +122,8 @@ const MealElementScreen: React.FC = observer(() => {
   const handleQuantityChange = (quantity: string) => {
     if (item && 'proteins' in item) {
       const product = item as Product;
-      const quantityNum = parseFloat(quantity) || 0;
-      const baseQuantity = parseFloat(product.quantity) || 100;
+      const quantityNum = Number.parseFloat(quantity) || 0;
+      const baseQuantity = Number.parseFloat(product.quantity) || 100;
 
       setIsCalculating(true);
 
@@ -213,7 +215,15 @@ const MealElementScreen: React.FC = observer(() => {
     <View style={styles.container}>
       <Header title={getTitle()} showBackButton onBackPress={handleBack} />
 
-      <ScrollView style={styles.content}>
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        <ScrollView
+          style={styles.scrollView}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+        >
         {/* Product Info */}
         {item && (
           <View style={styles.productInfo}>
@@ -232,160 +242,151 @@ const MealElementScreen: React.FC = observer(() => {
           </View>
         )}
 
-        {/* Meal Type and Time (only for new meals) */}
-        {!isEditing && !route.params?.mealId && (
-          <View style={styles.mealSettings}>
-            <Text style={styles.sectionTitle}>Настройки приема пищи</Text>
+        {/* Quantity and Nutrients */}
+        <View style={styles.nutrientsSection}>
+          {/* Горизонтальный контейнер для инпутов и типа приема пищи */}
+          <View style={styles.nutrientsRow}>
+            {/* Левая часть: Инпуты */}
+            <View style={styles.nutrientsLeft}>
+              {/* Первый ряд: Количество и Калории */}
+              <View style={styles.topRow}>
+                <Controller
+                  control={control}
+                  name="quantity"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Количество (г)"
+                      placeholder="100"
+                      value={value}
+                      onChangeText={(text) => {
+                        onChange(text);
+                        handleQuantityChange(text);
+                      }}
+                      onBlur={onBlur}
+                      error={errors.quantity?.message}
+                      keyboardType="numeric"
+                      containerStyle={styles.topRowInput}
+                      inputStyle={styles.numericInput}
+                    />
+                  )}
+                />
 
-            <View style={styles.mealTypeContainer}>
-              <Text style={styles.label}>Тип приема пищи</Text>
-              <View style={styles.mealTypeButtons}>
+                <Controller
+                  control={control}
+                  name="calories"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Калории (ккал)"
+                      placeholder="0"
+                      value={value?.toString() || ''}
+                      onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
+                      onBlur={onBlur}
+                      error={errors.calories?.message}
+                      keyboardType="numeric"
+                      containerStyle={styles.topRowInput}
+                      inputStyle={styles.numericInput}
+                    />
+                  )}
+                />
+              </View>
+
+              {/* Второй ряд: Белки, Жиры, Углеводы */}
+              <View style={styles.bottomRow}>
+                <Controller
+                  control={control}
+                  name="proteins"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Белки (г)"
+                      placeholder="0"
+                      value={value?.toString() || ''}
+                      onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
+                      onBlur={onBlur}
+                      error={errors.proteins?.message}
+                      keyboardType="numeric"
+                      containerStyle={styles.bottomRowInput}
+                      inputStyle={styles.numericInput}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="fats"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Жиры (г)"
+                      placeholder="0"
+                      value={value?.toString() || ''}
+                      onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
+                      onBlur={onBlur}
+                      error={errors.fats?.message}
+                      keyboardType="numeric"
+                      containerStyle={styles.bottomRowInput}
+                      inputStyle={styles.numericInput}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="carbohydrates"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Углеводы (г)"
+                      placeholder="0"
+                      value={value?.toString() || ''}
+                      onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
+                      onBlur={onBlur}
+                      error={errors.carbohydrates?.message}
+                      keyboardType="numeric"
+                      containerStyle={styles.bottomRowInput}
+                      inputStyle={styles.numericInput}
+                    />
+                  )}
+                />
+              </View>
+            </View>
+
+            {/* Правая часть: Тип приема пищи (вертикально) */}
+            {!isEditing && !route.params?.mealId && (
+              <View style={styles.mealTypeVertical}>
                 {['BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER'].map(
                   (type) => (
                     <TouchableOpacity
                       key={type}
                       style={[
-                        styles.mealTypeButton,
-                        mealType === type && styles.mealTypeButtonActive,
+                        styles.mealTypeButtonVertical,
+                        mealType === type && styles.mealTypeButtonVerticalActive,
                       ]}
                       onPress={() => setMealType(type as any)}
                     >
                       <Text
                         style={[
-                          styles.mealTypeButtonText,
-                          mealType === type && styles.mealTypeButtonTextActive,
+                          styles.mealTypeButtonTextVertical,
+                          mealType === type && styles.mealTypeButtonTextVerticalActive,
                         ]}
                       >
-                        {type === 'BREAKFAST'
-                          ? 'Завтрак'
-                          : type === 'LUNCH'
-                            ? 'Обед'
-                            : type === 'DINNER'
-                              ? 'Ужин'
-                              : type === 'SUPPER'
-                                ? 'Полдник'
-                                : 'Поздний ужин'}
+                        {formatMealType(type)}
                       </Text>
                     </TouchableOpacity>
                   )
                 )}
               </View>
-            </View>
-          </View>
-        )}
-
-        {/* Quantity and Nutrients */}
-        <View style={styles.nutrientsSection}>
-          <Text style={styles.sectionTitle}>Количество и пищевая ценность</Text>
-
-          <Controller
-            control={control}
-            name="quantity"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Количество (г)"
-                placeholder="100"
-                value={value}
-                onChangeText={(text) => {
-                  onChange(text);
-                  handleQuantityChange(text);
-                }}
-                onBlur={onBlur}
-                error={errors.quantity?.message}
-                keyboardType="numeric"
-              />
             )}
-          />
-
-          <View style={styles.nutrientsGrid}>
-            <Controller
-              control={control}
-              name="proteins"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Белки (г)"
-                  placeholder="0"
-                  value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
-                  onBlur={onBlur}
-                  error={errors.proteins?.message}
-                  keyboardType="numeric"
-                  containerStyle={styles.nutrientInput}
-                />
-              )}
-            />
-
-            <Controller
-              control={control}
-              name="fats"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Жиры (г)"
-                  placeholder="0"
-                  value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
-                  onBlur={onBlur}
-                  error={errors.fats?.message}
-                  keyboardType="numeric"
-                  containerStyle={styles.nutrientInput}
-                />
-              )}
-            />
           </View>
 
-          <View style={styles.nutrientsGrid}>
-            <Controller
-              control={control}
-              name="carbohydrates"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Углеводы (г)"
-                  placeholder="0"
-                  value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
-                  onBlur={onBlur}
-                  error={errors.carbohydrates?.message}
-                  keyboardType="numeric"
-                  containerStyle={styles.nutrientInput}
-                />
-              )}
-            />
-
-            <Controller
-              control={control}
-              name="calories"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Калории (ккал)"
-                  placeholder="0"
-                  value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
-                  onBlur={onBlur}
-                  error={errors.calories?.message}
-                  keyboardType="numeric"
-                  containerStyle={styles.nutrientInput}
-                  rightIcon={
-                    isCalculating ? (
-                      <Text style={styles.calculatingIcon}>⏳</Text>
-                    ) : (
-                      <Text style={styles.autoIcon}>⚡</Text>
-                    )
-                  }
-                />
-              )}
-            />
+          {/* Итого - на всю ширину */}
+          <View style={styles.summary}>
+            <Text style={styles.summaryText}>
+              Итого: {formatWeight(Number.parseFloat(watchedQuantity) || 0)} •{' '}
+              {formatCalories(watchedCalories || 0)}
+              {!isEditing && !route.params?.mealId && ` • ${formatMealType(mealType)}`}
+            </Text>
           </View>
         </View>
-
-        {/* Summary */}
-        <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Итого</Text>
-          <Text style={styles.summaryText}>
-            {formatWeight(parseFloat(watchedQuantity) || 0)} •{' '}
-            {formatCalories(watchedCalories || 0)}
-          </Text>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={styles.footer}>
         <Button
@@ -406,6 +407,12 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   productInfo: {
     padding: spacing.lg,
@@ -482,14 +489,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   nutrientsSection: {
-    padding: spacing.lg,
+    padding: spacing.md,
   },
-  nutrientsGrid: {
+  nutrientsRow: {
     flexDirection: 'row',
     gap: spacing.md,
+    marginBottom: spacing.md,
   },
-  nutrientInput: {
+  nutrientsLeft: {
     flex: 1,
+  },
+  topRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  topRowInput: {
+    flex: 1,
+  },
+  bottomRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  bottomRowInput: {
+    flex: 1,
+  },
+  numericInput: {
+    textAlign: 'right',
+    paddingRight: spacing.md,
   },
   calculatingIcon: {
     fontSize: 16,
@@ -498,19 +526,43 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   summary: {
-    margin: spacing.md,
-    padding: spacing.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
     backgroundColor: colors.primary + '20',
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
-  summaryTitle: {
-    ...typography.h5,
-    color: colors.primary,
-    marginBottom: spacing.sm,
-  },
   summaryText: {
-    ...typography.body1,
+    ...typography.body2,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  mealTypeVertical: {
+    flexDirection: 'column',
+    gap: spacing.xs,
+    minWidth: 120,
+    alignSelf: 'stretch',
+  },
+  mealTypeButtonVertical: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    backgroundColor: colors.background.default,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mealTypeButtonVerticalActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primary + '20',
+  },
+  mealTypeButtonTextVertical: {
+    ...typography.body2,
+    color: colors.text.secondary,
+  },
+  mealTypeButtonTextVerticalActive: {
     color: colors.primary,
     fontWeight: '600',
   },
