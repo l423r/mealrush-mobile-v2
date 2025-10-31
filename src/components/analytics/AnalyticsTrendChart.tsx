@@ -64,11 +64,11 @@ export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
         yAxisTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
         xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
         noOfSections={4}
-        animateOnDataChange
-        animationDuration={600}
+        animateOnDataChange={series.length > 1}
+        animationDuration={series.length > 1 ? 600 : 0}
         curved
         spacing={series.length > 7 ? 40 : 60}
-      />
+        />
     </View>
   );
 };

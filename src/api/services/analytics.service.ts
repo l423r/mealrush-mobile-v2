@@ -43,26 +43,56 @@ function resolveRange(period: AnalyticsPeriod): DateRange {
 
 async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
   const { startDate, endDate } = resolveRange(period);
-  const { data } = await apiClient.get<any>(MY_FOOD_ENDPOINTS.NUTRITION_TREND, {
-    params: { startDate, endDate, metric: 'CALORIES' },
-  });
+  // Fetch all metrics to build a combined series so UI can switch locally
+  // API expects: CALORIES, PROTEINS, FATS, CARBOHYDRATES (plural forms)
+  const metrics: Array<{ api: string; field: keyof TrendPoint }> = [
+    { api: 'CALORIES', field: 'calories' },
+    { api: 'PROTEINS', field: 'protein' },
+    { api: 'FATS', field: 'fat' },
+    { api: 'CARBOHYDRATES', field: 'carbs' },
+  ];
+  const requests = metrics.map((m) =>
+    apiClient
+      .get<any>(MY_FOOD_ENDPOINTS.NUTRITION_TREND, {
+        params: { startDate, endDate, metric: m.api },
+      })
+      .then((res) => ({ field: m.field, data: res.data }))
+      .catch((err) => {
+        // If a metric fails, log and return empty data for that metric
+        if (__DEV__) {
+          console.warn(`[AnalyticsTrend] Failed to fetch ${m.api}:`, err);
+        }
+        return { field: m.field, data: { dailyValues: [] } };
+      })
+  );
+
+  const results = await Promise.all(requests);
   if (__DEV__) {
-    console.log('[AnalyticsTrend] range:', { startDate, endDate, metric: 'CALORIES' });
-    console.log('[AnalyticsTrend] response:', data);
+    console.log('[AnalyticsTrend] range:', { startDate, endDate });
+    results.forEach((r) =>
+      console.log(`[AnalyticsTrend] response ${r.field}:`, r.data)
+    );
   }
-  // The backend may return either an array of points or an object
-  // with a dailyValues field. Normalize to TrendPoint[] with calories filled.
-  if (Array.isArray(data)) {
-    return data as TrendPoint[];
+
+  // Merge by date
+  const byDate: Record<string, TrendPoint> = {};
+  for (const r of results) {
+    const arr: Array<{ date: string; value: number }> = Array.isArray(r.data)
+      ? (r.data as any)
+      : r.data?.dailyValues || [];
+    for (const p of arr) {
+      const existing = byDate[p.date] || {
+        date: p.date,
+        calories: 0,
+        protein: 0,
+        fat: 0,
+        carbs: 0,
+      };
+      existing[r.field] = p.value ?? 0;
+      byDate[p.date] = existing;
+    }
   }
-  const dailyValues: Array<{ date: string; value: number }> = data?.dailyValues || [];
-  return dailyValues.map((p) => ({
-    date: p.date,
-    calories: p.value ?? 0,
-    protein: 0,
-    fat: 0,
-    carbs: 0,
-  }));
+  return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 async function fetchStatistics(period: AnalyticsPeriod): Promise<SummaryKpi> {
