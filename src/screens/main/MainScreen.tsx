@@ -119,11 +119,6 @@ const MainScreen: React.FC = observer(() => {
       <Text style={styles.emptySubtitle}>
         Добавьте свой первый прием пищи, чтобы начать отслеживание
       </Text>
-      <Button
-        title="Добавить прием пищи"
-        onPress={handleAddMeal}
-        style={styles.emptyButton}
-      />
     </View>
   );
 
@@ -412,9 +407,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.xl,
     lineHeight: 24,
-  },
-  emptyButton: {
-    minWidth: 200,
   },
   addButtonContainer: {
     position: 'absolute',
