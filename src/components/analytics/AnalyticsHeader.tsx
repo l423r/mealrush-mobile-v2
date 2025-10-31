@@ -58,11 +58,13 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
                 isActive(period, p) && styles.segmentTextActive,
               ]}
             >
-              {formatRangeLabel(p)}
+              {p === 'day' ? 'День' : p === 'week' ? 'Неделя' : 'Месяц'}
             </Text>
           </TouchableOpacity>
         ))}
       </View>
+
+      <Text style={styles.rangeCaption}>{formatRangeLabel(period)}</Text>
 
       <View style={styles.kpiGrid}>
         <KpiTile
@@ -126,9 +128,12 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     alignItems: 'center',
     borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   segmentItemActive: {
     backgroundColor: colors.primary,
+    borderWidth: 0,
   },
   segmentText: {
     ...typography.button,
@@ -136,6 +141,12 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: colors.white,
+  },
+  rangeCaption: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    textAlign: 'center',
+    marginBottom: spacing.md,
   },
   kpiGrid: {
     flexDirection: 'row',
