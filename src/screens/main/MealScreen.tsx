@@ -297,8 +297,8 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
   },
   summary: {
-    margin: spacing.lg,
-    padding: spacing.lg,
+    margin: spacing.md,
+    padding: spacing.md,
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   summaryTitle: {
     ...typography.h5,
     color: colors.text.primary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   summaryGrid: {
@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   summaryValue: {
-    ...typography.h3,
+    ...typography.h4,
     color: colors.primary,
     fontWeight: 'bold',
   },

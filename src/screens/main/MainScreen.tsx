@@ -320,8 +320,8 @@ const styles = StyleSheet.create({
     textTransform: 'capitalize',
   },
   statsContainer: {
-    margin: spacing.lg,
-    padding: spacing.xl,
+    margin: spacing.md,
+    padding: spacing.md,
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
     borderWidth: 0,
@@ -330,7 +330,7 @@ const styles = StyleSheet.create({
   statsTitle: {
     ...typography.h5,
     color: colors.text.primary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     textAlign: 'center',
   },
   statsGrid: {
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statValue: {
-    ...typography.h3,
+    ...typography.h4,
     color: colors.primary,
     fontWeight: 'bold',
   },

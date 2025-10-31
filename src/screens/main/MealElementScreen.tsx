@@ -498,8 +498,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   summary: {
-    margin: spacing.lg,
-    padding: spacing.lg,
+    margin: spacing.md,
+    padding: spacing.md,
     backgroundColor: colors.primary + '20',
     borderRadius: borderRadius.lg,
     alignItems: 'center',

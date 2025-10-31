@@ -281,7 +281,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statValue: {
-    ...typography.h3,
+    ...typography.h4,
     color: colors.primary,
     fontWeight: 'bold',
   },
