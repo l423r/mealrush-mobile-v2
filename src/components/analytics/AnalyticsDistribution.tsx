@@ -53,19 +53,22 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
       {hasMacroData ? (
         <View style={styles.pieContainer}>
           <PieChart
+            key={`pie-${pieData.map((p) => `${p.x}-${p.y}`).join('-')}`}
             donut
             innerRadius={60}
             radius={90}
-            data={pieData.map((p) => ({
-              value: Math.round((p.y || 0) * 100),
-              color:
-                p.x === 'Белки'
-                  ? metricColor('protein')
-                  : p.x === 'Жиры'
-                    ? metricColor('fat')
-                    : metricColor('carbs'),
-              text: `${p.x}`,
-            }))}
+            data={pieData
+              .filter((p) => (p.y || 0) > 0)
+              .map((p) => ({
+                value: Math.max(0, Math.round((p.y || 0) * 100)),
+                color:
+                  p.x === 'Белки'
+                    ? metricColor('protein')
+                    : p.x === 'Жиры'
+                      ? metricColor('fat')
+                      : metricColor('carbs'),
+                text: `${p.x}`,
+              }))}
             centerLabelComponent={() => (
               <Text
                 style={{ ...typography.body2, color: colors.text.secondary }}
@@ -109,10 +112,11 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
       </Text>
       {hasMealData ? (
         <BarChart
+          key={`bar-${mealDataWithValues.length}-${mealDataWithValues.map((i) => i.mealType).join('-')}`}
           height={220}
           data={mealDataWithValues.map((item) => ({
             label: formatMealTypeLabel(item.mealType),
-            value: Math.round(item.calories || 0),
+            value: Math.max(0, Math.round(item.calories || 0)),
             frontColor: colors.primary,
           }))}
           barWidth={28}

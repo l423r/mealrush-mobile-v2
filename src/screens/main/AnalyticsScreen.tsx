@@ -37,6 +37,14 @@ const AnalyticsScreen: React.FC = observer(() => {
     store.setPeriod(next);
   };
 
+  // Helper to get period key for component keys
+  const periodKey = useMemo(() => {
+    if (typeof store.period === 'string') {
+      return store.period;
+    }
+    return `${store.period.from}-${store.period.to}`;
+  }, [store.period]);
+
   return (
     <ScrollView
       style={styles.container}
@@ -66,11 +74,14 @@ const AnalyticsScreen: React.FC = observer(() => {
       </View>
 
       <View style={styles.section}>
-        {activeTab === 'trend' ? (
-          store.trend.length === 0 ? (
+        {store.loading ? (
+          <Text style={styles.placeholder}>Загрузка данных...</Text>
+        ) : activeTab === 'trend' ? (
+          !store.trend || store.trend.length === 0 ? (
             <Text style={styles.placeholder}>Недостаточно данных за период</Text>
           ) : (
             <AnalyticsTrendChart
+              key={`trend-${periodKey}-${metric}`}
               metric={metric}
               onMetricChange={setMetric}
               series={store.getTrendSeries(metric)}
@@ -79,7 +90,10 @@ const AnalyticsScreen: React.FC = observer(() => {
         ) : store.distribution == null ? (
           <Text style={styles.placeholder}>Недостаточно данных за период</Text>
         ) : (
-          <AnalyticsDistribution data={store.distribution} />
+          <AnalyticsDistribution
+            key={`distribution-${periodKey}`}
+            data={store.distribution}
+          />
         )}
       </View>
     </ScrollView>

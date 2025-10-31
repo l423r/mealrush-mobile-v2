@@ -28,6 +28,22 @@ export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
   onMetricChange,
   series,
 }) => {
+  // Validate and prepare chart data
+  const chartData = React.useMemo(() => {
+    if (!series || series.length === 0) {
+      return [];
+    }
+    return series
+      .filter((p) => p != null && typeof p.y === 'number' && !isNaN(p.y))
+      .map((p) => ({
+        value: Math.max(0, p.y), // Ensure non-negative values
+        label: formatDate(p.x, 'dd.MM'),
+      }));
+  }, [series]);
+
+  const hasValidData = chartData.length > 0;
+  const canUseAreaChart = chartData.length > 1;
+
   return (
     <View style={styles.container}>
       <View style={styles.chipsRow}>
@@ -46,29 +62,33 @@ export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
         ))}
       </View>
 
-      <LineChart
-        data={series.map((p) => ({
-          value: p.y,
-          label: formatDate(p.x, 'dd.MM'),
-        }))}
-        height={220}
-        thickness={2}
-        color={colors.primary}
-        areaChart
-        startFillColor={colors.primary}
-        endFillColor={colors.primary}
-        startOpacity={0.2}
-        endOpacity={0}
-        yAxisThickness={0}
-        xAxisThickness={0}
-        yAxisTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
-        xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
-        noOfSections={4}
-        animateOnDataChange={series.length > 1}
-        animationDuration={series.length > 1 ? 600 : 0}
-        curved
-        spacing={series.length > 7 ? 40 : 60}
+      {hasValidData ? (
+        <LineChart
+          key={`trend-${metric}-${series.length}`}
+          data={chartData}
+          height={220}
+          thickness={2}
+          color={colors.primary}
+          areaChart={canUseAreaChart}
+          startFillColor={canUseAreaChart ? colors.primary : undefined}
+          endFillColor={canUseAreaChart ? colors.primary : undefined}
+          startOpacity={canUseAreaChart ? 0.2 : 0}
+          endOpacity={0}
+          yAxisThickness={0}
+          xAxisThickness={0}
+          yAxisTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
+          xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
+          noOfSections={4}
+          animateOnDataChange={canUseAreaChart}
+          animationDuration={canUseAreaChart ? 600 : 0}
+          curved={canUseAreaChart}
+          spacing={chartData.length > 7 ? 40 : 60}
         />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Недостаточно данных для отображения графика</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -97,6 +117,16 @@ const styles = StyleSheet.create({
   },
   chipTextActive: {
     color: colors.white,
+  },
+  emptyContainer: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    textAlign: 'center',
   },
 });
 
