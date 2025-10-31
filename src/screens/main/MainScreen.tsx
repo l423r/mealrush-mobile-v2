@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +26,7 @@ import { calculateProgressPercentage } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
+import DateTimePicker from '@react-native-community/datetimepicker';
 
 type MainScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -35,6 +37,7 @@ const MainScreen: React.FC = observer(() => {
   const navigation = useNavigation<MainScreenNavigationProp>();
   const { mealStore, profileStore } = useStores();
   const [refreshing, setRefreshing] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const loadData = React.useCallback(async () => {
     try {
@@ -69,6 +72,19 @@ const MainScreen: React.FC = observer(() => {
     newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
     mealStore.setSelectedDate(newDate);
     loadData();
+  };
+
+  const handleCalendarPress = () => {
+    setShowDatePicker(true);
+  };
+
+  const handleCalendarChange = (event: any, selectedDate?: Date) => {
+    // On Android, picker closes after selection; keep open on iOS if needed
+    setShowDatePicker(Platform.OS === 'ios');
+    if (selectedDate) {
+      mealStore.setSelectedDate(selectedDate);
+      loadData();
+    }
   };
 
   const renderMealCard = ({ item: meal }: { item: any }) => {
@@ -131,11 +147,21 @@ const MainScreen: React.FC = observer(() => {
       <Header
         title="Расписание питания"
         rightComponent={
-          <TouchableOpacity onPress={() => {}}>
+          <TouchableOpacity onPress={handleCalendarPress}>
             <Text style={styles.calendarIcon}>📅</Text>
           </TouchableOpacity>
         }
       />
+
+      {showDatePicker && (
+        <DateTimePicker
+          value={mealStore.selectedDate}
+          mode="date"
+          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+          onChange={handleCalendarChange}
+          maximumDate={new Date()}
+        />
+      )}
 
       <ScrollView
         style={styles.content}
