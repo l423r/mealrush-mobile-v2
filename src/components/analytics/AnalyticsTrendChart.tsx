@@ -1,14 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import {
-  VictoryChart,
-  VictoryLine,
-  VictoryAxis,
-  VictoryTheme,
-  VictoryVoronoiContainer,
-  VictoryTooltip,
-  VictoryArea,
-} from 'victory-native';
+import { LineChart } from 'react-native-gifted-charts';
+import { formatDate } from '../../utils/formatting';
 import type { TrendMetric } from '../../types/analytics.types';
 import { colors, spacing, typography } from '../../theme';
 
@@ -53,44 +46,29 @@ export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
         ))}
       </View>
 
-      <VictoryChart
-        theme={VictoryTheme.material}
+      <LineChart
+        data={series.map((p) => ({
+          value: p.y,
+          label: formatDate(p.x, 'dd.MM'),
+        }))}
         height={220}
-        padding={{ top: 12, bottom: 40, left: 40, right: 12 }}
-        containerComponent={
-          <VictoryVoronoiContainer
-            voronoiDimension="x"
-            labels={({ datum }: any) => `${datum.x}: ${Math.round(datum.y)}`}
-            labelComponent={
-              <VictoryTooltip cornerRadius={8} flyoutStyle={{ fill: '#fff' }} />
-            }
-          />
-        }
-      >
-        <VictoryAxis
-          style={{ tickLabels: { fontSize: 10, fill: colors.text.secondary } }}
-        />
-        <VictoryAxis
-          dependentAxis
-          style={{ tickLabels: { fontSize: 10, fill: colors.text.secondary } }}
-        />
-        <VictoryArea
-          interpolation="monotoneX"
-          data={series}
-          style={{
-            data: {
-              stroke: colors.primary,
-              fill: `${colors.primary}33`,
-              strokeWidth: 2,
-            },
-          }}
-        />
-        <VictoryLine
-          interpolation="monotoneX"
-          data={series}
-          style={{ data: { stroke: colors.primary, strokeWidth: 2 } }}
-        />
-      </VictoryChart>
+        thickness={2}
+        color={colors.primary}
+        areaChart
+        startFillColor={colors.primary}
+        endFillColor={colors.primary}
+        startOpacity={0.2}
+        endOpacity={0}
+        yAxisThickness={0}
+        xAxisThickness={0}
+        yAxisTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
+        xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
+        noOfSections={4}
+        animateOnDataChange
+        animationDuration={600}
+        curved
+        spacing={series.length > 7 ? 40 : 60}
+      />
     </View>
   );
 };

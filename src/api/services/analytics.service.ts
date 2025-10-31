@@ -43,14 +43,26 @@ function resolveRange(period: AnalyticsPeriod): DateRange {
 
 async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
   const { startDate, endDate } = resolveRange(period);
-  const { data } = await apiClient.get<TrendPoint[]>(MY_FOOD_ENDPOINTS.NUTRITION_TREND, {
+  const { data } = await apiClient.get<any>(MY_FOOD_ENDPOINTS.NUTRITION_TREND, {
     params: { startDate, endDate, metric: 'CALORIES' },
   });
   if (__DEV__) {
     console.log('[AnalyticsTrend] range:', { startDate, endDate, metric: 'CALORIES' });
     console.log('[AnalyticsTrend] response:', data);
   }
-  return data;
+  // The backend may return either an array of points or an object
+  // with a dailyValues field. Normalize to TrendPoint[] with calories filled.
+  if (Array.isArray(data)) {
+    return data as TrendPoint[];
+  }
+  const dailyValues: Array<{ date: string; value: number }> = data?.dailyValues || [];
+  return dailyValues.map((p) => ({
+    date: p.date,
+    calories: p.value ?? 0,
+    protein: 0,
+    fat: 0,
+    carbs: 0,
+  }));
 }
 
 async function fetchStatistics(period: AnalyticsPeriod): Promise<SummaryKpi> {
@@ -90,12 +102,25 @@ async function fetchDistribution(
     console.log('[AnalyticsDistribution] response:', data);
   }
 
-  // Attempt to map common shapes; fallback to zeros if absent
-  const macro: MacroShare = data?.macroShare || {
-    proteinPct: 0,
-    fatPct: 0,
-    carbsPct: 0,
-  };
+  // Attempt to map common shapes; if not provided, derive macro share
+  // from average grams using kcal factors (P=4, C=4, F=9)
+  let macro: MacroShare | undefined = data?.macroShare;
+  if (!macro) {
+    const avgP: number = data?.averageProteins ?? 0;
+    const avgF: number = data?.averageFats ?? 0;
+    const avgC: number = data?.averageCarbohydrates ?? 0;
+    const kcalFromP = avgP * 4;
+    const kcalFromF = avgF * 9;
+    const kcalFromC = avgC * 4;
+    const total = kcalFromP + kcalFromF + kcalFromC;
+    macro = total > 0
+      ? {
+          proteinPct: kcalFromP / total,
+          fatPct: kcalFromF / total,
+          carbsPct: kcalFromC / total,
+        }
+      : { proteinPct: 0, fatPct: 0, carbsPct: 0 };
+  }
 
   const byMealType = data?.byMealType || [];
   return { macroShare: macro, byMealType };

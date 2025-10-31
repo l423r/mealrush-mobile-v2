@@ -83,6 +83,9 @@ export class AnalyticsStore {
 
   // Selectors / computed helpers
   getTrendSeries(metric: TrendMetric): { x: string; y: number }[] {
+    if (!Array.isArray(this.trend) || this.trend.length === 0) {
+      return [];
+    }
     return this.trend.map((p) => ({
       x: p.date,
       y:

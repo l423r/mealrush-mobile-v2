@@ -10,14 +10,17 @@ import {
 import { observer } from 'mobx-react-lite';
 import AnalyticsStore from '../../stores/AnalyticsStore';
 import { AnalyticsHeader } from '../../components/analytics/AnalyticsHeader';
-import type { AnalyticsPeriod } from '../../types/analytics.types';
+import type { AnalyticsPeriod, TrendMetric } from '../../types/analytics.types';
 import { colors, spacing, componentSpacing, typography } from '../../theme';
+import AnalyticsTrendChart from '../../components/analytics/AnalyticsTrendChart';
+import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribution';
 
 type TabKey = 'trend' | 'distributions';
 
 const AnalyticsScreen: React.FC = observer(() => {
   const store = useMemo(() => new AnalyticsStore(), []);
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
+  const [metric, setMetric] = useState<TrendMetric>('calories');
 
   useEffect(() => {
     store.fetchAllForPeriod();
@@ -59,13 +62,19 @@ const AnalyticsScreen: React.FC = observer(() => {
 
       <View style={styles.section}>
         {activeTab === 'trend' ? (
-          <Text style={styles.placeholder}>
-            График тренда появится после реализации
-          </Text>
+          store.trend.length === 0 ? (
+            <Text style={styles.placeholder}>Недостаточно данных за период</Text>
+          ) : (
+            <AnalyticsTrendChart
+              metric={metric}
+              onMetricChange={setMetric}
+              series={store.getTrendSeries(metric)}
+            />
+          )
+        ) : store.distribution == null ? (
+          <Text style={styles.placeholder}>Недостаточно данных за период</Text>
         ) : (
-          <Text style={styles.placeholder}>
-            Диаграммы распределений появятся после реализации
-          </Text>
+          <AnalyticsDistribution data={store.distribution} />
         )}
       </View>
     </ScrollView>
