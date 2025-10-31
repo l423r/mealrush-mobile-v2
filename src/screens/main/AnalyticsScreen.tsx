@@ -15,10 +15,12 @@ import { colors, spacing, componentSpacing, typography } from '../../theme';
 import AnalyticsTrendChart from '../../components/analytics/AnalyticsTrendChart';
 import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribution';
 import Header from '../../components/common/Header';
+import { useStores } from '../../stores';
 
 type TabKey = 'trend' | 'distributions';
 
 const AnalyticsScreen: React.FC = observer(() => {
+  const { profileStore } = useStores();
   const store = useMemo(() => new AnalyticsStore(), []);
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [metric, setMetric] = useState<TrendMetric>('calories');
@@ -47,6 +49,7 @@ const AnalyticsScreen: React.FC = observer(() => {
         period={store.period}
         onChangePeriod={onChangePeriod}
         kpi={store.summaryKpi}
+        targetCalories={profileStore.profile?.dayLimitCal}
       />
 
       <View style={styles.tabbar}>
