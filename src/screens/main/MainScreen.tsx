@@ -7,7 +7,6 @@ import {
   TouchableOpacity,
   FlatList,
   RefreshControl,
-  Platform,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -26,7 +25,7 @@ import { calculateProgressPercentage } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
-import DateTimePicker from '@react-native-community/datetimepicker';
+import CalendarModal from '../../components/common/CalendarModal';
 
 type MainScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -76,15 +75,6 @@ const MainScreen: React.FC = observer(() => {
 
   const handleCalendarPress = () => {
     setShowDatePicker(true);
-  };
-
-  const handleCalendarChange = (event: any, selectedDate?: Date) => {
-    // On Android, picker closes after selection; keep open on iOS if needed
-    setShowDatePicker(Platform.OS === 'ios');
-    if (selectedDate) {
-      mealStore.setSelectedDate(selectedDate);
-      loadData();
-    }
   };
 
   const renderMealCard = ({ item: meal }: { item: any }) => {
@@ -153,15 +143,16 @@ const MainScreen: React.FC = observer(() => {
         }
       />
 
-      {showDatePicker && (
-        <DateTimePicker
-          value={mealStore.selectedDate}
-          mode="date"
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleCalendarChange}
-          maximumDate={new Date()}
-        />
-      )}
+      <CalendarModal
+        visible={showDatePicker}
+        selectedDate={mealStore.selectedDate}
+        onClose={() => setShowDatePicker(false)}
+        onDateSelect={(date) => {
+          mealStore.setSelectedDate(date);
+          loadData();
+        }}
+        maximumDate={new Date()}
+      />
 
       <ScrollView
         style={styles.content}
