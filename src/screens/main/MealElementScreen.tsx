@@ -60,6 +60,7 @@ const MealElementScreen: React.FC = observer(() => {
   const item = route.params?.item;
   const isEditing = !!item && 'mealId' in item; // MealElement has mealId
   const isFromSearch = route.params?.fromSearch;
+  const readOnly = route.params?.readOnly || false;
 
   const [mealType, setMealType] = useState<
     'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'
@@ -206,6 +207,7 @@ const MealElementScreen: React.FC = observer(() => {
   };
 
   const getTitle = () => {
+    if (readOnly) return 'Просмотр продукта';
     if (isEditing) return 'Редактирование блюда';
     if (isFromSearch) return 'Добавление блюда';
     return 'Создание блюда';
@@ -267,6 +269,7 @@ const MealElementScreen: React.FC = observer(() => {
                       keyboardType="numeric"
                       containerStyle={styles.topRowInput}
                       inputStyle={styles.numericInput}
+                      editable={!readOnly}
                     />
                   )}
                 />
@@ -285,6 +288,7 @@ const MealElementScreen: React.FC = observer(() => {
                       keyboardType="numeric"
                       containerStyle={styles.topRowInput}
                       inputStyle={styles.numericInput}
+                      editable={!readOnly}
                     />
                   )}
                 />
@@ -306,6 +310,7 @@ const MealElementScreen: React.FC = observer(() => {
                       keyboardType="numeric"
                       containerStyle={styles.bottomRowInput}
                       inputStyle={styles.numericInput}
+                      editable={!readOnly}
                     />
                   )}
                 />
@@ -324,6 +329,7 @@ const MealElementScreen: React.FC = observer(() => {
                       keyboardType="numeric"
                       containerStyle={styles.bottomRowInput}
                       inputStyle={styles.numericInput}
+                      editable={!readOnly}
                     />
                   )}
                 />
@@ -342,6 +348,7 @@ const MealElementScreen: React.FC = observer(() => {
                       keyboardType="numeric"
                       containerStyle={styles.bottomRowInput}
                       inputStyle={styles.numericInput}
+                      editable={!readOnly}
                     />
                   )}
                 />
@@ -349,7 +356,7 @@ const MealElementScreen: React.FC = observer(() => {
             </View>
 
             {/* Правая часть: Тип приема пищи (вертикально) */}
-            {!isEditing && !route.params?.mealId && (
+            {!isEditing && !route.params?.mealId && !readOnly && (
               <View style={styles.mealTypeVertical}>
                 {['BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER'].map(
                   (type) => (
@@ -388,14 +395,16 @@ const MealElementScreen: React.FC = observer(() => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      <View style={styles.footer}>
-        <Button
-          title={isEditing ? 'Сохранить изменения' : 'Добавить блюдо'}
-          onPress={handleSubmit(onSubmit)}
-          disabled={!isValid || mealStore.loading}
-          loading={mealStore.loading}
-        />
-      </View>
+      {!readOnly && (
+        <View style={styles.footer}>
+          <Button
+            title={isEditing ? 'Сохранить изменения' : 'Добавить блюдо'}
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isValid || mealStore.loading}
+            loading={mealStore.loading}
+          />
+        </View>
+      )}
     </View>
   );
 });

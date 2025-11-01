@@ -9,7 +9,6 @@ import {
   Image,
   TextInput,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -32,6 +31,7 @@ import InsightCard from '../../components/recommendations/InsightCard';
 import RecommendedProductCard from '../../components/recommendations/RecommendedProductCard';
 import SectionHeader from '../../components/recommendations/SectionHeader';
 import RecommendationInfoSheet from '../../components/recommendations/RecommendationInfoSheet';
+import MealSelectorDialog from '../../components/common/MealSelectorDialog';
 
 type ProductsScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -40,7 +40,7 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<
 
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
-  const { productStore, recommendationsStore } = useStores();
+  const { productStore, recommendationsStore, mealStore } = useStores();
 
   const [activeTab, setActiveTab] = useState<
     'my' | 'favorites' | 'search' | 'reco'
@@ -51,6 +51,8 @@ const ProductsScreen: React.FC = observer(() => {
   const [infoSheetType, setInfoSheetType] = useState<
     'products' | 'mealPicks' | 'insights'
   >('products');
+  const [showMealSelector, setShowMealSelector] = useState(false);
+  const [selectedProductForAdd, setSelectedProductForAdd] = useState<ProductResponse | null>(null);
 
   // Initial load on mount
   useEffect(() => {
@@ -128,22 +130,29 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const handleAddProductToMeal = (product: ProductResponse) => {
-    Alert.alert(
-      'Добавить продукт',
-      `${product.name}\nУкажите количество (${product.measurementType === 'GRAM' ? 'г' : 'мл'})`,
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Добавить',
-          onPress: () => {
-            navigation.navigate('Search', {
-              preselectedProduct: product,
-              quantity: Number(product.quantity) || 100,
-            });
-          },
-        },
-      ]
-    );
+    setSelectedProductForAdd(product);
+    setShowMealSelector(true);
+  };
+
+  const handleMealSelect = (mealId: number) => {
+    if (selectedProductForAdd) {
+      navigation.navigate('MealElement', {
+        item: selectedProductForAdd,
+        mealId: mealId,
+        date: mealStore.selectedDate.toISOString(),
+        fromSearch: true,
+      });
+    }
+  };
+
+  const handleCreateNewMeal = () => {
+    if (selectedProductForAdd) {
+      navigation.navigate('MealElement', {
+        item: selectedProductForAdd,
+        date: mealStore.selectedDate.toISOString(),
+        fromSearch: true,
+      });
+    }
   };
 
   const showInfo = (type: 'products' | 'mealPicks' | 'insights') => {
@@ -152,7 +161,12 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const handleProductPress = (product: any) => {
-    navigation.navigate('Product', { product });
+    // Для избранного и рекомендаций - только просмотр
+    const readOnly = activeTab === 'favorites' || activeTab === 'reco';
+    navigation.navigate('MealElement', { 
+      item: product,
+      readOnly: readOnly,
+    });
   };
 
   const handleAddProduct = () => {
@@ -160,10 +174,13 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const renderProductItem = ({ item: product }: { item: any }) => {
+    const showAddButton = activeTab === 'favorites' || activeTab === 'my';
+    
     return (
       <TouchableOpacity
         style={styles.productCard}
         onPress={() => handleProductPress(product)}
+        activeOpacity={0.7}
       >
         {product.imageUrl ? (
           <Image
@@ -194,7 +211,19 @@ const ProductsScreen: React.FC = observer(() => {
           )}
         </View>
 
-        <Text style={styles.productArrow}>›</Text>
+        {showAddButton ? (
+          <TouchableOpacity
+            style={styles.addButtonSmall}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleAddProductToMeal(product);
+            }}
+          >
+            <Text style={styles.addButtonSmallIcon}>+</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.productArrow}>›</Text>
+        )}
       </TouchableOpacity>
     );
   };
@@ -437,6 +466,8 @@ const ProductsScreen: React.FC = observer(() => {
                     key={product.id}
                     product={product}
                     onPress={() => handleProductPress(product)}
+                    onAddToMeal={() => handleAddProductToMeal(product)}
+                    showAddButton
                   />
                 ))}
                 {recommendationsStore.hasMoreProducts && (
@@ -488,6 +519,18 @@ const ProductsScreen: React.FC = observer(() => {
         onClose={() => setInfoSheetVisible(false)}
         userGoal="SAVE"
         preferredCategories={[]}
+      />
+
+      {/* Meal Selector Dialog */}
+      <MealSelectorDialog
+        visible={showMealSelector}
+        meals={mealStore.mealsForSelectedDate}
+        onClose={() => {
+          setShowMealSelector(false);
+          setSelectedProductForAdd(null);
+        }}
+        onMealSelect={handleMealSelect}
+        onCreateNew={handleCreateNewMeal}
       />
     </View>
   );
@@ -604,6 +647,21 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: colors.text.secondary,
     marginLeft: spacing.sm,
+  },
+  addButtonSmall: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+    ...shadows.md,
+  },
+  addButtonSmallIcon: {
+    fontSize: 24,
+    color: colors.background.paper,
+    fontWeight: '600',
   },
   emptyState: {
     alignItems: 'center',

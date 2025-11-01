@@ -131,10 +131,11 @@ export type MainStackParamList = {
     meal: Meal;
   };
   MealElement: {
-    item?: Product | MealElement;
+    item?: Product | MealElement | ProductResponse;
     date?: string;
     mealId?: number;
     fromSearch?: boolean;
+    readOnly?: boolean;
   };
   PhotoAnalysis: {
     analysisResult: PhotoAnalysisResponse;
