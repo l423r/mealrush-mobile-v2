@@ -237,14 +237,8 @@ export interface MealElementUpdate {
   calories?: number;
 }
 
-// Photo Analysis types
-export interface PhotoAnalysisRequest {
-  imageBase64: string;
-  language?: string;
-  comment?: string;
-}
-
-export interface PhotoAnalysisIngredient {
+// Analysis types (shared by photo, text, and audio analysis)
+export interface AnalysisIngredient {
   name: string;
   quantity: number;
   measurementType: MeasurementType;
@@ -254,8 +248,8 @@ export interface PhotoAnalysisIngredient {
   calories: number;
 }
 
-export interface PhotoAnalysisResponse {
-  ingredients: PhotoAnalysisIngredient[];
+export interface AnalysisResponse {
+  ingredients: AnalysisIngredient[];
   totalNutrients: {
     proteins: number;
     fats: number;
@@ -264,6 +258,30 @@ export interface PhotoAnalysisResponse {
   };
   confidence: number;
   notes?: string;
+}
+
+// Photo Analysis types
+export interface PhotoAnalysisRequest {
+  imageBase64: string;
+  language?: string;
+  comment?: string;
+}
+
+// Alias for backward compatibility
+export type PhotoAnalysisIngredient = AnalysisIngredient;
+export type PhotoAnalysisResponse = AnalysisResponse;
+
+// Text Analysis types
+export interface TextAnalysisRequest {
+  description: string;
+  language?: string;
+}
+
+// Audio Analysis types
+export interface AudioAnalysisRequest {
+  audioBase64: string;
+  language?: string;
+  comment?: string;
 }
 
 // Device types

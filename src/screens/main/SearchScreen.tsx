@@ -34,6 +34,8 @@ import Loading from '../../components/common/Loading';
 import { CachedImage } from '../../components/common/CachedImage';
 import ImageSourceDialog from '../../components/common/ImageSourceDialog';
 import PhotoAnalysisDialog from '../../components/common/PhotoAnalysisDialog';
+import TextAnalysisDialog from '../../components/common/TextAnalysisDialog';
+import AudioRecordDialog from '../../components/common/AudioRecordDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert, useImageSource } from '../../hooks/useAlert';
 
@@ -56,6 +58,8 @@ const SearchScreen: React.FC = observer(() => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [showPhotoAnalysisDialog, setShowPhotoAnalysisDialog] = useState(false);
+  const [showTextAnalysisDialog, setShowTextAnalysisDialog] = useState(false);
+  const [showAudioRecordDialog, setShowAudioRecordDialog] = useState(false);
 
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -198,6 +202,75 @@ const SearchScreen: React.FC = observer(() => {
         handleGallery();
       }
     });
+  };
+
+  const handleTextAnalysisPress = () => {
+    setShowTextAnalysisDialog(true);
+  };
+
+  const handleStartTextAnalysis = async (description: string, language: string) => {
+    setShowTextAnalysisDialog(false);
+
+    try {
+      setIsAnalyzing(true);
+
+      const analysisResult = await mealStore.analyzeText(description, language);
+
+      setIsAnalyzing(false);
+
+      navigation.navigate('TextAnalysis', {
+        analysisResult,
+        description,
+        mealId: route.params?.mealId,
+        date: route.params?.date,
+      });
+    } catch {
+      setIsAnalyzing(false);
+      const errorMessage =
+        mealStore.textAnalysisError ||
+        'Не удалось проанализировать описание';
+      showError('Ошибка анализа', errorMessage);
+    }
+  };
+
+  const handleAudioAnalysisPress = () => {
+    setShowAudioRecordDialog(true);
+  };
+
+  const handleStartAudioAnalysis = async (
+    audioBase64: string,
+    language: string,
+    comment?: string
+  ) => {
+    setShowAudioRecordDialog(false);
+
+    try {
+      setIsAnalyzing(true);
+
+      const analysisResult = await mealStore.analyzeAudio(
+        audioBase64,
+        language,
+        comment
+      );
+
+      setIsAnalyzing(false);
+
+      // Extract transcription from notes field
+      const transcription = analysisResult.notes || '';
+
+      navigation.navigate('AudioAnalysis', {
+        analysisResult,
+        transcription,
+        mealId: route.params?.mealId,
+        date: route.params?.date,
+      });
+    } catch {
+      setIsAnalyzing(false);
+      const errorMessage =
+        mealStore.audioAnalysisError ||
+        'Не удалось проанализировать аудио';
+      showError('Ошибка анализа', errorMessage);
+    }
   };
 
   const handleCreateProductPress = () => {
@@ -382,8 +455,22 @@ const SearchScreen: React.FC = observer(() => {
             style={styles.quickActionButton}
           />
           <Button
-            title="📸 Анализ фото"
+            title="📸 Фото"
             onPress={handlePhotoAnalysisPress}
+            variant="outline"
+            size="small"
+            style={styles.quickActionButton}
+          />
+          <Button
+            title="✍️ Текст"
+            onPress={handleTextAnalysisPress}
+            variant="outline"
+            size="small"
+            style={styles.quickActionButton}
+          />
+          <Button
+            title="🎤 Голос"
+            onPress={handleAudioAnalysisPress}
             variant="outline"
             size="small"
             style={styles.quickActionButton}
@@ -399,8 +486,12 @@ const SearchScreen: React.FC = observer(() => {
 
         {/* Products List */}
         {(() => {
-          if (isAnalyzing || mealStore.analyzingPhoto) {
-            return <Loading message="Анализ фотографии..." />;
+          if (isAnalyzing || mealStore.analyzingPhoto || mealStore.analyzingText || mealStore.analyzingAudio) {
+            let message = 'Анализ...';
+            if (mealStore.analyzingPhoto) message = 'Анализ фотографии...';
+            if (mealStore.analyzingText) message = 'Анализ текста...';
+            if (mealStore.analyzingAudio) message = 'Анализ аудио...';
+            return <Loading message={message} />;
           }
           if (isSearching) {
             return <Loading message="Поиск продуктов..." />;
@@ -433,6 +524,20 @@ const SearchScreen: React.FC = observer(() => {
         }}
         onAnalyze={handleStartAnalysis}
         analyzing={isAnalyzing || mealStore.analyzingPhoto}
+      />
+
+      <TextAnalysisDialog
+        visible={showTextAnalysisDialog}
+        onClose={() => setShowTextAnalysisDialog(false)}
+        onAnalyze={handleStartTextAnalysis}
+        analyzing={isAnalyzing || mealStore.analyzingText}
+      />
+
+      <AudioRecordDialog
+        visible={showAudioRecordDialog}
+        onClose={() => setShowAudioRecordDialog(false)}
+        onAnalyze={handleStartAudioAnalysis}
+        analyzing={isAnalyzing || mealStore.analyzingAudio}
       />
 
       <AlertDialog

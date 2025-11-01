@@ -1135,7 +1135,7 @@ GET /my-food/images/{filename}
 
 ---
 
-## 11. Анализ фото (AI)
+## 11. Анализ блюд с помощью AI
 
 ### 11.1. Анализ блюда по фотографии
 
@@ -1210,6 +1210,158 @@ Headers: Authorization: Bearer {token}
 **Примечания:**
 - Клиент должен позволить пользователю откорректировать данные перед сохранением
 - Комментарий пользователя помогает AI более точно определить ингредиенты и их количество
+
+### 11.2. Анализ блюда по текстовому описанию
+
+**Endpoint:**
+```
+POST /my-food/meal_element/analyze-text
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+  "description": "Овсяная каша на молоке 200 грамм, банан 1 штука, мед чайная ложка",
+  "language": "ru"
+}
+```
+
+**Поля:**
+- `description` (обязательное) - текстовое описание блюда с ингредиентами (1-1000 символов)
+- `language` (опциональное) - язык для анализа (`ru`/`en`, по умолчанию `ru`)
+
+**Response (200 OK):**
+```json
+{
+  "ingredients": [
+    {
+      "name": "Овсяная каша на молоке",
+      "quantity": 200,
+      "measurement_type": "GRAM",
+      "proteins": 6.8,
+      "fats": 5.2,
+      "carbohydrates": 28.4,
+      "calories": 176.0
+    },
+    {
+      "name": "Банан",
+      "quantity": 120,
+      "measurement_type": "GRAM",
+      "proteins": 1.3,
+      "fats": 0.4,
+      "carbohydrates": 26.4,
+      "calories": 108.0
+    },
+    {
+      "name": "Мед",
+      "quantity": 10,
+      "measurement_type": "GRAM",
+      "proteins": 0.1,
+      "fats": 0.0,
+      "carbohydrates": 8.2,
+      "calories": 32.0
+    }
+  ],
+  "total_nutrients": {
+    "proteins": 8.2,
+    "fats": 5.6,
+    "carbohydrates": 63.0,
+    "calories": 316.0
+  },
+  "confidence": 0.78,
+  "notes": "Количество оценено на основе стандартных порций"
+}
+```
+
+**Errors:**
+- 400: Описание не предоставлено или невалидный формат
+- 408: Timeout (> 40 сек)
+- 503: OpenAI API недоступен
+
+**Примечания:**
+- Чем детальнее описание, тем точнее результат
+- Рекомендуется указывать количество ингредиентов в описании
+- Клиент должен позволить пользователю откорректировать данные перед сохранением
+
+### 11.3. Анализ блюда по аудио описанию
+
+**Endpoint:**
+```
+POST /my-food/meal_element/analyze-audio
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+  "audioBase64": "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAASW5mb...",
+  "language": "ru",
+  "comment": "Примерно стандартная порция"
+}
+```
+
+**Поля:**
+- `audioBase64` (обязательное) - base64 строка аудио файла
+- `language` (опциональное) - язык для транскрипции (`ru`/`en`, по умолчанию `ru`)
+- `comment` (опциональное) - дополнительный контекст для анализа (макс. 500 символов)
+
+**Поддерживаемые форматы аудио:**
+- mp3
+- wav
+- m4a
+- webm
+
+**Максимальный размер:** 25MB
+
+**Процесс обработки (2 этапа):**
+1. **Whisper API** транскрибирует аудио в текст
+2. **GPT API** анализирует текст и определяет КБЖУ
+
+**Response (200 OK):**
+```json
+{
+  "ingredients": [
+    {
+      "name": "Гречка отварная",
+      "quantity": 150,
+      "measurement_type": "GRAM",
+      "proteins": 6.3,
+      "fats": 1.65,
+      "carbohydrates": 31.95,
+      "calories": 165.0
+    },
+    {
+      "name": "Куриная котлета",
+      "quantity": 100,
+      "measurement_type": "GRAM",
+      "proteins": 18.5,
+      "fats": 8.2,
+      "carbohydrates": 2.1,
+      "calories": 152.0
+    }
+  ],
+  "total_nutrients": {
+    "proteins": 24.8,
+    "fats": 9.85,
+    "carbohydrates": 34.05,
+    "calories": 317.0
+  },
+  "confidence": 0.72,
+  "notes": "Транскрипция: 'Сегодня на обед гречка с куриной котлетой, примерно 150 грамм каши и 100 грамм котлеты'"
+}
+```
+
+**Errors:**
+- 400: Аудио не предоставлено или невалидный формат
+- 408: Timeout (> 40 сек, учитывая транскрипцию и анализ)
+- 503: OpenAI API недоступен
+
+**Примечания:**
+- Для лучшего результата говорите четко и указывайте количество
+- Процесс занимает больше времени чем фото/текст анализ (транскрипция + анализ)
+- В поле `notes` может быть включена транскрипция для проверки
+- Клиент должен позволить пользователю откорректировать данные перед сохранением
 
 ---
 
@@ -1343,6 +1495,104 @@ POST /my-food/meal_element (для каждого ингредиента или 
 // Блюдо добавлено
 ```
 
+### 12.5. Анализ блюда по текстовому описанию
+
+```javascript
+// 1. Пользователь вводит текстовое описание блюда
+
+// 2. Отправка на анализ
+POST /my-food/meal_element/analyze-text
+{
+  "description": "Овсяная каша на молоке 200 грамм с бананом и ложкой меда",
+  "language": "ru"
+}
+→ Response: { 
+  ingredients: [
+    { name: "Овсяная каша на молоке", quantity: 200, ... },
+    { name: "Банан", quantity: 120, ... },
+    { name: "Мед", quantity: 10, ... }
+  ],
+  total_nutrients: { proteins: 8.2, fats: 5.6, carbohydrates: 63.0, calories: 316.0 }
+}
+
+// 3. Пользователь корректирует данные (опционально)
+
+// 4. Создание meal и meal_element
+POST /my-food/meal
+{
+  "mealType": "BREAKFAST",
+  "dateTime": "2024-10-20T08:30:00"
+}
+→ Response: { id: 1, ... }
+
+// Создание элементов из каждого ингредиента или суммарно
+POST /my-food/meal_element
+{
+  "mealId": 1,
+  "name": "Овсяная каша с бананом и медом",
+  "quantity": "330",
+  "proteins": 8.2,
+  "fats": 5.6,
+  "carbohydrates": 63.0,
+  "calories": 316.0,
+  "measurementType": "GRAM",
+  ...
+}
+→ MealElement created
+
+// Блюдо добавлено
+```
+
+### 12.6. Анализ блюда по аудио описанию
+
+```javascript
+// 1. Пользователь записал аудио описание блюда, конвертировал в base64
+
+// 2. Отправка на анализ (двухэтапный процесс: Whisper → GPT)
+POST /my-food/meal_element/analyze-audio
+{
+  "audioBase64": "data:audio/mp3;base64,...",
+  "language": "ru",
+  "comment": "Обычная порция"
+}
+→ Response: {
+  ingredients: [
+    { name: "Гречка отварная", quantity: 150, ... },
+    { name: "Куриная котлета", quantity: 100, ... }
+  ],
+  total_nutrients: { proteins: 24.8, fats: 9.85, carbohydrates: 34.05, calories: 317.0 },
+  confidence: 0.72,
+  notes: "Транскрипция: 'На обед гречка с куриной котлетой, грамм 150 каши и сто грамм котлеты'"
+}
+
+// 3. Пользователь проверяет транскрипцию и корректирует данные (опционально)
+
+// 4. Создание meal и meal_element
+POST /my-food/meal
+{
+  "mealType": "LUNCH",
+  "dateTime": "2024-10-20T13:00:00"
+}
+→ Response: { id: 2, ... }
+
+// Создание элементов
+POST /my-food/meal_element
+{
+  "mealId": 2,
+  "name": "Гречка с куриной котлетой",
+  "quantity": "250",
+  "proteins": 24.8,
+  "fats": 9.85,
+  "carbohydrates": 34.05,
+  "calories": 317.0,
+  "measurementType": "GRAM",
+  ...
+}
+→ MealElement created
+
+// Блюдо добавлено
+```
+
 ---
 
 ## 13. Обработка ошибок (Best Practices для клиента)
@@ -1447,7 +1697,27 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.1.0 (текущая)
+### Версия 2.2.0 (текущая)
+
+Расширенные AI возможности для анализа блюд.
+
+**Новые эндпоинты:**
+- `POST /my-food/meal_element/analyze-text` - анализ блюда по текстовому описанию
+- `POST /my-food/meal_element/analyze-audio` - анализ блюда по аудио описанию (Whisper + GPT)
+
+**Изменения:**
+- Добавлен анализ блюд по текстовому описанию с помощью GPT
+- Добавлен анализ блюд по аудио описанию (двухэтапный процесс: Whisper API для транскрипции, затем GPT для анализа КБЖУ)
+- Поддержка аудио форматов: mp3, wav, m4a, webm (макс. 25MB)
+- Все три типа анализа (фото, текст, аудио) возвращают единый формат `AnalysisResponse`
+- Переименован `PhotoAnalysisResponse` → `AnalysisResponse` для отражения универсального использования
+- Обновлен Swagger tag с "Photo Analysis" на "AI Analysis" для контроллера
+
+**Примечание:** Формат ответа API не изменился, только название DTO класса в backend коде.
+
+---
+
+### Версия 2.1.0
 
 Новые возможности метрик и рекомендаций.
 
@@ -1780,3 +2050,4 @@ Notes:
 
 **Версия:** 1.0  
 **Дата:** 20 октября 2024
+

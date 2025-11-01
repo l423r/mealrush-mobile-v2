@@ -3,7 +3,7 @@ import type {
   Product,
   MealElement,
   Meal,
-  PhotoAnalysisResponse,
+  AnalysisResponse,
   ProductResponse,
 } from './api.types';
 
@@ -138,8 +138,20 @@ export type MainStackParamList = {
     readOnly?: boolean;
   };
   PhotoAnalysis: {
-    analysisResult: PhotoAnalysisResponse;
+    analysisResult: AnalysisResponse;
     imageUri: string;
+    mealId?: number;
+    date?: string;
+  };
+  TextAnalysis: {
+    analysisResult: AnalysisResponse;
+    description: string;
+    mealId?: number;
+    date?: string;
+  };
+  AudioAnalysis: {
+    analysisResult: AnalysisResponse;
+    transcription: string;
     mealId?: number;
     date?: string;
   };

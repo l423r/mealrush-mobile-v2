@@ -8,7 +8,9 @@ import type {
   MealElementUpdate,
   PaginatedResponse,
   PhotoAnalysisRequest,
-  PhotoAnalysisResponse,
+  AnalysisResponse,
+  TextAnalysisRequest,
+  AudioAnalysisRequest,
 } from '../../types/api.types';
 
 export const mealService = {
@@ -50,8 +52,20 @@ export const mealService = {
     apiClient.delete(`${MY_FOOD_ENDPOINTS.MEAL_ELEMENTS}/${id}`),
 
   analyzePhoto: (request: PhotoAnalysisRequest) =>
-    apiClient.post<PhotoAnalysisResponse>(
+    apiClient.post<AnalysisResponse>(
       MY_FOOD_ENDPOINTS.MEAL_ELEMENT_ANALYZE_PHOTO,
+      request
+    ),
+
+  analyzeText: (request: TextAnalysisRequest) =>
+    apiClient.post<AnalysisResponse>(
+      MY_FOOD_ENDPOINTS.MEAL_ELEMENT_ANALYZE_TEXT,
+      request
+    ),
+
+  analyzeAudio: (request: AudioAnalysisRequest) =>
+    apiClient.post<AnalysisResponse>(
+      MY_FOOD_ENDPOINTS.MEAL_ELEMENT_ANALYZE_AUDIO,
       request
     ),
 };

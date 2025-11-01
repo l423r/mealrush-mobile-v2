@@ -47,6 +47,8 @@ export const MY_FOOD_ENDPOINTS = {
   MEAL_ELEMENTS: '/meal_element',
   MEAL_ELEMENTS_BY_MEAL: '/meal_element/meal',
   MEAL_ELEMENT_ANALYZE_PHOTO: '/meal_element/analyze-photo',
+  MEAL_ELEMENT_ANALYZE_TEXT: '/meal_element/analyze-text',
+  MEAL_ELEMENT_ANALYZE_AUDIO: '/meal_element/analyze-audio',
 
   // Favorites
   FAVORITES: '/favorite',
@@ -72,3 +74,5 @@ export const MY_FOOD_ENDPOINTS = {
 // Request timeouts
 export const REQUEST_TIMEOUT = 30000;
 export const PHOTO_ANALYSIS_TIMEOUT = 40000;
+export const TEXT_ANALYSIS_TIMEOUT = 40000;
+export const AUDIO_ANALYSIS_TIMEOUT = 40000;
