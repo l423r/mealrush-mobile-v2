@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
@@ -37,6 +38,7 @@ import PhotoAnalysisDialog from '../../components/common/PhotoAnalysisDialog';
 import TextAnalysisDialog from '../../components/common/TextAnalysisDialog';
 import AudioRecordDialog from '../../components/common/AudioRecordDialog';
 import AlertDialog from '../../components/common/AlertDialog';
+import QuickActionCard from '../../components/common/QuickActionCard';
 import { useAlert, useImageSource } from '../../hooks/useAlert';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -446,43 +448,38 @@ const SearchScreen: React.FC = observer(() => {
         </View>
 
         {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <Button
-            title="📷 Сканер"
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.quickActionsContainer}
+          contentContainerStyle={styles.quickActionsContent}
+        >
+          <QuickActionCard
+            icon="qr-code-scanner"
+            label="Сканер"
             onPress={handleScannerPress}
-            variant="outline"
-            size="small"
-            style={styles.quickActionButton}
           />
-          <Button
-            title="📸 Фото"
+          <QuickActionCard
+            icon="photo-camera"
+            label="Фото"
             onPress={handlePhotoAnalysisPress}
-            variant="outline"
-            size="small"
-            style={styles.quickActionButton}
           />
-          <Button
-            title="✍️ Текст"
+          <QuickActionCard
+            icon="text-fields"
+            label="Текст"
             onPress={handleTextAnalysisPress}
-            variant="outline"
-            size="small"
-            style={styles.quickActionButton}
           />
-          <Button
-            title="🎤 Голос"
+          <QuickActionCard
+            icon="mic"
+            label="Голос"
             onPress={handleAudioAnalysisPress}
-            variant="outline"
-            size="small"
-            style={styles.quickActionButton}
           />
-          <Button
-            title="➕ Создать"
+          <QuickActionCard
+            icon="add-circle-outline"
+            label="Создать"
             onPress={handleCreateProductPress}
-            variant="outline"
-            size="small"
-            style={styles.quickActionButton}
           />
-        </View>
+        </ScrollView>
 
         {/* Products List */}
         {(() => {
@@ -603,13 +600,13 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
   },
-  quickActions: {
-    flexDirection: 'row',
-    padding: spacing.lg,
-    gap: spacing.sm,
+  quickActionsContainer: {
+    maxHeight: 100,
   },
-  quickActionButton: {
-    flex: 1,
+  quickActionsContent: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.md,
   },
   listContainer: {
     padding: spacing.lg,
