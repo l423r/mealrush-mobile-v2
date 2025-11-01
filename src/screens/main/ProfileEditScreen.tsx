@@ -50,7 +50,6 @@ const ProfileEditScreen: React.FC = observer(() => {
     mode: 'onChange',
     defaultValues: {
       height: profileStore.profile?.height || 170,
-      weight: profileStore.profile?.weight || 70,
       gender: profileStore.profile?.gender || 'MALE',
       birthday:
         profileStore.profile?.birthday ||
@@ -133,21 +132,12 @@ const ProfileEditScreen: React.FC = observer(() => {
               )}
             />
 
-            <Controller
-              control={control}
-              name="weight"
-              render={({ field: { onChange, onBlur, value } }) => (
-                <Input
-                  label="Вес (кг)"
-                  placeholder="70"
-                  value={value?.toString() || ''}
-                  onChangeText={(text) => onChange(parseFloat(text) || 0)}
-                  onBlur={onBlur}
-                  error={errors.weight?.message}
-                  keyboardType="numeric"
-                />
-              )}
-            />
+            <View style={styles.weightNote}>
+              <Text style={styles.weightNoteIcon}>⚖️</Text>
+              <Text style={styles.weightNoteText}>
+                Вес управляется в разделе "Отслеживание веса"
+              </Text>
+            </View>
 
             <Controller
               control={control}
@@ -402,6 +392,23 @@ const styles = StyleSheet.create({
     ...typography.body2,
     color: colors.text.primary,
     marginBottom: spacing.sm,
+  },
+  weightNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.primary + '10',
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  weightNoteIcon: {
+    fontSize: 20,
+    marginRight: spacing.sm,
+  },
+  weightNoteText: {
+    ...typography.body2,
+    color: colors.primary,
+    flex: 1,
   },
   pickerButton: {
     flexDirection: 'row',

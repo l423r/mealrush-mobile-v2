@@ -38,11 +38,12 @@ export const userProfileSchema = yup.object().shape({
     .min(100, 'Рост должен быть не менее 100 см')
     .max(250, 'Рост должен быть не более 250 см')
     .required('Рост обязателен'),
+  // Weight is now managed separately through weight history
   weight: yup
     .number()
     .min(30, 'Вес должен быть не менее 30 кг')
     .max(300, 'Вес должен быть не более 300 кг')
-    .required('Вес обязателен'),
+    .optional(),
   gender: yup
     .string()
     .oneOf(['MALE', 'FEMALE'], 'Выберите пол')
@@ -141,3 +142,14 @@ export const validateWeight = (weight: number): boolean => {
 export const validateHeight = (height: number): boolean => {
   return height >= 100 && height <= 250;
 };
+
+// Weight entry validation schema
+export const weightEntrySchema = yup.object().shape({
+  weight: yup
+    .number()
+    .min(30, 'Вес должен быть не менее 30 кг')
+    .max(300, 'Вес должен быть не более 300 кг')
+    .required('Вес обязателен'),
+  recordedAt: yup.string().required('Дата и время обязательны'),
+  notes: yup.string().max(500, 'Заметки не должны превышать 500 символов'),
+});

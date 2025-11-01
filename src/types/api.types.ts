@@ -437,3 +437,30 @@ export interface RecommendationsProductsParams {
 export interface MealPicksParams {
   size?: number; // default decided by backend
 }
+
+// =========================
+// Weight History v2.1.0
+// =========================
+
+export interface WeightEntry {
+  id: number;
+  weight: number;
+  recordedAt: string;
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface WeightStats {
+  currentWeight: number;
+  startWeight: number;
+  totalChange: number;
+  averageWeeklyChange: number;
+  periodDays: number;
+  recordCount: number;
+}
+
+export interface WeightEntryCreate {
+  weight: number;
+  recordedAt: string;
+  notes?: string;
+}

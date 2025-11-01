@@ -140,3 +140,24 @@ export const formatValidationErrors = (
   });
   return formattedErrors;
 };
+
+// =========================
+// Weight Formatting
+// =========================
+
+// Format weight in kilograms
+export const formatWeightKg = (weight: number): string => {
+  return `${formatNumber(weight, 1)} кг`;
+};
+
+// Format weight change with sign
+export const formatWeightChange = (change: number): string => {
+  const sign = change > 0 ? '+' : '';
+  return `${sign}${formatNumber(change, 1)} кг`;
+};
+
+// Format weekly rate
+export const formatWeeklyRate = (rate: number): string => {
+  const sign = rate > 0 ? '+' : '';
+  return `${sign}${formatNumber(rate, 1)} кг/нед`;
+};

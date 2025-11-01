@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -22,11 +22,14 @@ import {
 import {
   formatTargetWeightType,
   formatActivityLevel,
+  formatWeightChange,
 } from '../../utils/formatting';
-import { getBMICategory } from '../../utils/calculations';
+import { getBMICategory, formatWeightTrend } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
+import MiniWeightChart from '../../components/weight/MiniWeightChart';
+import WeightEntryModal from '../../components/weight/WeightEntryModal';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -35,12 +38,16 @@ type ProfileScreenNavigationProp = NativeStackNavigationProp<
 
 const ProfileScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { profileStore, authStore } = useStores();
+  const { profileStore, authStore, weightStore } = useStores();
+  const [showWeightModal, setShowWeightModal] = useState(false);
 
   useEffect(() => {
     if (!profileStore.profile) {
       profileStore.getProfile();
     }
+    // Load weight data
+    weightStore.fetchLatest();
+    weightStore.fetchHistory(0, 7); // Last 7 entries for mini chart
   }, [profileStore]);
 
   const handleEditProfile = () => {
@@ -49,6 +56,19 @@ const ProfileScreen: React.FC = observer(() => {
 
   const handleSettings = () => {
     navigation.navigate('Settings');
+  };
+
+  const handleWeightClick = () => {
+    navigation.navigate('Weight');
+  };
+
+  const handleAddWeight = () => {
+    setShowWeightModal(true);
+  };
+
+  const handleWeightAdded = () => {
+    weightStore.fetchLatest();
+    weightStore.fetchHistory(0, 7);
   };
 
   const handleLogout = () => {
@@ -114,15 +134,58 @@ const ProfileScreen: React.FC = observer(() => {
           <Text style={styles.userEmail}>{authStore.user?.email}</Text>
         </View>
 
-        {/* Current Stats */}
+        {/* Weight Card - Clickable */}
+        <TouchableOpacity
+          style={styles.weightCard}
+          onPress={handleWeightClick}
+          activeOpacity={0.7}
+        >
+          <View style={styles.weightHeader}>
+            <Text style={styles.cardTitle}>Вес</Text>
+            {weightStore.weeklyChange !== null && (
+              <Text
+                style={[
+                  styles.weightTrend,
+                  {
+                    color:
+                      weightStore.weeklyChange < 0
+                        ? colors.success
+                        : colors.error,
+                  },
+                ]}
+              >
+                {formatWeightTrend(weightStore.weeklyChange)}{' '}
+                {formatWeightChange(weightStore.weeklyChange)}
+              </Text>
+            )}
+          </View>
+
+          <View style={styles.weightMain}>
+            <Text style={styles.weightValue}>{profile.weight} кг</Text>
+            <Text style={styles.weightLabel}>текущий</Text>
+          </View>
+
+          {/* Mini Chart */}
+          {weightStore.history.length >= 2 && (
+            <MiniWeightChart data={weightStore.history} />
+          )}
+
+          <TouchableOpacity
+            style={styles.quickAddButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              handleAddWeight();
+            }}
+          >
+            <Text style={styles.quickAddText}>+ Записать вес</Text>
+          </TouchableOpacity>
+        </TouchableOpacity>
+
+        {/* Current Stats - without weight */}
         <View style={styles.statsCard}>
-          <Text style={styles.cardTitle}>Текущие показатели</Text>
+          <Text style={styles.cardTitle}>Показатели</Text>
 
           <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{profile.weight}</Text>
-              <Text style={styles.statLabel}>кг</Text>
-            </View>
             <View style={styles.statItem}>
               <Text style={styles.statValue}>{profile.height}</Text>
               <Text style={styles.statLabel}>см</Text>
@@ -214,6 +277,13 @@ const ProfileScreen: React.FC = observer(() => {
           />
         </View>
       </ScrollView>
+
+      {/* Weight Entry Modal */}
+      <WeightEntryModal
+        visible={showWeightModal}
+        onClose={() => setShowWeightModal(false)}
+        onSuccess={handleWeightAdded}
+      />
     </View>
   );
 });
@@ -258,8 +328,54 @@ const styles = StyleSheet.create({
     ...typography.body2,
     color: colors.text.secondary,
   },
-  statsCard: {
+  weightCard: {
     margin: spacing.lg,
+    marginBottom: spacing.md,
+    padding: spacing.xl,
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.xl,
+    borderWidth: 0,
+    ...shadows.lg,
+  },
+  weightHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  weightTrend: {
+    ...typography.body2,
+    fontWeight: '600',
+  },
+  weightMain: {
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  weightValue: {
+    ...typography.h2,
+    color: colors.primary,
+    fontWeight: 'bold',
+  },
+  weightLabel: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    marginTop: spacing.xs,
+  },
+  quickAddButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primary + '15',
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+  },
+  quickAddText: {
+    ...typography.button,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  statsCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
     padding: spacing.xl,
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,

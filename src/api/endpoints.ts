@@ -69,6 +69,11 @@ export const MY_FOOD_ENDPOINTS = {
   RECOMMENDATIONS_INSIGHTS: '/recommendations/insights',
   RECOMMENDATIONS_REFRESH: '/recommendations/refresh',
   RECOMMENDATIONS_MEALS: '/recommendations/meals',
+
+  // Weight History
+  WEIGHT_HISTORY: '/weight-history',
+  WEIGHT_HISTORY_LATEST: '/weight-history/latest',
+  WEIGHT_HISTORY_STATS: '/weight-history/stats',
 } as const;
 
 // Request timeouts

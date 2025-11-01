@@ -156,6 +156,7 @@ export type MainStackParamList = {
     date?: string;
   };
   ProfileEdit: undefined;
+  Weight: undefined;
   Settings: undefined;
   SettingsName: undefined;
   SettingsEmail: undefined;

@@ -145,3 +145,66 @@ export const formatNumber = (num: number, decimals: number = 1): string => {
 export const formatPercentage = (num: number): string => {
   return `${Math.round(num)}%`;
 };
+
+// =========================
+// Weight Tracking Functions
+// =========================
+
+// Calculate weight progress towards goal (0-100%)
+export const calculateWeightProgress = (
+  currentWeight: number,
+  targetWeight: number,
+  startWeight: number
+): number => {
+  if (startWeight === targetWeight) return 100;
+
+  const totalChange = Math.abs(targetWeight - startWeight);
+  const currentChange = Math.abs(currentWeight - startWeight);
+
+  return Math.min(Math.round((currentChange / totalChange) * 100), 100);
+};
+
+// Calculate weeks to reach goal weight
+export const calculateWeeksToGoal = (
+  currentWeight: number,
+  targetWeight: number,
+  averageWeeklyChange: number
+): number | null => {
+  if (Math.abs(averageWeeklyChange) < 0.01) return null; // Too slow to calculate
+
+  const remaining = Math.abs(currentWeight - targetWeight);
+  const weeksToGoal = remaining / Math.abs(averageWeeklyChange);
+
+  return weeksToGoal;
+};
+
+// Calculate estimated date to reach goal
+export const calculateGoalDate = (weeksToGoal: number): Date => {
+  const today = new Date();
+  const goalDate = new Date(today.getTime() + weeksToGoal * 7 * 24 * 60 * 60 * 1000);
+  return goalDate;
+};
+
+// Format weight trend direction
+export const formatWeightTrend = (change: number): string => {
+  if (change > 0.1) return '↑';
+  if (change < -0.1) return '↓';
+  return '→';
+};
+
+// Check if weight change is on track with goal
+export const isWeightChangeOnTrack = (
+  weeklyChange: number,
+  targetWeightType: 'LOSE' | 'SAVE' | 'GAIN'
+): boolean => {
+  if (targetWeightType === 'SAVE') {
+    return Math.abs(weeklyChange) < 0.5; // Stable within 0.5 kg
+  }
+  if (targetWeightType === 'LOSE') {
+    return weeklyChange < 0; // Losing weight
+  }
+  if (targetWeightType === 'GAIN') {
+    return weeklyChange > 0; // Gaining weight
+  }
+  return false;
+};
