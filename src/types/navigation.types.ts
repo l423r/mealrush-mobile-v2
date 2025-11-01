@@ -4,6 +4,7 @@ import type {
   MealElement,
   Meal,
   PhotoAnalysisResponse,
+  ProductResponse,
 } from './api.types';
 
 // Root Stack
@@ -115,6 +116,8 @@ export type MainStackParamList = {
   Search: {
     date?: string;
     mealId?: number;
+    preselectedProduct?: ProductResponse;
+    quantity?: number;
   };
   Scanner: {
     date?: string;

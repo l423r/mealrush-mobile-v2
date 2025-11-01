@@ -8,11 +8,14 @@ import {
   RefreshControl,
   Image,
   TextInput,
+  ScrollView,
+  Alert,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
+import type { ProductResponse } from '../../types/api.types';
 import { useStores } from '../../stores';
 import {
   colors,
@@ -25,6 +28,10 @@ import { formatCalories, formatWeight } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
+import InsightCard from '../../components/recommendations/InsightCard';
+import RecommendedProductCard from '../../components/recommendations/RecommendedProductCard';
+import SectionHeader from '../../components/recommendations/SectionHeader';
+import RecommendationInfoSheet from '../../components/recommendations/RecommendationInfoSheet';
 
 type ProductsScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -40,6 +47,10 @@ const ProductsScreen: React.FC = observer(() => {
   >('search');
   const [searchQuery, setSearchQuery] = useState('');
   const [refreshing, setRefreshing] = useState(false);
+  const [infoSheetVisible, setInfoSheetVisible] = useState(false);
+  const [infoSheetType, setInfoSheetType] = useState<
+    'products' | 'mealPicks' | 'insights'
+  >('products');
 
   // Initial load on mount
   useEffect(() => {
@@ -110,14 +121,34 @@ const ProductsScreen: React.FC = observer(() => {
 
   const loadRecommendations = async () => {
     try {
-      await Promise.all([
-        recommendationsStore.loadProducts(0, 10),
-        recommendationsStore.loadInsights(),
-        recommendationsStore.loadMealPicks(5),
-      ]);
+      await recommendationsStore.loadAll(10, 5);
     } catch {
       // handled in store
     }
+  };
+
+  const handleAddProductToMeal = (product: ProductResponse) => {
+    Alert.alert(
+      'Добавить продукт',
+      `${product.name}\nУкажите количество (${product.measurementType === 'GRAM' ? 'г' : 'мл'})`,
+      [
+        { text: 'Отмена', style: 'cancel' },
+        {
+          text: 'Добавить',
+          onPress: () => {
+            navigation.navigate('Search', {
+              preselectedProduct: product,
+              quantity: Number(product.quantity) || 100,
+            });
+          },
+        },
+      ]
+    );
+  };
+
+  const showInfo = (type: 'products' | 'mealPicks' | 'insights') => {
+    setInfoSheetType(type);
+    setInfoSheetVisible(true);
   };
 
   const handleProductPress = (product: any) => {
@@ -215,6 +246,16 @@ const ProductsScreen: React.FC = observer(() => {
     return productStore.myProducts;
   };
 
+  const renderTabIcon = (tab: 'search' | 'favorites' | 'my' | 'reco') => {
+    const icons = {
+      search: '🔍',
+      favorites: '⭐',
+      my: '📝',
+      reco: '✨',
+    };
+    return <Text style={styles.tabIcon}>{icons[tab]}</Text>;
+  };
+
   if (productStore.loading && !refreshing) {
     return <Loading message="Загрузка продуктов..." />;
   }
@@ -230,6 +271,7 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'search' && styles.activeTab]}
             onPress={() => handleTabChange('search')}
           >
+            {renderTabIcon('search')}
             <Text
               style={[
                 styles.tabText,
@@ -243,6 +285,7 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
             onPress={() => handleTabChange('favorites')}
           >
+            {renderTabIcon('favorites')}
             <Text
               style={[
                 styles.tabText,
@@ -256,26 +299,28 @@ const ProductsScreen: React.FC = observer(() => {
             style={[styles.tab, activeTab === 'my' && styles.activeTab]}
             onPress={() => handleTabChange('my')}
           >
+            {renderTabIcon('my')}
             <Text
               style={[
                 styles.tabText,
                 activeTab === 'my' && styles.activeTabText,
               ]}
             >
-              Мои продукты
+              Мои
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.tab, activeTab === 'reco' && styles.activeTab]}
             onPress={() => handleTabChange('reco')}
           >
+            {renderTabIcon('reco')}
             <Text
               style={[
                 styles.tabText,
                 activeTab === 'reco' && styles.activeTabText,
               ]}
             >
-              Рекомендации
+              Советы
             </Text>
           </TouchableOpacity>
         </View>
@@ -310,54 +355,118 @@ const ProductsScreen: React.FC = observer(() => {
             }
           />
         ) : (
-          <View style={styles.recoContainer}>
-            <View style={styles.recoHeaderRow}>
-              <Text style={styles.recoHeader}>Подборки для приёма</Text>
-              <TouchableOpacity
-                style={styles.recoRefresh}
-                onPress={() => recommendationsStore.refreshAll(5, 0, 10)}
-              >
-                <Text style={styles.recoRefreshText}>Обновить</Text>
-              </TouchableOpacity>
-            </View>
-            {recommendationsStore.mealPicks.map((p) => (
-              <View key={p.id} style={styles.recoCard}>
-                <Text style={styles.recoName}>{p.name}</Text>
-                <Text style={styles.recoMeta}>
-                  Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories}{' '}
-                  ккал
-                </Text>
-                <TouchableOpacity
-                  onPress={() => navigation.navigate('Search', {})}
-                >
-                  <Text style={styles.recoAction}>+ Добавить в приём</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
+          <ScrollView
+            style={styles.recoScrollView}
+            contentContainerStyle={styles.recoContainer}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={recommendationsStore.loading.refreshing}
+                onRefresh={() => recommendationsStore.refreshRecommendations()}
+              />
+            }
+          >
+            {/* Критичные и важные инсайты сверху */}
+            {(recommendationsStore.criticalInsights.length > 0 ||
+              recommendationsStore.warningInsights.length > 0) && (
+              <>
+                <SectionHeader
+                  title="Важные уведомления"
+                  icon="⚡"
+                  count={
+                    recommendationsStore.criticalInsights.length +
+                    recommendationsStore.warningInsights.length
+                  }
+                />
+                {recommendationsStore.criticalInsights.map((insight) => (
+                  <InsightCard key={insight.id} insight={insight} />
+                ))}
+                {recommendationsStore.warningInsights.map((insight) => (
+                  <InsightCard key={insight.id} insight={insight} />
+                ))}
+              </>
+            )}
 
-            <Text style={styles.recoHeader}>Рекомендованные продукты</Text>
-            {recommendationsStore.productsPage?.content.map((p) => (
-              <View key={p.id} style={styles.recoCard}>
-                <Text style={styles.recoName}>{p.name}</Text>
-                <Text style={styles.recoMeta}>
-                  Б:{p.proteins} Ж:{p.fats} У:{p.carbohydrates} • {p.calories}{' '}
-                  ккал
-                </Text>
+            {/* Подборки для приёма */}
+            <SectionHeader
+              title="Подборки для приёма"
+              icon="🎯"
+              actionText="Обновить"
+              onActionPress={() => recommendationsStore.loadMealPicks(5, true)}
+              onInfoPress={() => showInfo('mealPicks')}
+              count={recommendationsStore.mealPicks.length}
+            />
+            {recommendationsStore.loading.mealPicks ? (
+              <Loading message="Загрузка подборок..." />
+            ) : recommendationsStore.mealPicks.length === 0 ? (
+              <View style={styles.emptySection}>
+                <Text style={styles.emptySectionText}>Нет подборок</Text>
               </View>
-            ))}
-
-            <Text style={styles.recoHeader}>Инсайты</Text>
-            {recommendationsStore.insights.length === 0 ? (
-              <Text style={styles.recoEmpty}>Нет инсайтов</Text>
             ) : (
-              recommendationsStore.insights.map((i) => (
-                <View key={i.id} style={styles.recoCard}>
-                  <Text style={styles.recoName}>{i.title}</Text>
-                  <Text style={styles.recoMeta}>{i.description}</Text>
-                </View>
+              recommendationsStore.mealPicks.map((product) => (
+                <RecommendedProductCard
+                  key={product.id}
+                  product={product}
+                  onPress={() => handleProductPress(product)}
+                  onAddToMeal={() => handleAddProductToMeal(product)}
+                  showAddButton
+                />
               ))
             )}
-          </View>
+
+            {/* Рекомендованные продукты */}
+            <SectionHeader
+              title="Рекомендованные продукты"
+              icon="✨"
+              onInfoPress={() => showInfo('products')}
+              count={recommendationsStore.allProducts.length}
+            />
+            {recommendationsStore.loading.products ? (
+              <Loading message="Загрузка рекомендаций..." />
+            ) : recommendationsStore.allProducts.length === 0 ? (
+              <View style={styles.emptySection}>
+                <Text style={styles.emptySectionText}>
+                  Нет рекомендаций. Добавьте больше приемов пищи для
+                  персонализации.
+                </Text>
+              </View>
+            ) : (
+              <>
+                {recommendationsStore.allProducts.map((product) => (
+                  <RecommendedProductCard
+                    key={product.id}
+                    product={product}
+                    onPress={() => handleProductPress(product)}
+                  />
+                ))}
+                {recommendationsStore.hasMoreProducts && (
+                  <Button
+                    title="Загрузить ещё"
+                    onPress={() => recommendationsStore.loadNextProductsPage(10)}
+                    variant="outline"
+                    loading={recommendationsStore.loading.products}
+                  />
+                )}
+              </>
+            )}
+
+            {/* Информационные инсайты */}
+            {recommendationsStore.infoInsights.length > 0 && (
+              <>
+                <SectionHeader
+                  title="Полезные советы"
+                  icon="💡"
+                  onInfoPress={() => showInfo('insights')}
+                  count={recommendationsStore.infoInsights.length}
+                />
+                {recommendationsStore.infoInsights.map((insight) => (
+                  <InsightCard key={insight.id} insight={insight} />
+                ))}
+              </>
+            )}
+
+            <View style={styles.bottomSpacer} />
+          </ScrollView>
         )}
       </View>
 
@@ -371,6 +480,15 @@ const ProductsScreen: React.FC = observer(() => {
           />
         </View>
       )}
+
+      {/* Recommendation Info Sheet */}
+      <RecommendationInfoSheet
+        visible={infoSheetVisible}
+        type={infoSheetType}
+        onClose={() => setInfoSheetVisible(false)}
+        userGoal="SAVE"
+        preferredCategories={[]}
+      />
     </View>
   );
 });
@@ -404,18 +522,24 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.sm,
     alignItems: 'center',
+    justifyContent: 'center',
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
   },
   activeTab: {
     borderBottomColor: colors.primary,
   },
+  tabIcon: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
   tabText: {
-    ...typography.body1,
+    ...typography.caption,
     color: colors.text.secondary,
     fontWeight: '500',
+    textAlign: 'center',
   },
   activeTabText: {
     color: colors.primary,
@@ -517,53 +641,27 @@ const styles = StyleSheet.create({
   addButton: {
     width: '100%',
   },
+  recoScrollView: {
+    flex: 1,
+  },
   recoContainer: {
     padding: spacing.lg,
-    gap: spacing.md,
+    paddingBottom: spacing.xxxl,
   },
-  recoHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  recoHeader: {
-    ...typography.h4,
-    color: colors.text.primary,
-  },
-  recoRefresh: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
+  emptySection: {
     backgroundColor: colors.background.light,
-    borderRadius: 8,
-  },
-  recoRefreshText: {
-    ...typography.caption,
-    color: colors.text.primary,
-  },
-  recoCard: {
-    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
+    padding: spacing.xl,
+    alignItems: 'center',
+    marginBottom: spacing.lg,
   },
-  recoName: {
-    ...typography.body1,
-    color: colors.text.primary,
-  },
-  recoMeta: {
-    ...typography.caption,
+  emptySectionText: {
+    ...typography.body2,
     color: colors.text.secondary,
-    marginTop: spacing.xs,
+    textAlign: 'center',
   },
-  recoAction: {
-    ...typography.button,
-    color: colors.primary,
-    marginTop: spacing.sm,
-  },
-  recoEmpty: {
-    ...typography.caption,
-    color: colors.text.secondary,
+  bottomSpacer: {
+    height: spacing.xxxl,
   },
 });
 
