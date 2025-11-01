@@ -398,11 +398,6 @@ const SearchScreen: React.FC = observer(() => {
       <Header
         title="Поиск продуктов"
         showBackButton
-        rightComponent={
-          <TouchableOpacity onPress={handleScannerPress}>
-            <Text style={styles.scannerIcon}>📷</Text>
-          </TouchableOpacity>
-        }
       />
 
       <View style={styles.content}>
@@ -557,9 +552,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-  },
-  scannerIcon: {
-    fontSize: 24,
   },
   searchContainer: {
     padding: spacing.lg,
