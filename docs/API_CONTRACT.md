@@ -1648,7 +1648,95 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.2.0 (текущая)
+### Версия 2.4.0 (текущая)
+
+Улучшения API настроек уведомлений: глобальный переключатель, endpoint сброса, отображение timezone и вычисленных полей.
+
+**Новые возможности:**
+
+- ✅ `globallyEnabled` - master switch для отключения всех уведомлений одной кнопкой
+- ✅ `POST /notifications/preferences/reset` - сброс к defaults в одном запросе (вместо DELETE + GET)
+- ✅ `timezone` в GET response - отображение часового пояса пользователя
+- ✅ `reminderAt` - вычисленное поле (time - minutesBefore) для всех meal reminders
+- ✅ Изменен HTTP метод с `PUT` на `PATCH` для частичного обновления (семантически правильно)
+- ✅ Удалены legacy планировщики (MealReminderScheduler, WeeklyReportScheduler, NutritionRecommendationScheduler, AchievementNotifier)
+
+**BREAKING CHANGES - Notification Preferences:**
+
+- ❌ **ИЗМЕНЁН:** `PUT /notifications/preferences` → `PATCH /notifications/preferences`
+- ❌ **ИЗМЕНЁН:** Defaults для `snack` и `lateSnack`:
+  - **Было:** `time: "16:00"/"21:00"`, `minutesBefore: 15`
+  - **Стало:** `time: null`, `minutesBefore: null`
+  - **Причина:** Время перекусов индивидуально, пользователь выбирает сам
+- ⚠️ **ВАЛИДАЦИЯ:** При включении `snack`/`lateSnack` (`enabled: true`) обязательно указывать `time` и `minutesBefore`
+- ✅ **НОВЫЕ ПОЛЯ в response:**
+  - `globallyEnabled` (Boolean) - глобальный переключатель
+  - `timezone` (String) - часовой пояс из UserProfile
+  - `reminderAt` (LocalTime) - вычисленное время напоминания для каждого meal reminder
+
+**Миграция для клиентов:**
+
+```javascript
+// Было
+response.breakfast.time - response.breakfast.minutesBefore // вычисляли сами
+
+// Стало
+response.breakfast.reminderAt // готовое значение
+
+// Было
+PUT /notifications/preferences
+
+// Стало
+PATCH /notifications/preferences
+
+// Было (2 запроса для сброса)
+await DELETE /notifications/preferences
+await GET /notifications/preferences
+
+// Стало (1 запрос)
+await POST /notifications/preferences/reset
+```
+
+---
+
+### Версия 2.3.0
+
+Персонализированные настройки уведомлений с поддержкой часовых поясов.
+
+**Новые эндпоинты:**
+- `GET /my-food/notifications/preferences` - получение/создание настроек уведомлений
+- `PUT /my-food/notifications/preferences` - обновление настроек (partial update)
+- `DELETE /my-food/notifications/preferences` - удаление настроек (сброс к defaults)
+
+**Новые возможности:**
+- Персонализированные настройки уведомлений для каждого пользователя
+- Настройка времени для каждого типа приема пищи отдельно
+- Настройка за сколько минут напоминать (5-120 минут)
+- Возможность включить/выключить каждый тип уведомления
+- Настройка еженедельных отчетов (день недели + время)
+- Настройка ежедневных инсайтов
+- Умный scheduler с поддержкой часовых поясов (timezone из UserProfile)
+- Напоминания отправляются только если прием пищи еще не записан
+
+**Изменения:**
+- Новая таблица `notification_preferences` для хранения настроек
+- SmartNotificationScheduler заменяет старые фиксированные schedulers
+- Все времена указываются в локальной timezone пользователя
+- Автоматическая конвертация timezone для отправки уведомлений
+
+**Значения по умолчанию:**
+- Завтрак: 08:00 (за 30 мин), включен
+- Обед: 12:30 (за 30 мин), включен
+- Ужин: 18:30 (за 30 мин), включен
+- Полдник: 16:00 (за 15 мин), выключен
+- Поздний перекус: 21:00 (за 15 мин), выключен
+- Еженедельный отчет: Понедельник 09:00, включен
+- Ежедневные инсайты: 20:00, включен
+- Достижения: включены
+
+---
+
+### Версия 2.2.0
 
 Расширенные AI возможности для анализа блюд и консолидация управления уведомлениями.
 
@@ -2281,22 +2369,267 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 ---
 
-## 22. Design Notes (Metrics & Recommendations)
+## 22. Notification Preferences
 
-### 22.1. NutritionTrendAnalyzer
+### 22.1. Получение настроек уведомлений
+
+**Endpoint:**
+```
+GET /my-food/notifications/preferences
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Возвращает настройки уведомлений пользователя. Если настройки не существуют, автоматически создает их с значениями по умолчанию. Timezone берется из `user_profiles.timezone`.
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "globallyEnabled": true,
+  "timezone": "Europe/Moscow",
+  "breakfast": {
+    "enabled": true,
+    "time": "08:00",
+    "minutesBefore": 30,
+    "reminderAt": "07:30"
+  },
+  "lunch": {
+    "enabled": true,
+    "time": "12:30",
+    "minutesBefore": 30,
+    "reminderAt": "12:00"
+  },
+  "dinner": {
+    "enabled": true,
+    "time": "18:30",
+    "minutesBefore": 30,
+    "reminderAt": "18:00"
+  },
+  "snack": {
+    "enabled": false,
+    "time": null,
+    "minutesBefore": null,
+    "reminderAt": null
+  },
+  "lateSnack": {
+    "enabled": false,
+    "time": null,
+    "minutesBefore": null,
+    "reminderAt": null
+  },
+  "weeklyReport": {
+    "enabled": true,
+    "day": "MONDAY",
+    "time": "09:00"
+  },
+  "dailyInsights": {
+    "enabled": true,
+    "time": "20:00"
+  },
+  "achievementsEnabled": true,
+  "createdAt": "2024-11-05T12:00:00",
+  "updatedAt": "2024-11-05T12:00:00"
+}
+```
+
+**Поля ответа:**
+- `globallyEnabled` - **master switch**: при `false` все уведомления отключаются независимо от индивидуальных настроек
+- `timezone` - часовой пояс пользователя из UserProfile (только для отображения, read-only)
+- `time` - время приема пищи в локальной timezone пользователя
+- `minutesBefore` - за сколько минут до `time` отправить напоминание
+- `reminderAt` - **вычисленное поле** (time - minutesBefore), время фактической отправки уведомления (read-only)
+- `day` - день недели для weekly report: `MONDAY`, `TUESDAY`, `WEDNESDAY`, `THURSDAY`, `FRIDAY`, `SATURDAY`, `SUNDAY`
+
+**Примечания:**
+- При первом GET создаются настройки по умолчанию
+- Все времена указываются в локальной timezone пользователя
+- Scheduler автоматически конвертирует timezone → UTC для отправки
+- `snack` и `lateSnack` имеют `time=null` и `minutesBefore=null` по умолчанию - пользователь выбирает время при включении
+- `reminderAt` вычисляется на сервере, клиенту не нужно считать
+
+### 22.2. Обновление настроек уведомлений
+
+**Endpoint:**
+```
+PATCH /my-food/notifications/preferences
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Обновляет настройки уведомлений. Поддерживает частичное обновление (PATCH) - отправляются только изменившиеся поля. Null поля не обновляются.
+
+**Request Body (все поля опциональны):**
+```json
+{
+  "globallyEnabled": false,
+  "breakfast": {
+    "enabled": false
+  },
+  "lunch": {
+    "time": "13:00",
+    "minutesBefore": 15
+  },
+  "weeklyReport": {
+    "enabled": true,
+    "day": "SUNDAY",
+    "time": "18:00"
+  }
+}
+```
+
+**Response (200 OK):**
+Возвращает полные обновленные настройки (формат как в GET), включая вычисленные поля `timezone` и `reminderAt`.
+
+**Errors:**
+- 400: Невалидные данные (minutesBefore < 5 или > 120, некорректное время, **snack/lateSnack enabled без time**)
+- 401: Не авторизован
+
+**Примеры:**
+
+1. **Глобально выключить все уведомления:**
+```json
+{
+  "globallyEnabled": false
+}
+```
+
+2. **Выключить напоминание о завтраке:**
+```json
+{
+  "breakfast": {
+    "enabled": false
+  }
+}
+```
+
+3. **Изменить время обеда:**
+```json
+{
+  "lunch": {
+    "time": "13:30"
+  }
+}
+```
+
+4. **Включить полдник с указанием времени:**
+```json
+{
+  "snack": {
+    "enabled": true,
+    "time": "15:30",
+    "minutesBefore": 20
+  }
+}
+```
+**Важно:** При включении `snack` или `lateSnack` (`enabled: true`) обязательно указать `time` и `minutesBefore`, иначе вернется **400 Bad Request**.
+
+5. **Настроить все приемы пищи:**
+```json
+{
+  "breakfast": {"enabled": true, "time": "07:00", "minutesBefore": 30},
+  "lunch": {"enabled": true, "time": "12:00", "minutesBefore": 15},
+  "dinner": {"enabled": true, "time": "19:00", "minutesBefore": 30},
+  "snack": {"enabled": false},
+  "lateSnack": {"enabled": false}
+}
+```
+
+### 22.3. Удаление настроек (сброс к defaults)
+
+**Endpoint:**
+```
+DELETE /my-food/notifications/preferences
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Удаляет настройки уведомлений пользователя. При следующем GET запросе будут созданы настройки по умолчанию.
+
+**Response (204 No Content)**
+
+**Errors:**
+- 401: Не авторизован
+
+**Примечание:** Для сброса настроек рекомендуется использовать `POST /reset` (см. 22.4) - возвращает defaults в одном запросе.
+
+### 22.4. Сброс настроек к defaults (NEW)
+
+**Endpoint:**
+```
+POST /my-food/notifications/preferences/reset
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Удаляет текущие настройки и создает новые со значениями по умолчанию. Возвращает созданные настройки. **Этот эндпоинт позволяет сбросить настройки одним запросом** вместо `DELETE + GET`.
+
+**Request Body:** Пусто (не требуется)
+
+**Response (200 OK):**
+Возвращает полные настройки по умолчанию (формат как в GET), включая:
+- `globallyEnabled`: true
+- `timezone`: часовой пояс пользователя
+- `breakfast`, `lunch`, `dinner`: enabled с стандартными временами
+- `snack`, `lateSnack`: disabled с `time=null`
+- `reminderAt`: вычисленные времена напоминаний
+
+**Errors:**
+- 401: Не авторизован
+
+**Пример использования:**
+```http
+POST /my-food/notifications/preferences/reset
+Authorization: Bearer {JWT_TOKEN}
+```
+
+**Response:**
+```json
+{
+  "id": 2,
+  "userId": 1,
+  "globallyEnabled": true,
+  "timezone": "Europe/Moscow",
+  "breakfast": {
+    "enabled": true,
+    "time": "08:00",
+    "minutesBefore": 30,
+    "reminderAt": "07:30"
+  },
+  "snack": {
+    "enabled": false,
+    "time": null,
+    "minutesBefore": null,
+    "reminderAt": null
+  },
+  ...
+}
+```
+
+**Преимущества перед DELETE:**
+- ✅ Один HTTP запрос вместо двух (DELETE + GET)
+- ✅ Атомарная операция
+- ✅ Сразу получаете результат для отображения в UI
+
+---
+
+## 23. Design Notes (Metrics & Recommendations)
+
+### 23.1. NutritionTrendAnalyzer
 - Источник данных: агрегации по дням за период
 - Направление тренда: сравнение средних половин периода (порог 5%)
 - Простая модель прогноза: скользящее среднее последних 3 дней
 
-### 22.2. ProductStatisticsAnalyzer
+### 23.2. ProductStatisticsAnalyzer
 - Средние значения считаются как total/кол-во дней с данными
 - Категории и топ-продукты — по использованию в meal_elements
 
-### 22.3. InsightGenerator
+### 23.3. InsightGenerator
 - Пороговые правила: 80%/95-105%/120% от дневной цели калорий
 - Для GAIN: рекомендация по белку ≈ 1.8 г/кг веса
 
-### 22.4. ProductRecommendationEngine
+### 23.4. ProductRecommendationEngine
 - Факторы ранжирования: предпочтительные категории, цели, полнота КБЖУ
 - Исключения: уже использованные и избранные продукты
 

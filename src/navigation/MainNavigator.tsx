@@ -17,6 +17,7 @@ import SettingsNameScreen from '../screens/main/SettingsNameScreen';
 import SettingsEmailScreen from '../screens/main/SettingsEmailScreen';
 import SettingsPasswordScreen from '../screens/main/SettingsPasswordScreen';
 import SettingsDeleteAccountScreen from '../screens/main/SettingsDeleteAccountScreen';
+import NotificationSettingsScreen from '../screens/main/NotificationSettingsScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -49,6 +50,10 @@ const MainNavigator: React.FC = () => {
       <Stack.Screen
         name="SettingsDeleteAccount"
         component={SettingsDeleteAccountScreen}
+      />
+      <Stack.Screen
+        name="NotificationSettings"
+        component={NotificationSettingsScreen}
       />
     </Stack.Navigator>
   );

@@ -505,3 +505,64 @@ export interface InAppNotification {
   timestamp: number;
   read: boolean;
 }
+
+// =========================
+// Notification Preferences (API v2.4.0)
+// =========================
+
+export type DayOfWeek =
+  | 'MONDAY'
+  | 'TUESDAY'
+  | 'WEDNESDAY'
+  | 'THURSDAY'
+  | 'FRIDAY'
+  | 'SATURDAY'
+  | 'SUNDAY';
+
+export interface MealNotificationSettings {
+  enabled: boolean;
+  time: string | null; // "HH:mm", null для snack/lateSnack по умолчанию
+  minutesBefore: number | null; // 5-120, null для snack/lateSnack
+  reminderAt: string | null; // READ-ONLY, вычислено сервером
+}
+
+export interface WeeklyReportSettings {
+  enabled: boolean;
+  day: DayOfWeek;
+  time: string; // "HH:mm"
+}
+
+export interface DailyInsightsSettings {
+  enabled: boolean;
+  time: string; // "HH:mm"
+}
+
+export interface NotificationPreferences {
+  id: number;
+  userId: number;
+  globallyEnabled: boolean; // NEW v2.4.0 - master switch
+  timezone: string; // NEW v2.4.0 - read-only из UserProfile
+  breakfast: MealNotificationSettings;
+  lunch: MealNotificationSettings;
+  dinner: MealNotificationSettings;
+  snack: MealNotificationSettings;
+  lateSnack: MealNotificationSettings;
+  weeklyReport: WeeklyReportSettings;
+  dailyInsights: DailyInsightsSettings;
+  achievementsEnabled: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Partial update request (для PATCH запросов)
+export interface NotificationPreferencesUpdateRequest {
+  globallyEnabled?: boolean;
+  breakfast?: Partial<Omit<MealNotificationSettings, 'reminderAt'>>;
+  lunch?: Partial<Omit<MealNotificationSettings, 'reminderAt'>>;
+  dinner?: Partial<Omit<MealNotificationSettings, 'reminderAt'>>;
+  snack?: Partial<Omit<MealNotificationSettings, 'reminderAt'>>;
+  lateSnack?: Partial<Omit<MealNotificationSettings, 'reminderAt'>>;
+  weeklyReport?: Partial<WeeklyReportSettings>;
+  dailyInsights?: Partial<DailyInsightsSettings>;
+  achievementsEnabled?: boolean;
+}

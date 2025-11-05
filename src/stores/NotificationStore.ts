@@ -4,7 +4,11 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import type RootStore from './RootStore';
 import { notificationService } from '../api/services/notification.service';
-import type { DeviceType } from '../types/api.types';
+import type {
+  DeviceType,
+  NotificationPreferences,
+  NotificationPreferencesUpdateRequest,
+} from '../types/api.types';
 
 // Конфигурация поведения уведомлений
 Notifications.setNotificationHandler({
@@ -17,12 +21,19 @@ Notifications.setNotificationHandler({
 
 class NotificationStore {
   rootStore: RootStore;
+  
+  // Device registration state
   fcmToken: string | null = null;
   expoPushToken: string | null = null;
   loading: boolean = false;
   error: string | null = null;
   notificationsEnabled: boolean = false;
   permissionStatus: 'granted' | 'denied' | 'undetermined' = 'undetermined';
+  
+  // Notification preferences state (NEW v2.4.0)
+  preferences: NotificationPreferences | null = null;
+  preferencesLoading: boolean = false;
+  preferencesError: string | null = null;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -114,6 +125,10 @@ class NotificationStore {
       });
 
       console.log('Push notification token registered:', this.fcmToken);
+      
+      // После успешной регистрации загружаем preferences
+      await this.fetchPreferences();
+      
       return true;
     } catch (error: any) {
       runInAction(() => {
@@ -229,6 +244,223 @@ class NotificationStore {
     this.error = null;
     this.notificationsEnabled = false;
     this.permissionStatus = 'undetermined';
+    
+    // Reset preferences state
+    this.preferences = null;
+    this.preferencesLoading = false;
+    this.preferencesError = null;
+  }
+
+  // ==========================================
+  // NOTIFICATION PREFERENCES (API v2.4.0)
+  // ==========================================
+
+  /**
+   * Загрузка настроек уведомлений
+   * При первом запросе сервер автоматически создаст defaults
+   */
+  async fetchPreferences(): Promise<void> {
+    this.preferencesLoading = true;
+    this.preferencesError = null;
+
+    try {
+      const response = await notificationService.getPreferences();
+      runInAction(() => {
+        this.preferences = response.data;
+        this.preferencesLoading = false;
+      });
+      console.log('✅ Notification preferences loaded');
+    } catch (error: any) {
+      runInAction(() => {
+        this.preferencesLoading = false;
+        this.preferencesError =
+          error.response?.data?.message || 'Ошибка загрузки настроек уведомлений';
+      });
+      console.error('Error fetching notification preferences:', error);
+    }
+  }
+
+  /**
+   * Обновление настроек уведомлений (PATCH - partial update)
+   */
+  async updatePreferences(
+    updates: NotificationPreferencesUpdateRequest
+  ): Promise<boolean> {
+    this.preferencesLoading = true;
+    this.preferencesError = null;
+
+    try {
+      const response = await notificationService.updatePreferences(updates);
+      runInAction(() => {
+        this.preferences = response.data;
+        this.preferencesLoading = false;
+      });
+      console.log('✅ Notification preferences updated');
+      return true;
+    } catch (error: any) {
+      runInAction(() => {
+        this.preferencesLoading = false;
+        this.preferencesError =
+          error.response?.data?.message || 'Ошибка обновления настроек';
+      });
+      console.error('Error updating notification preferences:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Сброс настроек к defaults (POST /reset)
+   */
+  async resetPreferences(): Promise<boolean> {
+    this.preferencesLoading = true;
+    this.preferencesError = null;
+
+    try {
+      const response = await notificationService.resetPreferences();
+      runInAction(() => {
+        this.preferences = response.data;
+        this.preferencesLoading = false;
+      });
+      console.log('✅ Notification preferences reset to defaults');
+      return true;
+    } catch (error: any) {
+      runInAction(() => {
+        this.preferencesLoading = false;
+        this.preferencesError =
+          error.response?.data?.message || 'Ошибка сброса настроек';
+      });
+      console.error('Error resetting notification preferences:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Переключение globallyEnabled (master switch)
+   */
+  async toggleGloballyEnabled(): Promise<boolean> {
+    if (!this.preferences) return false;
+
+    return await this.updatePreferences({
+      globallyEnabled: !this.preferences.globallyEnabled,
+    });
+  }
+
+  /**
+   * Переключение уведомления для конкретного приема пищи
+   * Для snack/lateSnack требуется время при включении
+   */
+  async toggleMealNotification(
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'lateSnack'
+  ): Promise<boolean> {
+    if (!this.preferences) return false;
+
+    const currentValue = this.preferences[mealType].enabled;
+    
+    // При выключении просто переключаем enabled
+    if (currentValue) {
+      return await this.updatePreferences({
+        [mealType]: { enabled: false },
+      });
+    }
+    
+    // При включении snack/lateSnack нужно сначала показать диалог
+    // Метод должен вызываться только для breakfast/lunch/dinner
+    // Для snack/lateSnack используем enableSnack/enableLateSnack
+    if (mealType === 'snack' || mealType === 'lateSnack') {
+      throw new Error(`Use enableSnack/enableLateSnack for ${mealType}`);
+    }
+
+    return await this.updatePreferences({
+      [mealType]: { enabled: true },
+    });
+  }
+
+  /**
+   * Включение snack с указанием времени (обязательно)
+   */
+  async enableSnack(time: string, minutesBefore: number): Promise<boolean> {
+    // Валидация
+    if (!time || !minutesBefore) {
+      this.preferencesError = 'Укажите время и интервал напоминания';
+      return false;
+    }
+
+    if (minutesBefore < 5 || minutesBefore > 120) {
+      this.preferencesError = 'Интервал должен быть от 5 до 120 минут';
+      return false;
+    }
+
+    return await this.updatePreferences({
+      snack: {
+        enabled: true,
+        time,
+        minutesBefore,
+      },
+    });
+  }
+
+  /**
+   * Включение lateSnack с указанием времени (обязательно)
+   */
+  async enableLateSnack(time: string, minutesBefore: number): Promise<boolean> {
+    // Валидация
+    if (!time || !minutesBefore) {
+      this.preferencesError = 'Укажите время и интервал напоминания';
+      return false;
+    }
+
+    if (minutesBefore < 5 || minutesBefore > 120) {
+      this.preferencesError = 'Интервал должен быть от 5 до 120 минут';
+      return false;
+    }
+
+    return await this.updatePreferences({
+      lateSnack: {
+        enabled: true,
+        time,
+        minutesBefore,
+      },
+    });
+  }
+
+  /**
+   * Обновление времени приема пищи
+   */
+  async updateMealTime(
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'lateSnack',
+    time: string
+  ): Promise<boolean> {
+    return await this.updatePreferences({
+      [mealType]: { time },
+    });
+  }
+
+  /**
+   * Обновление интервала напоминания
+   */
+  async updateMinutesBefore(
+    mealType: 'breakfast' | 'lunch' | 'dinner' | 'snack' | 'lateSnack',
+    minutesBefore: number
+  ): Promise<boolean> {
+    if (minutesBefore < 5 || minutesBefore > 120) {
+      this.preferencesError = 'Интервал должен быть от 5 до 120 минут';
+      return false;
+    }
+
+    return await this.updatePreferences({
+      [mealType]: { minutesBefore },
+    });
+  }
+
+  /**
+   * Переключение уведомлений о достижениях
+   */
+  async toggleAchievements(): Promise<boolean> {
+    if (!this.preferences) return false;
+
+    return await this.updatePreferences({
+      achievementsEnabled: !this.preferences.achievementsEnabled,
+    });
   }
 }
 

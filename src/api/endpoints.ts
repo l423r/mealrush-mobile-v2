@@ -78,6 +78,8 @@ export const MY_FOOD_ENDPOINTS = {
   // Notifications
   NOTIFICATIONS_REGISTER: '/notifications/register',
   NOTIFICATIONS_DEVICE: '/notifications/device',
+  NOTIFICATIONS_PREFERENCES: '/notifications/preferences',
+  NOTIFICATIONS_PREFERENCES_RESET: '/notifications/preferences/reset',
 } as const;
 
 // Request timeouts

@@ -54,6 +54,10 @@ const ProfileScreen: React.FC = observer(() => {
     navigation.navigate('ProfileEdit');
   };
 
+  const handleNotifications = () => {
+    navigation.navigate('NotificationSettings');
+  };
+
   const handleSettings = () => {
     navigation.navigate('Settings');
   };
@@ -266,6 +270,13 @@ const ProfileScreen: React.FC = observer(() => {
           <Button
             title="Редактировать профиль"
             onPress={handleEditProfile}
+            style={styles.actionButton}
+          />
+
+          <Button
+            title="🔔 Настройки уведомлений"
+            onPress={handleNotifications}
+            variant="secondary"
             style={styles.actionButton}
           />
 
