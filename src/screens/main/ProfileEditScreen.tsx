@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   TouchableOpacity,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
@@ -21,6 +20,7 @@ import {
   TARGET_WEIGHT_TYPES,
   ACTIVITY_LEVELS,
 } from '../../utils/constants';
+import { getDeviceTimezone, POPULAR_TIMEZONES } from '../../utils/timezone';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -33,11 +33,12 @@ type ProfileEditScreenNavigationProp = NativeStackNavigationProp<
 
 const ProfileEditScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileEditScreenNavigationProp>();
-  const { profileStore } = useStores();
+  const { profileStore, uiStore } = useStores();
 
   const [showGenderPicker, setShowGenderPicker] = useState(false);
   const [showTargetPicker, setShowTargetPicker] = useState(false);
   const [showActivityPicker, setShowActivityPicker] = useState(false);
+  const [showTimezonePicker, setShowTimezonePicker] = useState(false);
 
   const {
     control,
@@ -59,6 +60,7 @@ const ProfileEditScreen: React.FC = observer(() => {
       physicalActivityLevel:
         profileStore.profile?.physicalActivityLevel || 'SECOND',
       dayLimitCal: profileStore.profile?.dayLimitCal || 2000,
+      timezone: profileStore.profile?.timezone || getDeviceTimezone(),
     },
   });
 
@@ -67,12 +69,12 @@ const ProfileEditScreen: React.FC = observer(() => {
   const onSubmit = async (data: any) => {
     try {
       await profileStore.updateProfile(data);
-      Alert.alert('Успех', 'Профиль обновлен');
+      uiStore.showSnackbar('Профиль обновлен', 'success');
       navigation.goBack();
     } catch {
-      Alert.alert(
-        'Ошибка',
-        profileStore.error || 'Не удалось обновить профиль'
+      uiStore.showSnackbar(
+        profileStore.error || 'Не удалось обновить профиль',
+        'error'
       );
     }
   };
@@ -96,6 +98,11 @@ const ProfileEditScreen: React.FC = observer(() => {
   ) => {
     setValue('physicalActivityLevel', activity);
     setShowActivityPicker(false);
+  };
+
+  const handleTimezoneSelect = (timezone: string) => {
+    setValue('timezone', timezone);
+    setShowTimezonePicker(false);
   };
 
   if (profileStore.loading) {
@@ -279,6 +286,36 @@ const ProfileEditScreen: React.FC = observer(() => {
               )}
             />
           </View>
+
+          {/* Timezone Settings */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Часовой пояс</Text>
+
+            <Controller
+              control={control}
+              name="timezone"
+              render={({ field: { value } }) => (
+                <View>
+                  <Text style={styles.label}>Часовой пояс</Text>
+                  <TouchableOpacity
+                    style={styles.pickerButton}
+                    onPress={() => setShowTimezonePicker(true)}
+                  >
+                    <Text style={styles.pickerButtonText}>
+                      {POPULAR_TIMEZONES.find((tz) => tz.value === value)
+                        ?.label || value}
+                    </Text>
+                    <Text style={styles.pickerArrow}>▼</Text>
+                  </TouchableOpacity>
+                  {errors.timezone && (
+                    <Text style={styles.errorText}>
+                      {errors.timezone.message}
+                    </Text>
+                  )}
+                </View>
+              )}
+            />
+          </View>
         </View>
       </ScrollView>
 
@@ -363,6 +400,35 @@ const ProfileEditScreen: React.FC = observer(() => {
               style={styles.modalButton}
             />
           </View>
+        </View>
+      )}
+
+      {/* Timezone Picker Modal */}
+      {showTimezonePicker && (
+        <View style={styles.modalOverlay}>
+          <ScrollView
+            contentContainerStyle={styles.modalScrollContent}
+            style={styles.modalScrollView}
+          >
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Выберите часовой пояс</Text>
+              {POPULAR_TIMEZONES.map((option) => (
+                <TouchableOpacity
+                  key={option.value}
+                  style={styles.modalOption}
+                  onPress={() => handleTimezoneSelect(option.value)}
+                >
+                  <Text style={styles.modalOptionText}>{option.label}</Text>
+                </TouchableOpacity>
+              ))}
+              <Button
+                title="Отмена"
+                onPress={() => setShowTimezonePicker(false)}
+                variant="outline"
+                style={styles.modalButton}
+              />
+            </View>
+          </ScrollView>
         </View>
       )}
     </View>
@@ -481,6 +547,14 @@ const styles = StyleSheet.create({
   },
   modalButton: {
     marginTop: spacing.lg,
+  },
+  modalScrollView: {
+    width: '100%',
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
   },
 });
 

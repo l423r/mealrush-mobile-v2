@@ -73,6 +73,10 @@ export const userProfileSchema = yup.object().shape({
     .min(800, 'Калорийность должна быть не менее 800 ккал')
     .max(5000, 'Калорийность должна быть не более 5000 ккал')
     .required('Калорийность обязательна'),
+  timezone: yup
+    .string()
+    .required('Часовой пояс обязателен')
+    .min(1, 'Часовой пояс обязателен'),
 });
 
 // Product validation schemas

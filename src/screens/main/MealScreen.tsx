@@ -34,7 +34,7 @@ type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
-  const { mealStore } = useStores();
+  const { mealStore, uiStore } = useStores();
 
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
@@ -72,7 +72,7 @@ const MealScreen: React.FC = observer(() => {
             try {
               await mealStore.deleteMealElement(elementId);
             } catch {
-              Alert.alert('Ошибка', 'Не удалось удалить блюдо');
+              uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
             }
           },
         },
@@ -94,7 +94,7 @@ const MealScreen: React.FC = observer(() => {
               await mealStore.deleteMeal(meal.id);
               navigation.goBack();
             } catch {
-              Alert.alert('Ошибка', 'Не удалось удалить прием пищи');
+              uiStore.showSnackbar('Не удалось удалить прием пищи', 'error');
             }
           },
         },

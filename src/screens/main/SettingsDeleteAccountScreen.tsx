@@ -16,7 +16,7 @@ type SettingsDeleteAccountScreenNavigationProp = NativeStackNavigationProp<
 
 const SettingsDeleteAccountScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsDeleteAccountScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, uiStore } = useStores();
 
   const handleBack = () => {
     navigation.goBack();
@@ -44,12 +44,12 @@ const SettingsDeleteAccountScreen: React.FC = observer(() => {
                     try {
                       // TODO: Implement account deletion API
                       await authStore.logout();
-                      Alert.alert(
-                        'Аккаунт удален',
-                        'Ваш аккаунт был успешно удален'
+                      uiStore.showSnackbar(
+                        'Аккаунт был успешно удален',
+                        'success'
                       );
                     } catch {
-                      Alert.alert('Ошибка', 'Не удалось удалить аккаунт');
+                      uiStore.showSnackbar('Не удалось удалить аккаунт', 'error');
                     }
                   },
                 },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,7 +27,7 @@ const emailSchema = yup.object().shape({
 
 const SettingsEmailScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsEmailScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, uiStore } = useStores();
 
   const {
     control,
@@ -44,10 +44,10 @@ const SettingsEmailScreen: React.FC = observer(() => {
   const onSubmit = async () => {
     try {
       // TODO: Implement email update API
-      Alert.alert('Успех', 'Email обновлен');
+      uiStore.showSnackbar('Email обновлен', 'success');
       navigation.goBack();
     } catch {
-      Alert.alert('Ошибка', 'Не удалось обновить email');
+      uiStore.showSnackbar('Не удалось обновить email', 'error');
     }
   };
 

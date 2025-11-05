@@ -10,8 +10,8 @@ const getBaseURL = () => {
     // Для физического устройства используйте IP адрес вашего компьютера в локальной сети
     // Для Android эмулятора используйте: http://10.0.2.2:8080/my-food
     // Для физического Android устройства используйте IP компьютера:
-    // return 'http://192.168.1.10:8080/my-food';
-    return 'http://10.0.2.2:8080/my-food';
+    return 'http://192.168.1.9:8080/my-food';
+    // return 'http://10.0.2.2:8080/my-food';
   } else {
     // В production
     return 'http://80.87.201.75:8079/gateway/my-food';
@@ -74,6 +74,10 @@ export const MY_FOOD_ENDPOINTS = {
   WEIGHT_HISTORY: '/weight-history',
   WEIGHT_HISTORY_LATEST: '/weight-history/latest',
   WEIGHT_HISTORY_STATS: '/weight-history/stats',
+
+  // Notifications
+  NOTIFICATIONS_REGISTER: '/notifications/register',
+  NOTIFICATIONS_DEVICE: '/notifications/device',
 } as const;
 
 // Request timeouts

@@ -162,6 +162,7 @@ export type MainStackParamList = {
   SettingsEmail: undefined;
   SettingsPassword: undefined;
   SettingsDeleteAccount: undefined;
+  NotificationSettings: undefined;
 };
 
 // Home Tabs

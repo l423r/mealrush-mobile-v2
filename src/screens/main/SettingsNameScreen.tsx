@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,7 +27,7 @@ const nameSchema = yup.object().shape({
 
 const SettingsNameScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsNameScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, uiStore } = useStores();
 
   const {
     control,
@@ -44,10 +44,10 @@ const SettingsNameScreen: React.FC = observer(() => {
   const onSubmit = async () => {
     try {
       // TODO: Implement name update API
-      Alert.alert('Успех', 'Имя обновлено');
+      uiStore.showSnackbar('Имя обновлено', 'success');
       navigation.goBack();
     } catch {
-      Alert.alert('Ошибка', 'Не удалось обновить имя');
+      uiStore.showSnackbar('Не удалось обновить имя', 'error');
     }
   };
 

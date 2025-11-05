@@ -43,6 +43,12 @@ class AuthStore {
       // Check if user has profile (не сбрасываем loading до завершения проверки профиля)
       await this.rootStore.profileStore.checkProfile();
 
+      // Register for push notifications
+      this.rootStore.notificationStore.registerForPushNotifications().catch((err) => {
+        console.warn('Failed to register for push notifications:', err);
+        // Не прерываем процесс входа, если регистрация уведомлений не удалась
+      });
+
       runInAction(() => {
         this.loading = false;
       });

@@ -1,0 +1,236 @@
+import { makeAutoObservable, runInAction } from 'mobx';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
+import { Platform } from 'react-native';
+import type RootStore from './RootStore';
+import { notificationService } from '../api/services/notification.service';
+import type { DeviceType } from '../types/api.types';
+
+// Конфигурация поведения уведомлений
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
+class NotificationStore {
+  rootStore: RootStore;
+  fcmToken: string | null = null;
+  expoPushToken: string | null = null;
+  loading: boolean = false;
+  error: string | null = null;
+  notificationsEnabled: boolean = false;
+  permissionStatus: 'granted' | 'denied' | 'undetermined' = 'undetermined';
+
+  constructor(rootStore: RootStore) {
+    this.rootStore = rootStore;
+    makeAutoObservable(this);
+  }
+
+  /**
+   * Регистрация для получения push-уведомлений
+   */
+  async registerForPushNotifications(): Promise<boolean> {
+    console.log('🔔 Starting push notification registration...');
+    this.loading = true;
+    this.error = null;
+
+    try {
+      // Проверка устройства
+      console.log('📱 Device.isDevice:', Device.isDevice);
+      console.log('📱 Platform:', Platform.OS);
+      
+      if (!Device.isDevice) {
+        const errorMsg = 'Пуш-уведомления работают только на физических устройствах';
+        console.log('⚠️', errorMsg);
+        console.warn(errorMsg);
+        runInAction(() => {
+          this.error = errorMsg;
+          this.loading = false;
+        });
+        return false;
+      }
+
+      console.log('✅ Device check passed');
+
+      // Запрос разрешения на уведомления
+      console.log('🔑 Requesting notification permissions...');
+      const { status: existingStatus } =
+        await Notifications.getPermissionsAsync();
+      console.log('📋 Existing permission status:', existingStatus);
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        console.log('❓ Permission not granted, requesting...');
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+        console.log('📋 New permission status:', finalStatus);
+      }
+
+      if (finalStatus !== 'granted') {
+        console.warn('❌ Permission denied');
+        runInAction(() => {
+          this.error = 'Разрешение на уведомления не предоставлено';
+          this.permissionStatus = 'denied';
+          this.loading = false;
+        });
+        return false;
+      }
+
+      console.log('✅ Permission granted!');
+      runInAction(() => {
+        this.permissionStatus = 'granted';
+      });
+
+      // Получение FCM Token (для Android)
+      if (Platform.OS === 'android') {
+        const devicePushToken = await Notifications.getDevicePushTokenAsync();
+        const token = devicePushToken.data;
+
+        runInAction(() => {
+          this.fcmToken = token;
+          this.notificationsEnabled = true;
+        });
+
+        // Отправка токена на бэкенд
+        await this.sendTokenToBackend(token, 'ANDROID');
+      } else if (Platform.OS === 'ios') {
+        const devicePushToken = await Notifications.getDevicePushTokenAsync();
+        const token = devicePushToken.data;
+
+        runInAction(() => {
+          this.fcmToken = token;
+          this.notificationsEnabled = true;
+        });
+
+        // Отправка токена на бэкенд
+        await this.sendTokenToBackend(token, 'IOS');
+      }
+
+      runInAction(() => {
+        this.loading = false;
+      });
+
+      console.log('Push notification token registered:', this.fcmToken);
+      return true;
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error = error.message || 'Ошибка регистрации уведомлений';
+      });
+      console.error('Error registering for push notifications:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Отправка токена на бэкенд
+   */
+  private async sendTokenToBackend(
+    token: string,
+    deviceType: DeviceType
+  ): Promise<void> {
+    try {
+      await notificationService.registerDevice({
+        fcmToken: token,
+        deviceType: deviceType,
+      });
+      console.log('Token successfully sent to backend');
+    } catch (error: any) {
+      console.error('Error sending token to backend:', error);
+      // Не выбрасываем ошибку, чтобы не прерывать процесс регистрации
+      // Токен сохранён локально и можно попробовать отправить позже
+    }
+  }
+
+  /**
+   * Настройка слушателей уведомлений
+   */
+  setupNotificationListeners(): () => void {
+    // Обработка уведомлений когда приложение открыто
+    const notificationListener =
+      Notifications.addNotificationReceivedListener((notification) => {
+        console.log('Notification received:', notification);
+        // Можно показать in-app уведомление или обновить UI
+      });
+
+    // Обработка нажатия на уведомление
+    const responseListener =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        console.log('Notification tapped:', response);
+        // Здесь можно добавить навигацию к нужному экрану
+        // Например, если в data есть route: navigation.navigate(route)
+        const data = response.notification.request.content.data;
+        console.log('Notification data:', data);
+      });
+
+    // Возвращаем функцию для очистки слушателей
+    return () => {
+      // Правильный способ удаления подписок
+      notificationListener.remove();
+      responseListener.remove();
+    };
+  }
+
+  /**
+   * Переключение уведомлений
+   */
+  async toggleNotifications(): Promise<void> {
+    if (this.notificationsEnabled) {
+      await this.disableNotifications();
+    } else {
+      await this.registerForPushNotifications();
+    }
+  }
+
+  /**
+   * Отключение уведомлений
+   */
+  async disableNotifications(): Promise<void> {
+    try {
+      if (this.fcmToken) {
+        // Удаляем токен с бэкенда
+        await notificationService.unregisterDevice(this.fcmToken);
+      }
+      runInAction(() => {
+        this.notificationsEnabled = false;
+        this.fcmToken = null;
+        this.expoPushToken = null;
+      });
+      console.log('Notifications disabled');
+    } catch (error) {
+      console.error('Error disabling notifications:', error);
+    }
+  }
+
+  /**
+   * Проверка статуса разрешений
+   */
+  async checkPermissionStatus(): Promise<void> {
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      runInAction(() => {
+        this.permissionStatus = status as 'granted' | 'denied' | 'undetermined';
+      });
+    } catch (error) {
+      console.error('Error checking permission status:', error);
+    }
+  }
+
+  /**
+   * Сброс состояния (при выходе из аккаунта)
+   */
+  reset(): void {
+    this.fcmToken = null;
+    this.expoPushToken = null;
+    this.loading = false;
+    this.error = null;
+    this.notificationsEnabled = false;
+    this.permissionStatus = 'undetermined';
+  }
+}
+
+export default NotificationStore;
+

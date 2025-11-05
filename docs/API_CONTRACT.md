@@ -220,9 +220,12 @@ Headers: Authorization: Bearer {token}
   "targetWeightType": "LOSE",
   "targetWeight": 70.0,
   "physicalActivityLevel": "SECOND",
-  "dayLimitCal": 1800
+  "dayLimitCal": 1800,
+  "timezone": "Europe/Moscow"
 }
 ```
+
+**Примечание:** Все поля обязательные кроме `targetWeightType`, `targetWeight`, `physicalActivityLevel` и `dayLimitCal`. Поле `timezone` обязательно и должно быть в формате IANA (например, "Europe/Moscow", "America/New_York", "Asia/Tokyo").
 
 **Enum значения:**
 - `gender`: `MALE`, `FEMALE`
@@ -242,6 +245,7 @@ Headers: Authorization: Bearer {token}
   "targetWeight": 70.0,
   "physicalActivityLevel": "SECOND",
   "dayLimitCal": 1800,
+  "timezone": "UTC",
   "bmi": 23.15,
   "recommendedCalories": 2400.0,
   "createdAt": "2024-10-20T12:00:00Z",
@@ -274,6 +278,7 @@ Headers: Authorization: Bearer {token}
   "targetWeight": 70.0,
   "physicalActivityLevel": "SECOND",
   "dayLimitCal": 1800,
+  "timezone": "UTC",
   "bmi": 23.15,
   "recommendedCalories": 2400.0,
   "createdAt": "2024-10-20T12:00:00Z",
@@ -296,9 +301,12 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "weight": 73,
-  "dayLimitCal": 1700
+  "dayLimitCal": 1700,
+  "timezone": "Europe/Moscow"
 }
 ```
+
+**Примечание:** `timezone` - часовой пояс пользователя в формате IANA (например, "Europe/Moscow", "America/New_York", "Asia/Tokyo").
 
 **Response (200 OK):**
 ```json
@@ -1049,66 +1057,9 @@ Headers: Authorization: Bearer {token}
 
 ---
 
-## 9. Устройства (для уведомлений)
+## 9. Изображения
 
-### 9.1. Регистрация устройства
-
-**Endpoint:**
-```
-POST /my-food/device
-Headers: Authorization: Bearer {token}
-```
-
-**Request Body:**
-```json
-{
-  "device_token": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-  "device_type": "ANDROID"
-}
-```
-
-**Device types:**
-- `ANDROID`
-- `IOS`
-
-**Response (201 Created):**
-```json
-{
-  "id": 1,
-  "userId": 1,
-  "deviceToken": "ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]",
-  "deviceType": "ANDROID",
-  "createdAt": "2024-10-20T12:00:00Z"
-}
-```
-
-**Errors:**
-- 409: Устройство уже зарегистрировано (можно игнорировать)
-
-### 9.2. Удаление устройства
-
-**Endpoint:**
-```
-DELETE /my-food/device/{deviceToken}
-Headers: Authorization: Bearer {token}
-```
-
-**Примеры:**
-```
-/device/ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]
-```
-
-**Response (204 No Content)**
-
-**Errors:**
-- 404: Устройство не найдено
-- 403: Устройство принадлежит другому пользователю
-
----
-
-## 10. Изображения
-
-### 10.1. Получение изображения
+### 9.1. Получение изображения
 
 **Endpoint:**
 ```
@@ -1699,13 +1650,14 @@ GET /my-food/swagger-ui/index.html
 
 ### Версия 2.2.0 (текущая)
 
-Расширенные AI возможности для анализа блюд.
+Расширенные AI возможности для анализа блюд и консолидация управления уведомлениями.
 
 **Новые эндпоинты:**
 - `POST /my-food/meal_element/analyze-text` - анализ блюда по текстовому описанию
 - `POST /my-food/meal_element/analyze-audio` - анализ блюда по аудио описанию (Whisper + GPT)
+- `DELETE /my-food/notifications/device/{deviceToken}` - удаление устройства из уведомлений
 
-**Изменения:**
+**Изменения AI Analysis:**
 - Добавлен анализ блюд по текстовому описанию с помощью GPT
 - Добавлен анализ блюд по аудио описанию (двухэтапный процесс: Whisper API для транскрипции, затем GPT для анализа КБЖУ)
 - Поддержка аудио форматов: mp3, wav, m4a, webm (макс. 25MB)
@@ -1713,7 +1665,17 @@ GET /my-food/swagger-ui/index.html
 - Переименован `PhotoAnalysisResponse` → `AnalysisResponse` для отражения универсального использования
 - Обновлен Swagger tag с "Photo Analysis" на "AI Analysis" для контроллера
 
-**Примечание:** Формат ответа API не изменился, только название DTO класса в backend коде.
+**BREAKING CHANGES - Device Management:**
+- ❌ **УДАЛЁН:** `POST /my-food/device` - используйте `POST /my-food/notifications/register` вместо него
+- ❌ **УДАЛЁН:** `DELETE /my-food/device/{deviceToken}` - используйте `DELETE /my-food/notifications/device/{deviceToken}`
+- ✅ Все эндпоинты управления устройствами теперь находятся под `/notifications`
+- ✅ Удалена секция "9. Устройства" из документации - см. секцию "21. Notifications Management"
+- ⚠️ **Миграция для клиентов:** обновите пути эндпоинтов с `/device` на `/notifications/*`
+
+**Примечания:**
+- Формат request/response для регистрации/удаления устройств не изменился
+- Изменились только пути (URL) эндпоинтов
+- Service layer (DeviceService) остался без изменений
 
 ---
 
@@ -2178,22 +2140,163 @@ Authorization: Bearer {JWT_TOKEN}
 
 ---
 
-## 21. Design Notes (Metrics & Recommendations)
+## 21. Notifications Management
 
-### 21.1. NutritionTrendAnalyzer
+Управление регистрацией устройств для получения push-уведомлений через Firebase Cloud Messaging.
+
+**Base Path:** `/my-food/notifications`
+
+### 21.1. Регистрация устройства для уведомлений
+
+**Endpoint:**
+```
+POST /my-food/notifications/register
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Регистрирует устройство пользователя для получения push-уведомлений через Firebase Cloud Messaging (FCM). При повторной регистрации с тем же токеном обновляется существующая запись.
+
+**Request Body:**
+```json
+{
+  "fcmToken": "eXaMpLe_FcM_ToKeN_123...",
+  "deviceType": "ANDROID"
+}
+```
+
+**Request Fields:**
+| Поле | Тип | Обязательное | Описание |
+|------|-----|--------------|----------|
+| fcmToken | String | Да | FCM токен устройства, полученный от Firebase SDK |
+| deviceType | Enum | Да | Тип устройства: "ANDROID" или "IOS" |
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "fcmToken": "eXaMpLe_FcM_ToKeN_123...",
+  "deviceType": "ANDROID",
+  "createdAt": "2024-11-01T12:00:00Z"
+}
+```
+
+**Response Fields:**
+| Поле | Тип | Описание |
+|------|-----|----------|
+| id | Long | ID записи устройства |
+| userId | Long | ID пользователя-владельца |
+| fcmToken | String | FCM токен устройства |
+| deviceType | String | Тип устройства (ANDROID/IOS) |
+| createdAt | DateTime | Дата и время регистрации |
+
+**Errors:**
+- 400: Невалидные данные (пустой токен или неверный тип устройства)
+- 401: Не авторизован (отсутствует или невалидный JWT токен)
+- 409: Устройство уже зарегистрировано (можно игнорировать, токен будет обновлён)
+
+**Примеры использования:**
+
+1. **Регистрация Android устройства:**
+```http
+POST /my-food/notifications/register
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "fcmToken": "f7X9kL2mN4pQ6rS8tU0vW1xY3zA5bC7dE9fG1hI3jK5lM7nO9pQ",
+  "deviceType": "ANDROID"
+}
+```
+
+2. **Регистрация iOS устройства:**
+```http
+POST /my-food/notifications/register
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "fcmToken": "aP1bQ2cR3dS4eT5fU6gV7hW8iX9jY0kZ1lA2mB3nC4oD5pE6qF",
+  "deviceType": "IOS"
+}
+```
+
+**Примечания:**
+- Регистрация устройства должна происходить после успешного входа в приложение
+- FCM токен может измениться при переустановке приложения или очистке данных
+- Рекомендуется повторно регистрировать устройство при каждом запуске приложения
+- Один пользователь может иметь несколько зарегистрированных устройств
+- При повторной регистрации с тем же токеном обновляется `createdAt`
+
+**Интеграция с Firebase:**
+- Используется Firebase Cloud Messaging API (V1)
+- Токены получаются через Firebase SDK на клиенте
+- Для отправки уведомлений бэкенд использует Firebase Admin SDK
+- Поддерживается отправка индивидуальных и групповых уведомлений
+
+### 21.2. Удаление устройства из уведомлений
+
+**Endpoint:**
+```
+DELETE /my-food/notifications/device/{deviceToken}
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Удаляет устройство из списка для получения push-уведомлений. После удаления устройство перестанет получать уведомления от приложения.
+
+**Path Parameters:**
+| Параметр | Тип | Описание |
+|----------|-----|----------|
+| deviceToken | String | FCM токен устройства, который нужно удалить |
+
+**Response (204 No Content)**
+
+Успешное удаление - пустое тело ответа.
+
+**Errors:**
+- 404: Устройство не найдено (токен не зарегистрирован)
+- 403: Устройство принадлежит другому пользователю (нет прав на удаление)
+- 401: Не авторизован (отсутствует или невалидный JWT токен)
+
+**Примеры использования:**
+
+**Удаление устройства:**
+```http
+DELETE /my-food/notifications/device/f7X9kL2mN4pQ6rS8tU0vW1xY3zA5bC7dE9fG1hI3jK5lM7nO9pQ
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+```
+
+**Response:**
+```
+204 No Content
+```
+
+**Примечания:**
+- Используется при выходе пользователя из приложения
+- Можно вызывать при удалении приложения (если возможно)
+- Токен должен быть URL-encoded если содержит специальные символы
+- После удаления можно повторно зарегистрировать то же устройство
+
+---
+
+## 22. Design Notes (Metrics & Recommendations)
+
+### 22.1. NutritionTrendAnalyzer
 - Источник данных: агрегации по дням за период
 - Направление тренда: сравнение средних половин периода (порог 5%)
 - Простая модель прогноза: скользящее среднее последних 3 дней
 
-### 21.2. ProductStatisticsAnalyzer
+### 22.2. ProductStatisticsAnalyzer
 - Средние значения считаются как total/кол-во дней с данными
 - Категории и топ-продукты — по использованию в meal_elements
 
-### 21.3. InsightGenerator
+### 22.3. InsightGenerator
 - Пороговые правила: 80%/95-105%/120% от дневной цели калорий
 - Для GAIN: рекомендация по белку ≈ 1.8 г/кг веса
 
-### 21.4. ProductRecommendationEngine
+### 22.4. ProductRecommendationEngine
 - Факторы ранжирования: предпочтительные категории, цели, полнота КБЖУ
 - Исключения: уже использованные и избранные продукты
 

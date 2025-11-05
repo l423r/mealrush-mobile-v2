@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -13,6 +13,7 @@ import {
   calculateRecommendedCalories,
   calculateAge,
 } from '../../utils/calculations';
+import { getDeviceTimezone } from '../../utils/timezone';
 
 type CompleteProfileScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
@@ -26,7 +27,7 @@ type CompleteProfileScreenRouteProp = RouteProp<
 const CompleteProfileScreen: React.FC = () => {
   const navigation = useNavigation<CompleteProfileScreenNavigationProp>();
   const route = useRoute<CompleteProfileScreenRouteProp>();
-  const { profileStore } = useStores();
+  const { profileStore, uiStore } = useStores();
   const [loading, setLoading] = useState(false);
 
   const { gender, target, weight, targetWeight, height, birthday, activity } =
@@ -78,7 +79,7 @@ const CompleteProfileScreen: React.FC = () => {
       !birthday ||
       !activity
     ) {
-      Alert.alert('Ошибка', 'Не все данные заполнены');
+      uiStore.showSnackbar('Не все данные заполнены', 'error');
       return;
     }
 
@@ -99,6 +100,7 @@ const CompleteProfileScreen: React.FC = () => {
           | 'FOURTH'
           | 'FIFTH',
         dayLimitCal: recommendedCalories,
+        timezone: getDeviceTimezone(),
       };
 
       await profileStore.createProfile(profileData);
@@ -106,9 +108,9 @@ const CompleteProfileScreen: React.FC = () => {
       // Profile created successfully, navigation will be handled by AppNavigator
       // The user will be redirected to Main screen automatically
     } catch (error: any) {
-      Alert.alert(
-        'Ошибка',
-        error.response?.data?.message || 'Не удалось создать профиль'
+      uiStore.showSnackbar(
+        error.response?.data?.message || 'Не удалось создать профиль',
+        'error'
       );
     } finally {
       setLoading(false);

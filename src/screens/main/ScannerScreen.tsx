@@ -31,7 +31,7 @@ const { width } = Dimensions.get('window');
 const ScannerScreen: React.FC = observer(() => {
   const navigation = useNavigation<ScannerScreenNavigationProp>();
   const route = useRoute<ScannerScreenRouteProp>();
-  const { productStore } = useStores();
+  const { productStore, uiStore } = useStores();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -75,21 +75,11 @@ const ScannerScreen: React.FC = observer(() => {
         );
       }
     } catch {
-      Alert.alert(
-        'Ошибка сканирования',
-        'Не удалось найти продукт. Попробуйте еще раз.',
-        [
-          {
-            text: 'Попробовать снова',
-            onPress: () => setScanned(false),
-          },
-          {
-            text: 'Отмена',
-            style: 'cancel',
-            onPress: () => navigation.goBack(),
-          },
-        ]
+      uiStore.showSnackbar(
+        'Не удалось найти продукт. Попробуйте еще раз',
+        'error'
       );
+      setScanned(false);
     } finally {
       setIsProcessing(false);
     }

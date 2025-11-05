@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -7,6 +7,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { MainStackParamList } from '../../types/navigation.types';
+import { useStores } from '../../stores';
 import { colors, spacing } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -31,7 +32,7 @@ const passwordSchema = yup.object().shape({
 
 const SettingsPasswordScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsPasswordScreenNavigationProp>();
-  // store not used here; intentionally omitted
+  const { uiStore } = useStores();
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -49,10 +50,10 @@ const SettingsPasswordScreen: React.FC = observer(() => {
   const onSubmit = async () => {
     try {
       // TODO: Implement password update API
-      Alert.alert('Успех', 'Пароль обновлен');
+      uiStore.showSnackbar('Пароль обновлен', 'success');
       navigation.goBack();
     } catch {
-      Alert.alert('Ошибка', 'Не удалось обновить пароль');
+      uiStore.showSnackbar('Не удалось обновить пароль', 'error');
     }
   };
 

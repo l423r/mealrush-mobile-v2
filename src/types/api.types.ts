@@ -90,6 +90,9 @@ export interface UserProfile {
   targetWeight: number;
   physicalActivityLevel: PhysicalActivityLevel;
   dayLimitCal: number;
+  timezone: string;
+  bmi?: number;
+  recommendedCalories?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -99,10 +102,11 @@ export interface UserProfileCreate {
   weight: number;
   gender: Gender;
   birthday: string;
-  targetWeightType: TargetWeightType;
-  targetWeight: number;
-  physicalActivityLevel: PhysicalActivityLevel;
-  dayLimitCal: number;
+  targetWeightType?: TargetWeightType;
+  targetWeight?: number;
+  physicalActivityLevel?: PhysicalActivityLevel;
+  dayLimitCal?: number;
+  timezone: string;
 }
 
 export interface UserProfileUpdate {
@@ -114,6 +118,7 @@ export interface UserProfileUpdate {
   targetWeight?: number;
   physicalActivityLevel?: PhysicalActivityLevel;
   dayLimitCal?: number;
+  timezone?: string;
 }
 
 // Product types
@@ -463,4 +468,40 @@ export interface WeightEntryCreate {
   weight: number;
   recordedAt: string;
   notes?: string;
+}
+
+// =========================
+// Notifications
+// =========================
+
+export type DeviceType = 'ANDROID' | 'IOS';
+
+export interface DeviceRegistrationRequest {
+  fcmToken: string;
+  deviceType: DeviceType;
+}
+
+export interface DeviceRegistrationResponse {
+  id: number;
+  userId: number;
+  fcmToken: string;
+  deviceType: DeviceType;
+  createdAt: string;
+}
+
+export interface NotificationPayload {
+  title: string;
+  body: string;
+  data?: Record<string, any>;
+}
+
+export type NotificationType = 'success' | 'info' | 'warning' | 'error';
+
+export interface InAppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  timestamp: number;
+  read: boolean;
 }
