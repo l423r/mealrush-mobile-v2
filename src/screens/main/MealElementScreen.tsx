@@ -56,7 +56,7 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, uiStore } = useStores();
+  const { mealStore, uiStore, productStore } = useStores();
 
   const item = route.params?.item;
   const isEditing = !!item && 'mealId' in item; // MealElement has mealId
@@ -100,12 +100,35 @@ const MealElementScreen: React.FC = observer(() => {
 
   const watchedQuantity = watch('quantity');
   const watchedCalories = watch('calories');
+  const watchedProteins = watch('proteins');
+  const watchedFats = watch('fats');
+  const watchedCarbohydrates = watch('carbohydrates');
 
   // Debug: log when dialog visibility changes
   useEffect(() => {
     console.log('🔔 [MealElementScreen] Dialog visibility changed:', showMealTypeConfirmDialog);
     console.log('  - existingMealForConfirm:', existingMealForConfirm);
   }, [showMealTypeConfirmDialog, existingMealForConfirm]);
+
+  // Auto-calculate calories when BJU changes (only when manually editing, not for product quantity changes)
+  useEffect(() => {
+    // Only auto-calculate if editing a meal element (not a product with base calculations)
+    if (isEditing && watchedProteins !== undefined && watchedFats !== undefined && watchedCarbohydrates !== undefined) {
+      const calculatedCalories = (watchedProteins * 4) + (watchedFats * 9) + (watchedCarbohydrates * 4);
+      const roundedCalories = Math.round(calculatedCalories * 10) / 10;
+      
+      // Only update if the calculated value is different from current to avoid infinite loops
+      if (Math.abs(roundedCalories - (watchedCalories || 0)) > 0.1) {
+        console.log('🔢 [MealElementScreen] Auto-calculating calories from BJU:', {
+          proteins: watchedProteins,
+          fats: watchedFats,
+          carbohydrates: watchedCarbohydrates,
+          calculatedCalories: roundedCalories
+        });
+        setValue('calories', roundedCalories);
+      }
+    }
+  }, [watchedProteins, watchedFats, watchedCarbohydrates, isEditing, setValue, watchedCalories]);
 
   useEffect(() => {
     if (item && 'proteins' in item) {
@@ -320,15 +343,70 @@ const MealElementScreen: React.FC = observer(() => {
     setExistingMealForConfirm(null);
   };
 
+  const handleSaveAsProduct = async () => {
+    try {
+      console.log('💾 [MealElementScreen.handleSaveAsProduct] Сохранение блюда как продукта');
+      
+      const formData = getValues();
+      const productName = item?.name || 'Блюдо';
+      const currentQuantity = Number.parseFloat(formData.quantity) || 100;
+      
+      // Пересчитываем КБЖУ на 100г
+      const targetQuantity = 100;
+      const ratio = targetQuantity / currentQuantity;
+      
+      const proteinsFor100g = Math.round(formData.proteins * ratio * 10) / 10;
+      const fatsFor100g = Math.round(formData.fats * ratio * 10) / 10;
+      const carbohydratesFor100g = Math.round(formData.carbohydrates * ratio * 10) / 10;
+      const caloriesFor100g = Math.round(formData.calories * ratio * 10) / 10;
+      
+      const productData = {
+        name: productName,
+        proteins: proteinsFor100g,
+        fats: fatsFor100g,
+        carbohydrates: carbohydratesFor100g,
+        calories: caloriesFor100g,
+        quantity: '100',
+        measurementType: 'GRAM' as const,
+      };
+
+      console.log('  - Текущее количество:', currentQuantity + 'г');
+      console.log('  - Текущие КБЖУ:', {
+        proteins: formData.proteins,
+        fats: formData.fats,
+        carbohydrates: formData.carbohydrates,
+        calories: formData.calories
+      });
+      console.log('  - КБЖУ на 100г:', {
+        proteins: proteinsFor100g,
+        fats: fatsFor100g,
+        carbohydrates: carbohydratesFor100g,
+        calories: caloriesFor100g
+      });
+      console.log('  - Данные продукта:', productData);
+      
+      await productStore.createProduct(productData);
+      
+      console.log('✅ [MealElementScreen] Продукт создан успешно');
+      uiStore.showSnackbar(`Продукт "${productName}" сохранен (100г)`, 'success');
+    } catch (error) {
+      console.error('❌ [MealElementScreen] Ошибка при сохранении продукта:', error);
+      uiStore.showSnackbar(
+        productStore.error || 'Не удалось сохранить продукт',
+        'error'
+      );
+    }
+  };
+
   const handleBack = () => {
     navigation.goBack();
   };
 
   const getTitle = () => {
-    if (readOnly) return 'Просмотр продукта';
-    if (isEditing) return 'Редактирование блюда';
-    if (isFromSearch) return 'Добавление блюда';
-    return 'Создание блюда';
+    if (readOnly) return 'Просмотр';
+    if (isEditing) return 'Редактирование';
+    if (isFromSearch) return 'Добавление';
+    return 'Создание';
   };
 
   return (
@@ -521,6 +599,16 @@ const MealElementScreen: React.FC = observer(() => {
             disabled={!isValid || mealStore.loading}
             loading={mealStore.loading}
           />
+          {isEditing && (
+            <Button
+              title="Сохранить как продукт"
+              onPress={handleSaveAsProduct}
+              disabled={!isValid || productStore.loading}
+              loading={productStore.loading}
+              style={styles.secondaryButton}
+              variant="outline"
+            />
+          )}
         </View>
       )}
 
@@ -708,6 +796,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
+  },
+  secondaryButton: {
+    marginTop: spacing.sm,
   },
 });
 

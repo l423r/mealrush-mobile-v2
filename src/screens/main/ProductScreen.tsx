@@ -68,7 +68,10 @@ const ProductScreen: React.FC = observer(() => {
     },
   });
 
-  const watchedValues = watch();
+  const watchedProteins = watch('proteins');
+  const watchedFats = watch('fats');
+  const watchedCarbohydrates = watch('carbohydrates');
+  const watchedCalories = watch('calories');
 
   useEffect(() => {
     if (product) {
@@ -79,18 +82,21 @@ const ProductScreen: React.FC = observer(() => {
 
   useEffect(() => {
     // Auto-calculate calories when macronutrients change
-    const { proteins, fats, carbohydrates } = watchedValues;
-    if (proteins > 0 || fats > 0 || carbohydrates > 0) {
-      setIsCalculating(true);
+    if (watchedProteins > 0 || watchedFats > 0 || watchedCarbohydrates > 0) {
       const calculatedCalories = calculateCalories(
-        proteins,
-        fats,
-        carbohydrates
+        watchedProteins,
+        watchedFats,
+        watchedCarbohydrates
       );
-      setValue('calories', calculatedCalories);
-      setTimeout(() => setIsCalculating(false), 500);
+      
+      // Only update if the calculated value is different from current to avoid infinite loops
+      if (Math.abs(calculatedCalories - (watchedCalories || 0)) > 0.1) {
+        setIsCalculating(true);
+        setValue('calories', calculatedCalories);
+        setTimeout(() => setIsCalculating(false), 500);
+      }
     }
-  }, [watchedValues, setValue]);
+  }, [watchedProteins, watchedFats, watchedCarbohydrates, watchedCalories, setValue]);
 
   const handleImagePicker = async () => {
     const hasPermission = await requestMediaLibraryPermission();
@@ -150,6 +156,7 @@ const ProductScreen: React.FC = observer(() => {
 
       const productData = {
         ...data,
+        quantity: '100', // Продукты всегда хранятся на 100г
         imageBase64: base64Image,
         productCategoryId: 'other', // Default category
       };
@@ -326,22 +333,6 @@ const ProductScreen: React.FC = observer(() => {
               />
             </View>
           </View>
-
-          <Controller
-            control={control}
-            name="quantity"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Количество (г)"
-                placeholder="100"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.quantity?.message}
-                keyboardType="numeric"
-              />
-            )}
-          />
         </View>
       </ScrollView>
 

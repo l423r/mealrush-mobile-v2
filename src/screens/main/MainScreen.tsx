@@ -77,6 +77,17 @@ const MainScreen: React.FC = observer(() => {
     setShowDatePicker(true);
   };
 
+  const getMealTypeIcon = (mealType: string): string => {
+    const icons: Record<string, string> = {
+      BREAKFAST: '🌅',
+      LUNCH: '🌞',
+      DINNER: '🌙',
+      SUPPER: '☕',
+      LATE_SUPPER: '🌃',
+    };
+    return icons[mealType] || '🍽️';
+  };
+
   const renderMealCard = ({ item: meal }: { item: any }) => {
     const elements = mealStore.mealElements[meal.id] || [];
     const totalCalories = elements.reduce(
@@ -98,6 +109,10 @@ const MainScreen: React.FC = observer(() => {
         style={styles.mealCard}
         onPress={() => handleMealPress(meal)}
       >
+        <View style={styles.mealIconContainer}>
+          <Text style={styles.mealIcon}>{getMealTypeIcon(meal.mealType)}</Text>
+        </View>
+
         <View style={styles.mealHeader}>
           <Text style={styles.mealType}>{formatMealType(meal.mealType)}</Text>
           <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
@@ -373,6 +388,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     ...shadows.md,
+  },
+  mealIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.light,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.md,
+  },
+  mealIcon: {
+    fontSize: 24,
   },
   mealHeader: {
     flex: 1,

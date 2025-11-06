@@ -126,6 +126,7 @@ export type MainStackParamList = {
   Product: {
     product?: Product;
     barcode?: string;
+    isEditing?: boolean;
   };
   Meal: {
     meal: Meal;

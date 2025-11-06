@@ -161,7 +161,16 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const handleProductPress = (product: any) => {
-    // Для избранного и рекомендаций - только просмотр
+    // Для "Мои продукты" - открыть редактирование продукта
+    if (activeTab === 'my') {
+      navigation.navigate('Product', { 
+        product: product,
+        isEditing: true,
+      });
+      return;
+    }
+    
+    // Для избранного и рекомендаций - только просмотр в MealElement
     const readOnly = activeTab === 'favorites' || activeTab === 'reco';
     navigation.navigate('MealElement', { 
       item: product,
