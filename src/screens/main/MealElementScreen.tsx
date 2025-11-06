@@ -17,7 +17,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { MainStackParamList } from '../../types/navigation.types';
-import type { Product, MealElement } from '../../types/api.types';
+import type { Product, MealElement, Meal } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { formatCalories, formatWeight, formatMealType } from '../../utils/formatting';
@@ -25,6 +25,7 @@ import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import MealTypeConfirmDialog from '../../components/common/MealTypeConfirmDialog';
 
 type MealElementScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -67,6 +68,8 @@ const MealElementScreen: React.FC = observer(() => {
   >('BREAKFAST');
   const [mealTime] = useState(new Date());
   const [isCalculating, setIsCalculating] = useState(false);
+  const [showMealTypeConfirmDialog, setShowMealTypeConfirmDialog] = useState(false);
+  const [existingMealForConfirm, setExistingMealForConfirm] = useState<Meal | null>(null);
 
   const {
     control,
@@ -74,6 +77,7 @@ const MealElementScreen: React.FC = observer(() => {
     formState: { errors, isValid },
     watch,
     setValue,
+    getValues,
   } = useForm({
     resolver: yupResolver(mealElementSchema),
     mode: 'onChange',
@@ -96,6 +100,12 @@ const MealElementScreen: React.FC = observer(() => {
 
   const watchedQuantity = watch('quantity');
   const watchedCalories = watch('calories');
+
+  // Debug: log when dialog visibility changes
+  useEffect(() => {
+    console.log('🔔 [MealElementScreen] Dialog visibility changed:', showMealTypeConfirmDialog);
+    console.log('  - existingMealForConfirm:', existingMealForConfirm);
+  }, [showMealTypeConfirmDialog, existingMealForConfirm]);
 
   useEffect(() => {
     if (item && 'proteins' in item) {
@@ -162,12 +172,43 @@ const MealElementScreen: React.FC = observer(() => {
           calories: data.calories,
         });
         uiStore.showSnackbar('Блюдо обновлено', 'success');
+        console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
+        navigation.navigate('HomeTabs', { screen: 'Main' });
+        console.log('✅ [MealElementScreen] Команда навигации выполнена');
       } else {
         // Create new meal element
         console.log('➕ [MealElementScreen] Создание нового элемента');
+        console.log('  - isEditing:', isEditing);
+        console.log('  - route.params?.mealId:', route.params?.mealId);
+        console.log('  - mealType:', mealType);
+        console.log('  - selectedDate:', mealStore.selectedDate.toISOString());
+        
         let mealId = route.params?.mealId;
 
         if (!mealId) {
+          console.log('🔎 [MealElementScreen] mealId не передан, проверяем существующие приемы пищи');
+          
+          // Check if there's an existing meal of the same type
+          const existingMeals = mealStore.getMealsByTypeForDate(mealType);
+          console.log('  - Результат getMealsByTypeForDate:', existingMeals);
+          console.log('  - Количество найденных приемов:', existingMeals.length);
+          
+          if (existingMeals.length > 0) {
+            // Show confirmation dialog
+            const latestMeal = existingMeals[0];
+            console.log('✅ [MealElementScreen] Найдены существующие приемы пищи того же типа');
+            console.log('  - Последний прием:', latestMeal);
+            console.log('  - ID последнего приема:', latestMeal.id);
+            console.log('  - Время последнего приема:', latestMeal.dateTime);
+            console.log('  - Показываем диалог подтверждения');
+            
+            setExistingMealForConfirm(latestMeal);
+            setShowMealTypeConfirmDialog(true);
+            console.log('  - Диалог установлен, выходим из onSubmit');
+            return; // Wait for user decision
+          }
+
+          console.log('ℹ️ [MealElementScreen] Существующих приемов пищи не найдено, создаем новый');
           // Create new meal
           console.log('🍽️ [MealElementScreen] Создание нового приема пищи');
           const meal = await mealStore.createMeal({
@@ -176,34 +217,12 @@ const MealElementScreen: React.FC = observer(() => {
           });
           mealId = meal.id;
           console.log('✅ [MealElementScreen] Прием пищи создан, id:', mealId);
+        } else {
+          console.log('ℹ️ [MealElementScreen] mealId передан:', mealId, '- добавляем к существующему');
         }
 
-        const elementData = {
-          mealId: mealId,
-          parentProductId: item && 'id' in item ? item.id : undefined,
-          name: item?.name || 'Блюдо',
-          quantity: data.quantity,
-          proteins: data.proteins,
-          fats: data.fats,
-          carbohydrates: data.carbohydrates,
-          calories: data.calories,
-          measurementType: 'GRAM' as const,
-          defaultProteins: item?.proteins || data.proteins,
-          defaultFats: item?.fats || data.fats,
-          defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
-          defaultCalories: item?.calories || data.calories,
-          defaultQuantity: item?.quantity || '100',
-        };
-
-        console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);
-        await mealStore.createMealElement(elementData);
-        console.log('✅ [MealElementScreen] Элемент создан успешно');
-        uiStore.showSnackbar('Блюдо добавлено', 'success');
+        await createMealElementWithId(mealId, data);
       }
-
-      console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
-      navigation.navigate('HomeTabs', { screen: 'Main' });
-      console.log('✅ [MealElementScreen] Команда навигации выполнена');
     } catch (error) {
       console.error('❌ [MealElementScreen] Ошибка в onSubmit:', error);
       uiStore.showSnackbar(
@@ -211,6 +230,94 @@ const MealElementScreen: React.FC = observer(() => {
         'error'
       );
     }
+  };
+
+  const createMealElementWithId = async (mealId: number, data: any) => {
+    const elementData = {
+      mealId: mealId,
+      parentProductId: item && 'id' in item ? item.id : undefined,
+      name: item?.name || 'Блюдо',
+      quantity: data.quantity,
+      proteins: data.proteins,
+      fats: data.fats,
+      carbohydrates: data.carbohydrates,
+      calories: data.calories,
+      measurementType: 'GRAM' as const,
+      defaultProteins: item?.proteins || data.proteins,
+      defaultFats: item?.fats || data.fats,
+      defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
+      defaultCalories: item?.calories || data.calories,
+      defaultQuantity: item?.quantity || '100',
+    };
+
+    console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);
+    await mealStore.createMealElement(elementData);
+    console.log('✅ [MealElementScreen] Элемент создан успешно');
+    uiStore.showSnackbar('Блюдо добавлено', 'success');
+
+    console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
+    navigation.navigate('HomeTabs', { screen: 'Main' });
+    console.log('✅ [MealElementScreen] Команда навигации выполнена');
+  };
+
+  const handleConfirmAddToExisting = async () => {
+    console.log('✅ [MealElementScreen.handleConfirmAddToExisting] Пользователь выбрал добавить к существующему');
+    console.log('  - existingMealForConfirm:', existingMealForConfirm);
+    
+    setShowMealTypeConfirmDialog(false);
+    
+    if (existingMealForConfirm) {
+      try {
+        console.log('  - Получаем данные формы');
+        const data = getValues();
+        console.log('  - Данные формы:', data);
+        console.log('  - Добавляем к приему пищи ID:', existingMealForConfirm.id);
+        
+        await createMealElementWithId(existingMealForConfirm.id, data);
+      } catch (error) {
+        console.error('❌ [MealElementScreen] Ошибка при добавлении к существующему:', error);
+        uiStore.showSnackbar(
+          mealStore.error || 'Не удалось добавить блюдо',
+          'error'
+        );
+      }
+    } else {
+      console.warn('⚠️ [MealElementScreen] existingMealForConfirm is null!');
+    }
+  };
+
+  const handleCreateNewMeal = async () => {
+    console.log('🆕 [MealElementScreen.handleCreateNewMeal] Пользователь выбрал создать новый прием');
+    console.log('  - mealType:', mealType);
+    console.log('  - mealTime:', mealTime.toISOString());
+    
+    setShowMealTypeConfirmDialog(false);
+    
+    try {
+      // Create new meal
+      console.log('🍽️ [MealElementScreen] Создание нового приема пищи (пользователь выбрал создать новый)');
+      const meal = await mealStore.createMeal({
+        mealType: mealType,
+        dateTime: mealTime.toISOString(),
+      });
+      console.log('✅ [MealElementScreen] Прием пищи создан, id:', meal.id);
+
+      const data = getValues();
+      console.log('  - Данные формы:', data);
+      await createMealElementWithId(meal.id, data);
+    } catch (error) {
+      console.error('❌ [MealElementScreen] Ошибка при создании нового:', error);
+      uiStore.showSnackbar(
+        mealStore.error || 'Не удалось создать прием пищи',
+        'error'
+      );
+    }
+  };
+
+  const handleCancelDialog = () => {
+    console.log('❌ [MealElementScreen.handleCancelDialog] Пользователь отменил диалог');
+    setShowMealTypeConfirmDialog(false);
+    setExistingMealForConfirm(null);
   };
 
   const handleBack = () => {
@@ -416,6 +523,16 @@ const MealElementScreen: React.FC = observer(() => {
           />
         </View>
       )}
+
+      {/* Диалог подтверждения добавления к существующему приему */}
+      <MealTypeConfirmDialog
+        visible={showMealTypeConfirmDialog}
+        onConfirm={handleConfirmAddToExisting}
+        onCreateNew={handleCreateNewMeal}
+        onCancel={handleCancelDialog}
+        mealTypeName={formatMealType(mealType)}
+        mealTime={existingMealForConfirm ? new Date(existingMealForConfirm.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
+      />
     </View>
   );
 });

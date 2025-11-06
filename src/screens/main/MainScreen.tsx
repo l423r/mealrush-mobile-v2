@@ -367,8 +367,8 @@ const styles = StyleSheet.create({
   mealCard: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',

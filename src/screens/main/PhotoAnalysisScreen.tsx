@@ -12,7 +12,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
-import type { PhotoAnalysisIngredient } from '../../types/api.types';
+import type { PhotoAnalysisIngredient, Meal } from '../../types/api.types';
 import { useStores } from '../../stores';
 import {
   colors,
@@ -21,11 +21,12 @@ import {
   borderRadius,
   shadows,
 } from '../../theme';
-import { formatNumber, formatMeasurementType } from '../../utils/formatting';
+import { formatNumber, formatMeasurementType, formatMealType } from '../../utils/formatting';
 import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import MealTypeConfirmDialog from '../../components/common/MealTypeConfirmDialog';
 
 type PhotoAnalysisScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -68,6 +69,8 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
   const [expandedIngredients, setExpandedIngredients] = useState<Set<number>>(
     new Set()
   );
+  const [showMealTypeConfirmDialog, setShowMealTypeConfirmDialog] = useState(false);
+  const [existingMealForConfirm, setExistingMealForConfirm] = useState<Meal | null>(null);
 
   const toggleIngredientExpansion = (index: number) => {
     const newExpanded = new Set(expandedIngredients);
@@ -127,43 +130,108 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
 
   const handleSave = async () => {
     try {
+      console.log('💾 [PhotoAnalysisScreen] handleSave начало');
       let currentMealId = mealId;
 
-      // Создаем прием пищи, если он не передан
       if (!currentMealId) {
+        console.log('🔎 [PhotoAnalysisScreen] mealId не передан, проверяем существующие приемы пищи');
+        console.log('  - mealType:', mealType);
+        console.log('  - selectedDate:', mealStore.selectedDate.toISOString());
+        
+        const existingMeals = mealStore.getMealsByTypeForDate(mealType);
+        console.log('  - Результат getMealsByTypeForDate:', existingMeals);
+        console.log('  - Количество найденных приемов:', existingMeals.length);
+        
+        if (existingMeals.length > 0) {
+          const latestMeal = existingMeals[0];
+          console.log('✅ [PhotoAnalysisScreen] Найдены существующие приемы пищи того же типа');
+          console.log('  - Последний прием:', latestMeal);
+          console.log('  - Показываем диалог подтверждения');
+          
+          setExistingMealForConfirm(latestMeal);
+          setShowMealTypeConfirmDialog(true);
+          return;
+        }
+
+        console.log('ℹ️ [PhotoAnalysisScreen] Существующих приемов пищи не найдено, создаем новый');
         const meal = await mealStore.createMeal({
           mealType,
           dateTime: mealTime.toISOString(),
         });
         currentMealId = meal.id;
+        console.log('✅ [PhotoAnalysisScreen] Прием пищи создан, id:', currentMealId);
+      } else {
+        console.log('ℹ️ [PhotoAnalysisScreen] mealId передан:', currentMealId, '- добавляем к существующему');
       }
 
-      // Создаем MealElement для каждого ингредиента
-      for (const ingredient of ingredients) {
-        await mealStore.createMealElement({
-          mealId: currentMealId,
-          name: ingredient.name,
-          quantity: ingredient.editedQuantity.toString(),
-          proteins: ingredient.proteins,
-          fats: ingredient.fats,
-          carbohydrates: ingredient.carbohydrates,
-          calories: ingredient.calories,
-          measurementType: ingredient.measurementType,
-          defaultProteins: ingredient.proteins,
-          defaultFats: ingredient.fats,
-          defaultCarbohydrates: ingredient.carbohydrates,
-          defaultCalories: ingredient.calories,
-          defaultQuantity: ingredient.editedQuantity.toString(),
-        });
-      }
-
-      uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
-      console.log('🚀 [PhotoAnalysisScreen] Навигация на HomeTabs > Main');
-      navigation.navigate('HomeTabs', { screen: 'Main' });
+      await saveIngredientsToMeal(currentMealId);
     } catch {
       const errorMessage = mealStore.error || 'Не удалось сохранить блюда';
       uiStore.showSnackbar(errorMessage, 'error');
     }
+  };
+
+  const saveIngredientsToMeal = async (currentMealId: number) => {
+    console.log('📝 [PhotoAnalysisScreen] Сохранение ингредиентов в прием пищи:', currentMealId);
+    
+    for (const ingredient of ingredients) {
+      await mealStore.createMealElement({
+        mealId: currentMealId,
+        name: ingredient.name,
+        quantity: ingredient.editedQuantity.toString(),
+        proteins: ingredient.proteins,
+        fats: ingredient.fats,
+        carbohydrates: ingredient.carbohydrates,
+        calories: ingredient.calories,
+        measurementType: ingredient.measurementType,
+        defaultProteins: ingredient.proteins,
+        defaultFats: ingredient.fats,
+        defaultCarbohydrates: ingredient.carbohydrates,
+        defaultCalories: ingredient.calories,
+        defaultQuantity: ingredient.editedQuantity.toString(),
+      });
+    }
+
+    uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
+    console.log('🚀 [PhotoAnalysisScreen] Навигация на HomeTabs > Main');
+    navigation.navigate('HomeTabs', { screen: 'Main' });
+  };
+
+  const handleConfirmAddToExisting = async () => {
+    console.log('✅ [PhotoAnalysisScreen.handleConfirmAddToExisting] Пользователь выбрал добавить к существующему');
+    setShowMealTypeConfirmDialog(false);
+    
+    if (existingMealForConfirm) {
+      try {
+        await saveIngredientsToMeal(existingMealForConfirm.id);
+      } catch (error) {
+        console.error('❌ [PhotoAnalysisScreen] Ошибка при добавлении к существующему:', error);
+        uiStore.showSnackbar(mealStore.error || 'Не удалось добавить блюда', 'error');
+      }
+    }
+  };
+
+  const handleCreateNewMeal = async () => {
+    console.log('🆕 [PhotoAnalysisScreen.handleCreateNewMeal] Пользователь выбрал создать новый прием');
+    setShowMealTypeConfirmDialog(false);
+    
+    try {
+      const meal = await mealStore.createMeal({
+        mealType,
+        dateTime: mealTime.toISOString(),
+      });
+      console.log('✅ [PhotoAnalysisScreen] Прием пищи создан, id:', meal.id);
+      await saveIngredientsToMeal(meal.id);
+    } catch (error) {
+      console.error('❌ [PhotoAnalysisScreen] Ошибка при создании нового:', error);
+      uiStore.showSnackbar(mealStore.error || 'Не удалось создать прием пищи', 'error');
+    }
+  };
+
+  const handleCancelDialog = () => {
+    console.log('❌ [PhotoAnalysisScreen.handleCancelDialog] Пользователь отменил диалог');
+    setShowMealTypeConfirmDialog(false);
+    setExistingMealForConfirm(null);
   };
 
   const handleBack = () => {
@@ -372,6 +440,16 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
           loading={mealStore.loading}
         />
       </View>
+
+      {/* Диалог подтверждения добавления к существующему приему */}
+      <MealTypeConfirmDialog
+        visible={showMealTypeConfirmDialog}
+        onConfirm={handleConfirmAddToExisting}
+        onCreateNew={handleCreateNewMeal}
+        onCancel={handleCancelDialog}
+        mealTypeName={formatMealType(mealType)}
+        mealTime={existingMealForConfirm ? new Date(existingMealForConfirm.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
+      />
     </View>
   );
 });
