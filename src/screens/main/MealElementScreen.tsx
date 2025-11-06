@@ -193,7 +193,7 @@ const MealElementScreen: React.FC = observer(() => {
         uiStore.showSnackbar('Блюдо добавлено', 'success');
       }
 
-      navigation.goBack();
+      navigation.navigate('HomeTabs', { screen: 'Main' });
     } catch {
       uiStore.showSnackbar(
         mealStore.error || 'Не удалось сохранить блюдо',
