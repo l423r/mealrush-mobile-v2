@@ -174,27 +174,27 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
   const saveIngredientsToMeal = async (currentMealId: number) => {
     console.log('📝 [PhotoAnalysisScreen] Сохранение ингредиентов в прием пищи:', currentMealId);
     
-    for (const ingredient of ingredients) {
-      await mealStore.createMealElement({
-        mealId: currentMealId,
-        name: ingredient.name,
-        quantity: ingredient.editedQuantity.toString(),
-        proteins: ingredient.proteins,
-        fats: ingredient.fats,
-        carbohydrates: ingredient.carbohydrates,
-        calories: ingredient.calories,
-        measurementType: ingredient.measurementType,
-        defaultProteins: ingredient.proteins,
-        defaultFats: ingredient.fats,
-        defaultCarbohydrates: ingredient.carbohydrates,
-        defaultCalories: ingredient.calories,
-        defaultQuantity: ingredient.editedQuantity.toString(),
-      });
-    }
+      for (const ingredient of ingredients) {
+        await mealStore.createMealElement({
+          mealId: currentMealId,
+          name: ingredient.name,
+          quantity: ingredient.editedQuantity.toString(),
+          proteins: ingredient.proteins,
+          fats: ingredient.fats,
+          carbohydrates: ingredient.carbohydrates,
+          calories: ingredient.calories,
+          measurementType: ingredient.measurementType,
+          defaultProteins: ingredient.proteins,
+          defaultFats: ingredient.fats,
+          defaultCarbohydrates: ingredient.carbohydrates,
+          defaultCalories: ingredient.calories,
+          defaultQuantity: ingredient.editedQuantity.toString(),
+        });
+      }
 
-    uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
-    console.log('🚀 [PhotoAnalysisScreen] Навигация на HomeTabs > Main');
-    navigation.navigate('HomeTabs', { screen: 'Main' });
+      uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
+      console.log('🚀 [PhotoAnalysisScreen] Навигация на HomeTabs > Main');
+      navigation.navigate('HomeTabs', { screen: 'Main' });
   };
 
   const handleConfirmAddToExisting = async () => {

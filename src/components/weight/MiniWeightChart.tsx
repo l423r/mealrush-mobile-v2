@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { LineChart } from 'react-native-gifted-charts';
 import type { WeightEntry } from '../../types/api.types';
 import { colors, spacing } from '../../theme';
 
@@ -42,87 +43,44 @@ const MiniWeightChart: React.FC<MiniWeightChartProps> = ({ data }) => {
   
   const recentData = dailyData.slice(0, 7);
 
-  const weights = recentData.map((e) => e.weight);
-  const minWeight = Math.min(...weights);
-  const maxWeight = Math.max(...weights);
-  const weightRange = maxWeight - minWeight || 1; // Avoid division by zero
-
-  const chartWidth = Dimensions.get('window').width - spacing.lg * 4 - spacing.xl * 2;
-  const chartHeight = 40;
-
   // Reverse for display (oldest to newest, left to right)
   const displayData = [...recentData].reverse();
 
-  const points = displayData.map((entry, index) => {
-    const x = displayData.length === 1 ? chartWidth / 2 : (index / (displayData.length - 1)) * chartWidth;
-    const y =
-      chartHeight - ((entry.weight - minWeight) / weightRange) * chartHeight;
-    return { x, y };
-  });
+  // Prepare data for LineChart
+  const chartData = displayData.map((entry) => ({
+    value: entry.weight,
+    label: '', // No labels for mini chart
+  }));
 
   return (
-    <View style={[styles.container, { width: chartWidth, height: chartHeight }]}>
-      {/* Connect lines between points */}
-      {points.map((point, index) => {
-        if (index === 0) return null;
-        const prev = points[index - 1];
-        const angle = Math.atan2(point.y - prev.y, point.x - prev.x);
-        const length = Math.sqrt(
-          Math.pow(point.x - prev.x, 2) + Math.pow(point.y - prev.y, 2)
-        );
-
-        return (
-          <View
-            key={`line-${index}`}
-            style={[
-              styles.line,
-              {
-                left: prev.x,
-                bottom: prev.y,
-                width: length,
-                transform: [{ rotate: `${angle}rad` }],
-              },
-            ]}
-          />
-        );
-      })}
-
-      {/* Data points */}
-      {points.map((point, index) => (
-        <View
-          key={`point-${index}`}
-          style={[
-            styles.dataPoint,
-            {
-              left: point.x - 3,
-              bottom: point.y - 3,
-            },
-          ]}
-        />
-      ))}
+    <View style={styles.container}>
+      <LineChart
+        data={chartData}
+        height={50}
+        thickness={2}
+        color={colors.primary}
+        areaChart={true}
+        startFillColor={colors.primary}
+        endFillColor={colors.primary}
+        startOpacity={0.3}
+        endOpacity={0.05}
+        hideDataPoints={false}
+        dataPointsColor={colors.primary}
+        dataPointsRadius={3}
+        hideYAxisText={true}
+        hideAxesAndRules={true}
+        curved={true}
+        spacing={chartData.length > 4 ? 30 : 50}
+        initialSpacing={5}
+        endSpacing={5}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
     marginVertical: spacing.sm,
-  },
-  line: {
-    position: 'absolute',
-    height: 2,
-    backgroundColor: colors.primary,
-    transformOrigin: 'left center',
-  },
-  dataPoint: {
-    position: 'absolute',
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.primary,
-    borderWidth: 1,
-    borderColor: colors.white,
   },
 });
 

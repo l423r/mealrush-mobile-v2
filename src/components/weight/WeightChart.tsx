@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { LineChart } from 'react-native-gifted-charts';
 import type { WeightEntry } from '../../types/api.types';
 import { formatDate } from '../../utils/formatting';
 import {
@@ -75,7 +76,9 @@ const WeightChart: React.FC<WeightChartProps> = ({
             onPress={() => handlePeriodChange(0)}
           />
         </View>
-        <Text style={styles.emptyText}>Нет данных для отображения</Text>
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Нет данных для отображения</Text>
+        </View>
       </View>
     );
   }
@@ -83,42 +86,18 @@ const WeightChart: React.FC<WeightChartProps> = ({
   // Group by day - one entry per day (latest)
   const dailyData = groupByDay(data);
 
-  // Calculate chart dimensions and scales ONLY from actual data
-  const weights = dailyData.map((e) => e.weight);
-  const minWeight = Math.min(...weights) - 2;
-  const maxWeight = Math.max(...weights) + 2;
-  const weightRange = maxWeight - minWeight;
-
-  const chartWidth = Dimensions.get('window').width - spacing.lg * 4;
-  const chartHeight = 200;
-
   // Reverse data for display (oldest to newest, left to right)
   const displayData = [...dailyData].reverse();
 
-  // Generate points for chart
-  const points = displayData.map((entry, index) => {
-    const x = displayData.length === 1 ? chartWidth / 2 : (index / (displayData.length - 1)) * chartWidth;
-    const y =
-      chartHeight - ((entry.weight - minWeight) / weightRange) * chartHeight;
-    return { x, y, entry };
-  });
+  // Prepare data for LineChart
+  const chartData = displayData.map((entry) => ({
+    value: entry.weight,
+    label: formatDate(entry.recordedAt, 'd MMM'),
+    dataPointText: `${entry.weight}`,
+  }));
 
-  // Get unique dates for X-axis labels (displayData is already reversed)
-  const getUniqueStartAndEndDates = () => {
-    if (displayData.length === 0) return { start: '', end: '' };
-    if (displayData.length === 1) {
-      const date = formatDate(displayData[0].recordedAt, 'd MMM');
-      return { start: date, end: date };
-    }
-
-    // displayData is oldest to newest, so first is left, last is right
-    const firstDate = formatDate(displayData[0].recordedAt, 'd MMM');
-    const lastDate = formatDate(displayData[displayData.length - 1].recordedAt, 'd MMM');
-
-    return { start: firstDate, end: lastDate };
-  };
-
-  const { start: startDate, end: endDate } = getUniqueStartAndEndDates();
+  const hasValidData = chartData.length > 0;
+  const canUseAreaChart = chartData.length > 1;
 
   return (
     <View style={styles.container}>
@@ -147,81 +126,35 @@ const WeightChart: React.FC<WeightChartProps> = ({
         />
       </View>
 
-      <View style={styles.chartContainer}>
-        {/* Y-axis labels */}
-        <View style={styles.yAxis}>
-          <Text style={styles.axisLabel}>{Math.round(maxWeight)}</Text>
-          <Text style={styles.axisLabel}>
-            {Math.round((maxWeight + minWeight) / 2)}
-          </Text>
-          <Text style={styles.axisLabel}>{Math.round(minWeight)}</Text>
+      {hasValidData ? (
+        <LineChart
+          key={`weight-${selectedPeriod}-${data.length}`}
+          data={chartData}
+          height={200}
+          thickness={2}
+          color={colors.primary}
+          areaChart={canUseAreaChart}
+          startFillColor={canUseAreaChart ? colors.primary : undefined}
+          endFillColor={canUseAreaChart ? colors.primary : undefined}
+          startOpacity={canUseAreaChart ? 0.2 : 0}
+          endOpacity={0}
+          yAxisThickness={0}
+          xAxisThickness={0}
+          yAxisTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
+          xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
+          noOfSections={4}
+          animateOnDataChange={canUseAreaChart}
+          animationDuration={canUseAreaChart ? 600 : 0}
+          curved={canUseAreaChart}
+          spacing={chartData.length > 7 ? 40 : 60}
+          initialSpacing={10}
+          endSpacing={10}
+        />
+      ) : (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>Нет данных для отображения</Text>
         </View>
-
-        {/* Chart area */}
-        <View style={[styles.chart, { width: chartWidth, height: chartHeight }]}>
-          {/* Target line */}
-          {targetWeight && targetWeight >= minWeight && targetWeight <= maxWeight && (
-            <View
-              style={[
-                styles.targetLine,
-                {
-                  bottom:
-                    ((targetWeight - minWeight) / weightRange) * chartHeight,
-                },
-              ]}
-            >
-              <Text style={styles.targetLabel}>Цель</Text>
-            </View>
-          )}
-
-          {/* Connect lines between points */}
-          {points.map((point, index) => {
-            if (index === 0) return null;
-            const prev = points[index - 1];
-            const angle = Math.atan2(point.y - prev.y, point.x - prev.x);
-            const length = Math.sqrt(
-              Math.pow(point.x - prev.x, 2) + Math.pow(point.y - prev.y, 2)
-            );
-
-            return (
-              <View
-                key={`line-${index}`}
-                style={[
-                  styles.line,
-                  {
-                    left: prev.x,
-                    bottom: prev.y,
-                    width: length,
-                    transform: [{ rotate: `${angle}rad` }],
-                  },
-                ]}
-              />
-            );
-          })}
-
-          {/* Data points */}
-          {points.map((point, index) => (
-            <View
-              key={`point-${index}`}
-              style={[
-                styles.dataPoint,
-                {
-                  left: point.x - 4,
-                  bottom: point.y - 4,
-                },
-              ]}
-            />
-          ))}
-        </View>
-      </View>
-
-      {/* X-axis labels */}
-      <View style={styles.xAxis}>
-        <Text style={styles.axisLabel}>{startDate}</Text>
-        {startDate !== endDate && (
-          <Text style={styles.axisLabel}>{endDate}</Text>
-        )}
-      </View>
+      )}
     </View>
   );
 };
@@ -278,61 +211,10 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontWeight: '600',
   },
-  chartContainer: {
-    flexDirection: 'row',
-    marginBottom: spacing.sm,
-  },
-  yAxis: {
-    width: 40,
-    justifyContent: 'space-between',
-    paddingRight: spacing.xs,
-  },
-  chart: {
-    position: 'relative',
-    backgroundColor: colors.background.default,
-    borderRadius: borderRadius.md,
-  },
-  targetLine: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: colors.secondary,
-    borderStyle: 'dashed',
-    flexDirection: 'row',
+  emptyContainer: {
+    height: 200,
+    justifyContent: 'center',
     alignItems: 'center',
-  },
-  targetLabel: {
-    ...typography.caption,
-    color: colors.secondary,
-    backgroundColor: colors.background.paper,
-    paddingHorizontal: spacing.xs,
-    marginLeft: spacing.sm,
-  },
-  dataPoint: {
-    position: 'absolute',
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.white,
-  },
-  line: {
-    position: 'absolute',
-    height: 2,
-    backgroundColor: colors.primary,
-    transformOrigin: 'left center',
-  },
-  xAxis: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginLeft: 40,
-    paddingTop: spacing.xs,
-  },
-  axisLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
   },
   emptyText: {
     ...typography.body1,

@@ -92,9 +92,9 @@ const ProductScreen: React.FC = observer(() => {
       // Only update if the calculated value is different from current to avoid infinite loops
       if (Math.abs(calculatedCalories - (watchedCalories || 0)) > 0.1) {
         setIsCalculating(true);
-        setValue('calories', calculatedCalories);
-        setTimeout(() => setIsCalculating(false), 500);
-      }
+      setValue('calories', calculatedCalories);
+      setTimeout(() => setIsCalculating(false), 500);
+    }
     }
   }, [watchedProteins, watchedFats, watchedCarbohydrates, watchedCalories, setValue]);
 

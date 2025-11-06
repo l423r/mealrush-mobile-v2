@@ -256,31 +256,31 @@ const MealElementScreen: React.FC = observer(() => {
   };
 
   const createMealElementWithId = async (mealId: number, data: any) => {
-    const elementData = {
-      mealId: mealId,
-      parentProductId: item && 'id' in item ? item.id : undefined,
-      name: item?.name || 'Блюдо',
-      quantity: data.quantity,
-      proteins: data.proteins,
-      fats: data.fats,
-      carbohydrates: data.carbohydrates,
-      calories: data.calories,
-      measurementType: 'GRAM' as const,
-      defaultProteins: item?.proteins || data.proteins,
-      defaultFats: item?.fats || data.fats,
-      defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
-      defaultCalories: item?.calories || data.calories,
-      defaultQuantity: item?.quantity || '100',
-    };
+        const elementData = {
+          mealId: mealId,
+          parentProductId: item && 'id' in item ? item.id : undefined,
+          name: item?.name || 'Блюдо',
+          quantity: data.quantity,
+          proteins: data.proteins,
+          fats: data.fats,
+          carbohydrates: data.carbohydrates,
+          calories: data.calories,
+          measurementType: 'GRAM' as const,
+          defaultProteins: item?.proteins || data.proteins,
+          defaultFats: item?.fats || data.fats,
+          defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
+          defaultCalories: item?.calories || data.calories,
+          defaultQuantity: item?.quantity || '100',
+        };
 
-    console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);
-    await mealStore.createMealElement(elementData);
-    console.log('✅ [MealElementScreen] Элемент создан успешно');
-    uiStore.showSnackbar('Блюдо добавлено', 'success');
+        console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);
+        await mealStore.createMealElement(elementData);
+        console.log('✅ [MealElementScreen] Элемент создан успешно');
+        uiStore.showSnackbar('Блюдо добавлено', 'success');
 
-    console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
-    navigation.navigate('HomeTabs', { screen: 'Main' });
-    console.log('✅ [MealElementScreen] Команда навигации выполнена');
+      console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
+      navigation.navigate('HomeTabs', { screen: 'Main' });
+      console.log('✅ [MealElementScreen] Команда навигации выполнена');
   };
 
   const handleConfirmAddToExisting = async () => {
