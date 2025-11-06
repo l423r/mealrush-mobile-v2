@@ -153,7 +153,8 @@ const TextAnalysisScreen: React.FC = observer(() => {
       }
 
       uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
-      navigation.goBack();
+      console.log('🚀 [TextAnalysisScreen] Навигация на HomeTabs > Main');
+      navigation.navigate('HomeTabs', { screen: 'Main' });
     } catch {
       const errorMessage = mealStore.error || 'Не удалось сохранить блюда';
       uiStore.showSnackbar(errorMessage, 'error');

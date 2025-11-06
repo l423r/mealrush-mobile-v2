@@ -148,8 +148,11 @@ const MealElementScreen: React.FC = observer(() => {
 
   const onSubmit = async (data: any) => {
     try {
+      console.log('🔄 [MealElementScreen] onSubmit - начало', { isEditing, data });
+      
       if (isEditing) {
         // Update existing meal element
+        console.log('✏️ [MealElementScreen] Обновление существующего элемента');
         const mealElement = item as MealElement;
         await mealStore.updateMealElement(mealElement.id, {
           quantity: data.quantity,
@@ -161,15 +164,18 @@ const MealElementScreen: React.FC = observer(() => {
         uiStore.showSnackbar('Блюдо обновлено', 'success');
       } else {
         // Create new meal element
+        console.log('➕ [MealElementScreen] Создание нового элемента');
         let mealId = route.params?.mealId;
 
         if (!mealId) {
           // Create new meal
+          console.log('🍽️ [MealElementScreen] Создание нового приема пищи');
           const meal = await mealStore.createMeal({
             mealType: mealType,
             dateTime: mealTime.toISOString(),
           });
           mealId = meal.id;
+          console.log('✅ [MealElementScreen] Прием пищи создан, id:', mealId);
         }
 
         const elementData = {
@@ -189,12 +195,17 @@ const MealElementScreen: React.FC = observer(() => {
           defaultQuantity: item?.quantity || '100',
         };
 
+        console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);
         await mealStore.createMealElement(elementData);
+        console.log('✅ [MealElementScreen] Элемент создан успешно');
         uiStore.showSnackbar('Блюдо добавлено', 'success');
       }
 
+      console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
       navigation.navigate('HomeTabs', { screen: 'Main' });
-    } catch {
+      console.log('✅ [MealElementScreen] Команда навигации выполнена');
+    } catch (error) {
+      console.error('❌ [MealElementScreen] Ошибка в onSubmit:', error);
       uiStore.showSnackbar(
         mealStore.error || 'Не удалось сохранить блюдо',
         'error'

@@ -1,6 +1,5 @@
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 import { Audio } from 'expo-av';
-import { Platform } from 'react-native';
 
 // Request microphone permission
 export const requestAudioPermission = async (): Promise<boolean> => {
@@ -74,10 +73,17 @@ export const audioUriToBase64 = async (
   uri: string
 ): Promise<string | null> => {
   try {
-    // Read file as base64
-    const base64 = await FileSystem.readAsStringAsync(uri, {
-      encoding: FileSystem.EncodingType.Base64,
-    });
+    // Use new File class to read the file
+    const file = new File(uri);
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Convert ArrayBuffer to base64
+    const bytes = new Uint8Array(arrayBuffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
 
     // Determine the mime type based on the file extension
     let mimeType = 'audio/mp3'; // default
@@ -102,9 +108,10 @@ export const audioUriToBase64 = async (
 // Validate audio file size (max 25MB as per API docs)
 export const validateAudioSize = async (uri: string): Promise<boolean> => {
   try {
-    const fileInfo = await FileSystem.getInfoAsync(uri);
+    const file = new File(uri);
+    const fileInfo = await file.info();
     
-    if (!fileInfo.exists || !('size' in fileInfo)) {
+    if (!fileInfo.exists || !fileInfo.size) {
       return false;
     }
 

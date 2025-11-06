@@ -22,6 +22,7 @@ import {
   validateAudioSize,
   audioUriToBase64,
 } from '../../utils/audioUtils';
+import { useStores } from '../../stores';
 
 interface AudioRecordDialogProps {
   visible: boolean;
@@ -36,6 +37,7 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
   onAnalyze,
   analyzing = false,
 }) => {
+  const { uiStore } = useStores();
   const [recording, setRecording] = useState<Audio.Recording | null>(null);
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
@@ -88,7 +90,7 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
       // Validate file size
       const isValidSize = await validateAudioSize(recordingUri);
       if (!isValidSize) {
-        alert('Файл слишком большой. Максимальный размер: 25MB');
+        uiStore.showSnackbar('Файл слишком большой. Максимальный размер: 25MB', 'error');
         setIsProcessing(false);
         return;
       }
@@ -96,7 +98,7 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
       // Convert to base64
       const base64 = await audioUriToBase64(recordingUri);
       if (!base64) {
-        alert('Не удалось обработать аудио файл');
+        uiStore.showSnackbar('Не удалось обработать аудио файл', 'error');
         setIsProcessing(false);
         return;
       }
@@ -105,7 +107,7 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
       onAnalyze(base64, language, comment.trim() || undefined);
     } catch (error) {
       console.error('Error processing audio:', error);
-      alert('Произошла ошибка при обработке аудио');
+      uiStore.showSnackbar('Произошла ошибка при обработке аудио', 'error');
       setIsProcessing(false);
     }
   };
