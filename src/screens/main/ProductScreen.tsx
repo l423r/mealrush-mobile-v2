@@ -22,6 +22,7 @@ import { calculateCalories } from '../../utils/calculations';
 import {
   requestCameraPermission,
   requestMediaLibraryPermission,
+  imageUriToBase64,
 } from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -149,9 +150,8 @@ const ProductScreen: React.FC = observer(() => {
     try {
       let base64Image = null;
       if (imageUri) {
-        // Using URI directly for now
-        // Base64 conversion can be added later if needed via imageUriToBase64 utility
-        base64Image = imageUri;
+        // Convert image URI to base64 for upload
+        base64Image = await imageUriToBase64(imageUri);
       }
 
       const productData = {

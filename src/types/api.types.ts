@@ -156,6 +156,7 @@ export interface ProductCreate {
   productCategoryId?: string;
   code?: string;
   imageBase64?: string;
+  imageUrl?: string;
 }
 
 export interface ProductUpdate {
@@ -232,6 +233,7 @@ export interface MealElementCreate {
   defaultCalories: number;
   defaultQuantity: string;
   imageBase64?: string;
+  imageUrl?: string;
 }
 
 export interface MealElementUpdate {
@@ -240,6 +242,7 @@ export interface MealElementUpdate {
   fats?: number;
   carbohydrates?: number;
   calories?: number;
+  imageBase64?: string;
 }
 
 // Analysis types (shared by photo, text, and audio analysis)

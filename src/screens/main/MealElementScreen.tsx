@@ -271,6 +271,8 @@ const MealElementScreen: React.FC = observer(() => {
           defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
           defaultCalories: item?.calories || data.calories,
           defaultQuantity: item?.quantity || '100',
+          // Reuse image from Product if available (API v2.5.0)
+          imageUrl: item?.imageUrl || undefined,
         };
 
         console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);

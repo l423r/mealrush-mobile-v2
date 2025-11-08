@@ -1,7 +1,7 @@
 # API Contract: MealRush Backend
 
-**Версия:** 2.0.0  
-**Дата:** 20 октября 2024  
+**Версия:** 2.5.0  
+**Дата:** 7 ноября 2024  
 **Статус:** Утверждено
 
 ---
@@ -73,7 +73,59 @@ POST /my-food/auth/token
 | 409 | Conflict | Конфликт (дубликат) |
 | 500 | Internal Server Error | Ошибка сервера |
 
-### 1.5. Формат ошибок
+### 1.5. Работа с изображениями
+
+**Загрузка изображений:**
+
+Все эндпоинты, поддерживающие изображения (Products, MealElements), принимают два опциональных поля:
+
+- `imageBase64` (string) - base64 строка нового изображения для загрузки
+- `imageUrl` (string) - URL существующего изображения для переиспользования
+
+**Правила:**
+
+1. **Новое изображение**: передайте `imageBase64` (с или без data URL префикса `data:image/jpeg;base64,`)
+2. **Существующее изображение**: передайте `imageUrl` (например, при создании Product из MealElement)
+3. **Приоритет**: если переданы оба поля - используется `imageBase64`
+4. **Обработка**: автоматическое изменение размера (max 1200x1200px), сжатие (85% quality), конвертация в JPG
+5. **Response**: в ответе будет `imageUrl` с полным публичным URL изображения
+
+**Пример запроса с новым изображением:**
+```json
+{
+  "name": "Куриная грудка",
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRgAB...",
+  "proteins": 31.0
+}
+```
+
+**Пример запроса с существующим изображением:**
+```json
+{
+  "name": "Куриная грудка",
+  "imageUrl": "http://minio.example.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg",
+  "proteins": 31.0
+}
+```
+
+**Пример ответа:**
+```json
+{
+  "id": 123,
+  "name": "Куриная грудка",
+  "imageUrl": "http://minio.example.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg",
+  "proteins": 31.0
+}
+```
+
+**Ограничения:**
+- Максимальный размер base64 изображения: 10MB
+- Поддерживаемые форматы входных изображений: JPEG, PNG, WebP, GIF
+- Выходной формат: всегда JPG
+- Изображения хранятся в S3 с UUID именами для безопасности
+- Неиспользуемые изображения автоматически удаляются раз в неделю
+
+### 1.6. Формат ошибок
 
 ```json
 {
@@ -345,7 +397,7 @@ POST /my-food/product
 Headers: Authorization: Bearer {token}
 ```
 
-**Request Body:**
+**Request Body (вариант 1 - с новым изображением):**
 ```json
 {
   "name": "Гречка отварная",
@@ -360,7 +412,27 @@ Headers: Authorization: Bearer {token}
 }
 ```
 
-**Примечание:** Поле `imageBase64` опционально.
+**Request Body (вариант 2 - с существующим изображением, например из MealElement):**
+```json
+{
+  "name": "Гречка отварная",
+  "proteins": 4.2,
+  "fats": 1.1,
+  "carbohydrates": 21.3,
+  "calories": 110.0,
+  "quantity": "100",
+  "measurementType": "GRAM",
+  "productCategoryId": "cereals",
+  "imageUrl": "http://minio.example.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg"
+}
+```
+
+**Примечания:**
+- Поля `imageBase64` и `imageUrl` опциональны
+- Если передан `imageBase64` - будет загружено новое изображение в S3
+- Если передан `imageUrl` - будет переиспользовано существующее изображение
+- Если переданы оба поля - приоритет у `imageBase64` (будет загружено новое)
+- Изображения автоматически обрабатываются: resize до 1200x1200px, сжатие 85%, конвертация в JPG
 
 **Measurement types:**
 - `GRAM`, `KILOGRAM`, `LITER`, `MILLILITER`, `PIECE`, `UNIT`
@@ -378,7 +450,7 @@ Headers: Authorization: Bearer {token}
   "quantity": "100",
   "measurementType": "GRAM",
   "productCategoryId": "cereals",
-  "imageUrl": "http://80.87.201.75:8079/gateway/my-food/images/123.jpg",
+  "imageUrl": "http://minio.example.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg",
   "source": null,
   "createdAt": "2024-10-20T12:00:00Z"
 }
@@ -423,18 +495,29 @@ Headers: Authorization: Bearer {token}
 {
   "name": "Гречка отварная домашняя",
   "proteins": 4.5,
-  ...
+  "fats": 1.2,
+  "carbohydrates": 22.0,
+  "calories": 115.0,
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
 }
 ```
 
-**Примечание:** Все поля опциональны. ID передается в URL path.
+**Примечания:**
+- Все поля опциональны. ID передается в URL path
+- Если передан `imageBase64` - будет загружено НОВОЕ изображение (старое останется в S3 для других записей)
+- Если `imageBase64` не передан - текущее изображение останется без изменений
+- Нельзя напрямую изменить `imageUrl` через API (только через загрузку нового `imageBase64`)
 
 **Response (200 OK):**
 ```json
 {
   "id": 123,
   "name": "Гречка отварная домашняя",
-  ...
+  "proteins": 4.5,
+  "fats": 1.2,
+  "carbohydrates": 22.0,
+  "calories": 115.0,
+  "imageUrl": "http://minio.example.com/mealrush-images/images/a7b8c9d0-1234-5678-90ab-cdef12345678.jpg",
   "updatedAt": "2024-10-21T10:00:00Z"
 }
 ```
@@ -844,7 +927,7 @@ POST /my-food/meal_element
 Headers: Authorization: Bearer {token}
 ```
 
-**Request Body:**
+**Request Body (вариант 1 - с новым изображением):**
 ```json
 {
   "mealId": 1,
@@ -861,13 +944,38 @@ Headers: Authorization: Bearer {token}
   "defaultCarbohydrates": 21.3,
   "defaultCalories": 110.0,
   "defaultQuantity": "100",
-  "imageBase64": "..."
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
 }
 ```
 
-**Примечание:** 
+**Request Body (вариант 2 - с существующим изображением, например из Product):**
+```json
+{
+  "mealId": 1,
+  "parentProductId": 123,
+  "name": "Гречка отварная",
+  "proteins": 6.3,
+  "fats": 1.65,
+  "carbohydrates": 31.95,
+  "calories": 165.0,
+  "quantity": "150",
+  "measurementType": "GRAM",
+  "defaultProteins": 4.2,
+  "defaultFats": 1.1,
+  "defaultCarbohydrates": 21.3,
+  "defaultCalories": 110.0,
+  "defaultQuantity": "100",
+  "imageUrl": "http://minio.example.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg"
+}
+```
+
+**Примечания:** 
 - `parentProductId` опционально, если элемент создается из продукта
-- `imageBase64` опционально для загрузки изображения
+- Поля `imageBase64` и `imageUrl` опциональны
+- Если передан `imageBase64` - будет загружено новое изображение в S3
+- Если передан `imageUrl` - будет переиспользовано существующее изображение (удобно при создании из Product)
+- Если переданы оба поля - приоритет у `imageBase64`
+- Изображения автоматически обрабатываются: resize до 1200x1200px, сжатие 85%, конвертация в JPG
 
 **Расчет actual vs default:**
 ```javascript
@@ -894,7 +1002,7 @@ const actual_proteins = (default_proteins / 100) * quantity;
   "defaultCarbohydrates": 21.3,
   "defaultCalories": 110.0,
   "defaultQuantity": "100",
-  "imageUrl": "http://.../images/456.jpg",
+  "imageUrl": "http://minio.example.com/mealrush-images/images/b2c3d4e5-5678-9012-34ab-56789abcdef0.jpg",
   "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
@@ -973,13 +1081,18 @@ Headers: Authorization: Bearer {token}
   "proteins": 8.4,
   "fats": 2.2,
   "carbohydrates": 42.6,
-  "calories": 220.0
+  "calories": 220.0,
+  "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
 }
 ```
 
-**Примечание:** Все поля опциональны. ID передается в URL path.
+**Примечания:**
+- Все поля опциональны. ID передается в URL path
+- Если передан `imageBase64` - будет загружено НОВОЕ изображение (старое останется в S3 для других записей)
+- Если `imageBase64` не передан - текущее изображение останется без изменений
+- Нельзя напрямую изменить `imageUrl` через API (только через загрузку нового `imageBase64`)
 
-**Response (200 OK):** обновленный MealElement
+**Response (200 OK):** обновленный MealElement с новым `imageUrl` если изображение было заменено
 
 ### 7.5. Удаление элемента
 
@@ -1061,28 +1174,46 @@ Headers: Authorization: Bearer {token}
 
 ### 9.1. Получение изображения
 
-**Endpoint:**
+**Архитектура хранения:**
+- Изображения хранятся в MinIO S3 (публичный bucket)
+- Структура: `images/{uuid}.jpg` (UUID для безопасности)
+- Прямой доступ по публичному URL (без проксирования через backend)
+
+**URL Format:**
 ```
-GET /my-food/images/{filename}
+http://minio.example.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg
 ```
 
-**Примеры:**
+**Примеры URL в разных окружениях:**
+
+**Development:**
 ```
-/images/123.jpg
-/images/product_456.png
+http://localhost:9000/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg
 ```
 
-**Response (200 OK):**
-- Content-Type: image/jpeg, image/png, и т.д.
-- Body: бинарные данные изображения
+**Production:**
+```
+http://s3.mealrush.com/mealrush-images/images/550e8400-e29b-41d4-a716-446655440000.jpg
+```
 
-**Errors:**
-- 404: Изображение не найдено
+**Загрузка изображения:**
+- Мобильное приложение загружает изображение напрямую из S3 по URL
+- Кэширование изображений рекомендуется на стороне клиента
+- HTTP Cache-Control headers настроены для долгого кэширования
+
+**Как получить URL:**
+- URL возвращается автоматически в поле `imageUrl` при создании/получении Product или MealElement
+- Клиент просто использует этот URL для загрузки изображения
+
+**Безопасность:**
+- UUID в имени файла предотвращает перебор изображений
+- Публичный доступ только для чтения
+- Без знания точного UUID невозможно получить доступ к изображению
 
 **Примечание:** 
-- Эндпоинт используется для получения изображений продуктов и блюд
-- Изображения загружаются через `image_base64` в других эндпоинтах (POST /product, POST /meal_element)
-- URL изображений возвращается в поле `image_url` (например: `http://80.87.201.75:8079/gateway/my-food/images/123.jpg`)
+- Изображения загружаются через `imageBase64` в эндпоинтах создания (POST /product, POST /meal_element)
+- Можно переиспользовать существующее изображение через поле `imageUrl`
+- Неиспользуемые изображения автоматически удаляются раз в неделю (Orphan Detection)
 
 ---
 
@@ -1394,9 +1525,10 @@ POST /my-food/meal_element
   "defaultFats": 1.1,
   "defaultCarbohydrates": 21.3,
   "defaultCalories": 110.0,
-  "defaultQuantity": "100"
+  "defaultQuantity": "100",
+  "imageUrl": "http://minio.../images/uuid.jpg"  // переиспользуем изображение из Product
 }
-→ Response: MealElement created
+→ Response: MealElement created (с тем же imageUrl)
 
 // 5. Обновление списка на главном экране
 GET /my-food/meal/findByDate?date=2024-10-20
@@ -1544,6 +1676,45 @@ POST /my-food/meal_element
 // Блюдо добавлено
 ```
 
+### 12.7. Переиспользование изображений между Product и MealElement
+
+```javascript
+// Сценарий: Пользователь съел блюдо из MealElement и хочет сохранить его как Product
+
+// 1. Получить MealElement
+GET /my-food/meal_element/123
+→ Response: {
+  id: 123,
+  name: "Куриная грудка гриль",
+  proteins: 31.0,
+  imageUrl: "http://minio.../images/a1b2c3d4-uuid.jpg",
+  ...
+}
+
+// 2. Создать Product с переиспользованием изображения
+POST /my-food/product
+{
+  "name": "Куриная грудка гриль",
+  "proteins": 31.0,
+  "fats": 3.6,
+  "carbohydrates": 0.0,
+  "calories": 165.0,
+  "measurementType": "GRAM",
+  "quantity": "100",
+  "productCategoryId": "meat",
+  "imageUrl": "http://minio.../images/a1b2c3d4-uuid.jpg"  // переиспользуем изображение
+}
+→ Response: Product created (с тем же imageUrl, изображение не дублируется в S3)
+
+// Обратный сценарий: Product → MealElement - аналогично
+```
+
+**Преимущества:**
+- Изображение не загружается повторно в S3
+- Экономия трафика и места в хранилище
+- Быстрое создание записи
+- Одно изображение используется в нескольких местах
+
 ---
 
 ## 13. Обработка ошибок (Best Practices для клиента)
@@ -1648,7 +1819,78 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.4.0 (текущая)
+### Версия 2.5.0 (текущая - 7 ноября 2024)
+
+Интеграция S3/MinIO хранилища для изображений продуктов и элементов приема пищи.
+
+**Новые возможности:**
+
+- ✅ **S3/MinIO Storage** - хранилище изображений с автоматической обработкой:
+  - Resize до 1200x1200px с сохранением пропорций
+  - Сжатие 85% качества
+  - Конвертация в JPG (единый формат)
+  - Публичный bucket с UUID именами файлов для безопасности
+  - Структура: `images/{uuid}.jpg`
+
+- ✅ **Переиспользование изображений** - поддержка `imageUrl` в request:
+  - Можно передать существующий `imageUrl` при создании Product из MealElement или наоборот
+  - Изображение не дублируется в S3
+  - Экономия трафика и места
+
+- ✅ **Feature toggle** - возможность включать/отключать S3 через `S3_ENABLED`
+- ✅ **Orphan Detection** - автоматическая очистка неиспользуемых изображений раз в неделю
+- ✅ **Graceful fallback** - если S3 недоступен, продолжаем без изображения (imageUrl=null)
+
+**Изменения в API:**
+
+- ✅ `POST /product` и `POST /meal_element` теперь поддерживают:
+  - `imageBase64` (string, optional) - для загрузки нового изображения
+  - `imageUrl` (string, optional) - для переиспользования существующего
+  - Приоритет у `imageBase64` если переданы оба поля
+
+- ✅ `PUT /product` и `PUT /meal_element` теперь поддерживают:
+  - `imageBase64` (string, optional) - для замены изображения
+
+- ✅ Response всех эндпоинтов теперь содержат:
+  - `imageUrl` - полный публичный URL изображения в S3 (если есть)
+
+**Примеры:**
+
+```json
+// Создание с новым изображением
+POST /product
+{
+  "name": "Курица",
+  "imageBase64": "data:image/jpeg;base64,...",
+  ...
+}
+→ imageUrl: "http://minio.../images/550e8400-uuid.jpg"
+
+// Создание с существующим изображением (Product → MealElement)
+POST /meal_element
+{
+  "name": "Курица",
+  "imageUrl": "http://minio.../images/550e8400-uuid.jpg",
+  ...
+}
+→ imageUrl: "http://minio.../images/550e8400-uuid.jpg" (то же изображение)
+```
+
+**Переменные окружения:**
+```bash
+S3_ENABLED=true                           # включить/выключить S3
+S3_ENDPOINT=http://localhost:9000         # MinIO endpoint
+S3_ACCESS_KEY=minioadmin                  # credentials
+S3_SECRET_KEY=minioadmin
+S3_BUCKET_NAME=mealrush-images           # bucket name
+IMAGE_MAX_WIDTH=1200                      # max width
+IMAGE_MAX_HEIGHT=1200                     # max height
+IMAGE_QUALITY=0.85                        # compression quality
+```
+
+---
+
+### Версия 2.4.0
 
 Улучшения API настроек уведомлений: глобальный переключатель, endpoint сброса, отображение timezone и вычисленных полей.
 
