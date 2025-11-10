@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 import { authService } from '../api/services/auth.service';
 import type RootStore from './RootStore';
 import type { User, LoginRequest, RegisterRequest } from '../types/api.types';
-import { saveToken, deleteToken } from '../api/axios.config';
+import { saveToken, deleteToken, getToken } from '../api/axios.config';
 
 class AuthStore {
   rootStore: RootStore;
@@ -13,6 +13,7 @@ class AuthStore {
   isAuthenticated: boolean = false;
   loading: boolean = false;
   error: string | null = null;
+  initializing: boolean = true;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -120,7 +121,18 @@ class AuthStore {
   }
 
   async checkAuth() {
-    if (this.token) {
+    runInAction(() => {
+      this.initializing = true;
+    });
+
+    // Load token from SecureStore
+    const storedToken = await getToken();
+    
+    if (storedToken) {
+      runInAction(() => {
+        this.token = storedToken;
+      });
+      
       try {
         await this.getUser();
         await this.rootStore.profileStore.checkProfile();
@@ -132,6 +144,10 @@ class AuthStore {
         await this.logout();
       }
     }
+
+    runInAction(() => {
+      this.initializing = false;
+    });
   }
 
   setToken(token: string) {
@@ -153,6 +169,7 @@ class AuthStore {
     this.isAuthenticated = false;
     this.loading = false;
     this.error = null;
+    this.initializing = false;
   }
 }
 

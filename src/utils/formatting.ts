@@ -24,6 +24,28 @@ export const formatTime = (date: string | Date): string => {
   return formatDate(date, 'HH:mm');
 };
 
+// Format time in user's timezone (converts UTC to local)
+export const formatTimeInTimezone = (
+  date: string | Date,
+  timezone: string = 'UTC'
+): string => {
+  try {
+    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    if (!isValid(dateObj)) return '';
+    
+    // Use Intl API to format in user's timezone
+    return new Intl.DateTimeFormat('ru-RU', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: timezone,
+      hour12: false,
+    }).format(dateObj);
+  } catch (error) {
+    console.error('Error formatting time with timezone:', error);
+    return formatTime(date); // Fallback to original function
+  }
+};
+
 export const formatDateForAPI = (date: Date): string => {
   return format(date, 'yyyy-MM-dd');
 };

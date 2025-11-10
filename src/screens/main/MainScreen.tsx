@@ -20,7 +20,7 @@ import {
   borderRadius,
   shadows,
 } from '../../theme';
-import { formatDate, formatTime, formatMealType } from '../../utils/formatting';
+import { formatDate, formatTime, formatTimeInTimezone, formatMealType } from '../../utils/formatting';
 import { calculateProgressPercentage } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -37,6 +37,8 @@ const MainScreen: React.FC = observer(() => {
   const { mealStore, profileStore } = useStores();
   const [refreshing, setRefreshing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  
+  const userTimezone = profileStore.profile?.timezone || 'UTC';
 
   const loadData = React.useCallback(async () => {
     try {
@@ -115,7 +117,7 @@ const MainScreen: React.FC = observer(() => {
 
         <View style={styles.mealHeader}>
           <Text style={styles.mealType}>{formatMealType(meal.mealType)}</Text>
-          <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
+          <Text style={styles.mealTime}>{formatTimeInTimezone(meal.dateTime, userTimezone)}</Text>
         </View>
 
         <View style={styles.mealContent}>

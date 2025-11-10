@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { useStores } from '../../stores';
 import Loading from '../../components/common/Loading';
+import Header from '../../components/common/Header';
 import MealNotificationCard from '../../components/notifications/MealNotificationCard';
 import SnackEnableDialog from '../../components/notifications/SnackEnableDialog';
 
@@ -192,7 +193,9 @@ const NotificationSettingsScreen: React.FC = observer(() => {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.container}>
+      <Header title="Настройки уведомлений" showBackButton />
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
       {/* Device Registration Status */}
       {renderStatusCard()}
 
@@ -458,6 +461,7 @@ const NotificationSettingsScreen: React.FC = observer(() => {
         </View>
       )}
     </ScrollView>
+    </View>
   );
 });
 
@@ -465,6 +469,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.default,
+  },
+  scrollView: {
+    flex: 1,
   },
   content: {
     padding: spacing.md,

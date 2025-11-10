@@ -21,8 +21,8 @@ const AppNavigator: React.FC = observer(() => {
   }, [authStore]);
 
   // Показываем загрузку, пока проверяется авторизация или профиль
-  if (authStore.loading || profileStore.checkingProfile) {
-    return <Loading message="Проверка авторизации..." />;
+  if (authStore.initializing || authStore.loading || profileStore.checkingProfile) {
+    return <Loading message="Загрузка..." />;
   }
 
   const renderScreen = () => {

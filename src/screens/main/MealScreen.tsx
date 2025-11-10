@@ -17,6 +17,7 @@ import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import {
   formatTime,
+  formatTimeInTimezone,
   formatMealType,
   formatCalories,
   formatWeight,
@@ -34,10 +35,11 @@ type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
-  const { mealStore, uiStore } = useStores();
+  const { mealStore, uiStore, profileStore } = useStores();
 
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
+  const userTimezone = profileStore.profile?.timezone || 'UTC';
 
   useEffect(() => {
     // Load meal elements if not already loaded
@@ -207,7 +209,7 @@ const MealScreen: React.FC = observer(() => {
           <>
             {/* Meal Info */}
             <View style={styles.mealInfo}>
-              <Text style={styles.mealTime}>{formatTime(meal.dateTime)}</Text>
+              <Text style={styles.mealTime}>{formatTimeInTimezone(meal.dateTime, userTimezone)}</Text>
               {meal.name && <Text style={styles.mealName}>{meal.name}</Text>}
             </View>
 
