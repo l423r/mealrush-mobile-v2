@@ -30,7 +30,17 @@ export const formatTimeInTimezone = (
   timezone: string = 'UTC'
 ): string => {
   try {
-    const dateObj = typeof date === 'string' ? parseISO(date) : date;
+    let dateObj: Date;
+    
+    if (typeof date === 'string') {
+      // API returns datetime WITHOUT 'Z', but it's in UTC
+      // Explicitly append 'Z' to treat as UTC
+      const dateStr = date.endsWith('Z') ? date : `${date}Z`;
+      dateObj = parseISO(dateStr);
+    } else {
+      dateObj = date;
+    }
+    
     if (!isValid(dateObj)) return '';
     
     // Use Intl API to format in user's timezone

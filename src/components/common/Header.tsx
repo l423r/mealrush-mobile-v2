@@ -12,6 +12,7 @@ import { colors, typography, spacing } from '../../theme';
 
 interface HeaderProps {
   title: string;
+  subtitle?: React.ReactNode;
   showBackButton?: boolean;
   rightComponent?: React.ReactNode;
   onBackPress?: () => void;
@@ -19,6 +20,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   title,
+  subtitle,
   showBackButton = false,
   rightComponent,
   onBackPress,
@@ -62,6 +64,11 @@ const Header: React.FC<HeaderProps> = ({
           <Text style={styles.title} numberOfLines={1}>
             {title}
           </Text>
+          {subtitle && (
+            <View style={styles.subtitle}>
+              {subtitle}
+            </View>
+          )}
         </View>
 
         <View style={styles.right}>{rightComponent}</View>
@@ -105,6 +112,9 @@ const styles = StyleSheet.create({
     ...typography.h4,
     color: colors.text.primary,
     fontWeight: '600',
+  },
+  subtitle: {
+    marginTop: spacing.xs / 2,
   },
 });
 

@@ -167,6 +167,34 @@ class MealStore {
     }
   }
 
+  async updateMeal(mealId: number, mealData: Partial<Meal>) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const response = await mealService.updateMeal(mealId, mealData as Meal);
+
+      runInAction(() => {
+        // Update in meals array
+        const index = this.meals.findIndex((m) => m.id === mealId);
+        if (index !== -1) {
+          this.meals[index] = response.data;
+        }
+        this.loading = false;
+        this.error = null;
+      });
+
+      return response.data;
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка обновления приема пищи';
+      });
+      throw error;
+    }
+  }
+
   async createMealElement(elementData: MealElementCreate) {
     this.loading = true;
     this.error = null;

@@ -25,6 +25,8 @@ import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
+import NutrientRow from '../../components/common/NutrientRow';
+import CompactSummary from '../../components/common/CompactSummary';
 import MealTypeConfirmDialog from '../../components/common/MealTypeConfirmDialog';
 
 type AudioAnalysisScreenNavigationProp = NativeStackNavigationProp<
@@ -323,33 +325,13 @@ const AudioAnalysisScreen: React.FC = observer(() => {
 
         {/* Total Nutrients */}
         <View style={styles.summary}>
-          <Text style={styles.summaryTitle}>Итого</Text>
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>
-                {formatNumber(totals.calories, 0)}
-              </Text>
-              <Text style={styles.summaryLabel}>ккал</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>
-                {formatNumber(totals.proteins, 1)}
-              </Text>
-              <Text style={styles.summaryLabel}>белки</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>
-                {formatNumber(totals.fats, 1)}
-              </Text>
-              <Text style={styles.summaryLabel}>жиры</Text>
-            </View>
-            <View style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>
-                {formatNumber(totals.carbohydrates, 1)}
-              </Text>
-              <Text style={styles.summaryLabel}>углеводы</Text>
-            </View>
-          </View>
+          <CompactSummary
+            calories={totals.calories}
+            proteins={totals.proteins}
+            fats={totals.fats}
+            carbohydrates={totals.carbohydrates}
+            variant="large"
+          />
         </View>
 
         {/* Ingredients List */}
@@ -383,40 +365,26 @@ const AudioAnalysisScreen: React.FC = observer(() => {
 
                 {isExpanded && (
                   <View style={styles.ingredientDetails}>
-                    <Input
-                      label={`Количество (${formatMeasurementType(ingredient.measurementType)})`}
-                      value={ingredient.editedQuantity.toString()}
-                      onChangeText={(text) => handleQuantityChange(index, text)}
-                      keyboardType="numeric"
-                      style={styles.quantityInput}
-                    />
-
-                    <View style={styles.nutrientsGrid}>
-                      <View style={styles.nutrientItem}>
-                        <Text style={styles.nutrientLabel}>Белки</Text>
-                        <Text style={styles.nutrientValue}>
-                          {formatNumber(ingredient.proteins, 1)}г
-                        </Text>
-                      </View>
-                      <View style={styles.nutrientItem}>
-                        <Text style={styles.nutrientLabel}>Жиры</Text>
-                        <Text style={styles.nutrientValue}>
-                          {formatNumber(ingredient.fats, 1)}г
-                        </Text>
-                      </View>
-                      <View style={styles.nutrientItem}>
-                        <Text style={styles.nutrientLabel}>Углеводы</Text>
-                        <Text style={styles.nutrientValue}>
-                          {formatNumber(ingredient.carbohydrates, 1)}г
-                        </Text>
-                      </View>
-                      <View style={styles.nutrientItem}>
-                        <Text style={styles.nutrientLabel}>Калории</Text>
-                        <Text style={styles.nutrientValue}>
-                          {formatNumber(ingredient.calories, 0)}
-                        </Text>
-                      </View>
+                    <View style={styles.quantityRow}>
+                      <Text style={styles.quantityLabel}>Количество:</Text>
+                      <Input
+                        value={ingredient.editedQuantity.toString()}
+                        onChangeText={(text) => handleQuantityChange(index, text)}
+                        keyboardType="numeric"
+                        style={styles.quantityInputCompact}
+                      />
+                      <Text style={styles.unitLabel}>
+                        {formatMeasurementType(ingredient.measurementType)}
+                      </Text>
                     </View>
+
+                    <NutrientRow
+                      proteins={ingredient.proteins}
+                      fats={ingredient.fats}
+                      carbohydrates={ingredient.carbohydrates}
+                      calories={ingredient.calories}
+                      showCaloriesFirst
+                    />
                   </View>
                 )}
               </View>
@@ -570,29 +538,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
   },
-  summaryTitle: {
-    ...typography.h5,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  summaryItem: {
-    alignItems: 'center',
-  },
-  summaryValue: {
-    ...typography.h4,
-    color: colors.primary,
-    fontWeight: 'bold',
-  },
-  summaryLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
-  },
   ingredientsContainer: {
     padding: spacing.lg,
     paddingBottom: 100,
@@ -639,31 +584,23 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
   },
-  quantityInput: {
-    marginBottom: spacing.md,
-  },
-  nutrientsGrid: {
+  quantityRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-  },
-  nutrientItem: {
-    flex: 1,
-    minWidth: '45%',
-    backgroundColor: colors.background.light,
-    padding: spacing.md,
-    borderRadius: borderRadius.md,
     alignItems: 'center',
+    marginBottom: spacing.sm,
   },
-  nutrientLabel: {
-    ...typography.caption,
+  quantityLabel: {
+    ...typography.body2,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    marginRight: spacing.sm,
   },
-  nutrientValue: {
-    ...typography.body1,
-    color: colors.text.primary,
-    fontWeight: '600',
+  quantityInputCompact: {
+    width: 80,
+    marginRight: spacing.sm,
+  },
+  unitLabel: {
+    ...typography.body2,
+    color: colors.text.secondary,
   },
   footer: {
     position: 'absolute',

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -25,6 +25,9 @@ import {
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
+import NutrientRow from '../../components/common/NutrientRow';
+import CompactSummary from '../../components/common/CompactSummary';
+import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -40,6 +43,7 @@ const MealScreen: React.FC = observer(() => {
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
   const userTimezone = profileStore.profile?.timezone || 'UTC';
+  const [showEditDialog, setShowEditDialog] = useState(false);
 
   useEffect(() => {
     // Load meal elements if not already loaded
@@ -108,6 +112,31 @@ const MealScreen: React.FC = observer(() => {
     navigation.goBack();
   };
 
+  const handleEditMealType = () => {
+    setShowEditDialog(true);
+  };
+
+  const handleMealTypeSelect = async (newType: string) => {
+    setShowEditDialog(false);
+    
+    if (newType === meal.mealType) {
+      return; // No change
+    }
+
+    try {
+      await mealStore.updateMeal(meal.id, {
+        mealType: newType,
+        dateTime: meal.dateTime,
+        name: meal.name,
+      } as any);
+      uiStore.showSnackbar('Тип приема пищи изменен', 'success');
+      // Reload meal data
+      await mealStore.loadMealsForDate(mealStore.selectedDate);
+    } catch (error) {
+      uiStore.showSnackbar('Не удалось изменить тип', 'error');
+    }
+  };
+
   const renderElement = ({ item: element }: { item: any }) => {
     return (
       <TouchableOpacity
@@ -127,29 +156,33 @@ const MealScreen: React.FC = observer(() => {
         )}
 
         <View style={styles.elementInfo}>
-          <Text style={styles.elementName} numberOfLines={2}>
+          <Text style={styles.elementName} numberOfLines={1}>
             {element.name}
           </Text>
-          <Text style={styles.elementQuantity}>
-            {formatWeight(parseFloat(element.quantity))}
-          </Text>
-          <Text style={styles.elementMacros}>
-            Б: {element.proteins}г • Ж: {element.fats}г • У:{' '}
-            {element.carbohydrates}г
-          </Text>
+          <NutrientRow
+            proteins={element.proteins}
+            fats={element.fats}
+            carbohydrates={element.carbohydrates}
+            calories={element.calories}
+            showCaloriesFirst={false}
+            compact
+          />
+          <View style={styles.quantityCaloriesRow}>
+            <Text style={styles.quantityText}>
+              {formatWeight(parseFloat(element.quantity))}
+            </Text>
+            <Text style={styles.caloriesText}>
+              {formatCalories(element.calories)}
+            </Text>
+          </View>
         </View>
 
-        <View style={styles.elementRight}>
-          <Text style={styles.elementCalories}>
-            {formatCalories(element.calories)}
-          </Text>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={() => handleDeleteElement(element.id)}
-          >
-            <Text style={styles.deleteIcon}>🗑️</Text>
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeleteElement(element.id)}
+        >
+          <Text style={styles.deleteButtonText}>🗑️</Text>
+        </TouchableOpacity>
       </TouchableOpacity>
     );
   };
@@ -189,13 +222,18 @@ const MealScreen: React.FC = observer(() => {
   return (
     <View style={styles.container}>
       <Header
-        title={formatMealType(meal.mealType)}
+        title={`${formatMealType(meal.mealType)} • ${formatTimeInTimezone(meal.dateTime, userTimezone)}`}
         showBackButton
         onBackPress={handleBack}
         rightComponent={
-          <TouchableOpacity onPress={handleDeleteMeal}>
-            <Text style={styles.deleteIcon}>🗑️</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={handleEditMealType} style={styles.editButton}>
+              <Text style={styles.editIcon}>✏️</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleDeleteMeal}>
+              <Text style={styles.deleteIcon}>🗑️</Text>
+            </TouchableOpacity>
+          </View>
         }
       />
 
@@ -207,41 +245,15 @@ const MealScreen: React.FC = observer(() => {
         keyExtractor={(item) => item.id.toString()}
         ListHeaderComponent={
           <>
-            {/* Meal Info */}
-            <View style={styles.mealInfo}>
-              <Text style={styles.mealTime}>{formatTimeInTimezone(meal.dateTime, userTimezone)}</Text>
-              {meal.name && <Text style={styles.mealName}>{meal.name}</Text>}
-            </View>
-
             {/* Summary */}
             <View style={styles.summary}>
-              <Text style={styles.summaryTitle}>Итого</Text>
-              <View style={styles.summaryGrid}>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>
-                    {Math.round(totalCalories)}
-                  </Text>
-                  <Text style={styles.summaryLabel}>ккал</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>
-                    {Math.round(totalProteins)}
-                  </Text>
-                  <Text style={styles.summaryLabel}>белки</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>
-                    {Math.round(totalFats)}
-                  </Text>
-                  <Text style={styles.summaryLabel}>жиры</Text>
-                </View>
-                <View style={styles.summaryItem}>
-                  <Text style={styles.summaryValue}>
-                    {Math.round(totalCarbohydrates)}
-                  </Text>
-                  <Text style={styles.summaryLabel}>углеводы</Text>
-                </View>
-              </View>
+              <CompactSummary
+                calories={totalCalories}
+                proteins={totalProteins}
+                fats={totalFats}
+                carbohydrates={totalCarbohydrates}
+                variant="large"
+              />
             </View>
 
             {/* Elements Title */}
@@ -263,6 +275,14 @@ const MealScreen: React.FC = observer(() => {
           style={styles.addButton}
         />
       </View>
+
+      {/* Meal Type Edit Dialog */}
+      <MealTypeEditDialog
+        visible={showEditDialog}
+        currentType={meal.mealType}
+        onSelect={handleMealTypeSelect}
+        onCancel={() => setShowEditDialog(false)}
+      />
     </View>
   );
 });
@@ -279,24 +299,19 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 100, // Space for add button
   },
-  deleteIcon: {
-    fontSize: 24,
-  },
-  mealInfo: {
-    padding: spacing.lg,
-    backgroundColor: colors.background.paper,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
+  headerActions: {
+    flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  mealTime: {
-    ...typography.h4,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
+  editButton: {
+    padding: spacing.xs,
   },
-  mealName: {
-    ...typography.body1,
-    color: colors.text.secondary,
+  editIcon: {
+    fontSize: 20,
+  },
+  deleteIcon: {
+    fontSize: 22,
   },
   summary: {
     margin: spacing.md,
@@ -305,29 +320,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
-  },
-  summaryTitle: {
-    ...typography.h5,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  summaryGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  summaryItem: {
-    alignItems: 'center',
-  },
-  summaryValue: {
-    ...typography.h4,
-    color: colors.primary,
-    fontWeight: 'bold',
-  },
-  summaryLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
   },
   elementsTitleContainer: {
     paddingHorizontal: spacing.lg,
@@ -344,60 +336,61 @@ const styles = StyleSheet.create({
   elementCard: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    padding: spacing.sm,
     marginHorizontal: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border.light,
     flexDirection: 'row',
     alignItems: 'center',
   },
   elementImage: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
     borderRadius: borderRadius.md,
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   elementImagePlaceholder: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background.default,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   elementImagePlaceholderIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   elementInfo: {
     flex: 1,
   },
   elementName: {
-    ...typography.h5,
+    ...typography.body1,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    fontWeight: '600',
+    marginBottom: spacing.xs / 2,
   },
-  elementQuantity: {
+  quantityCaloriesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  quantityText: {
     ...typography.body2,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
   },
-  elementMacros: {
-    ...typography.caption,
-    color: colors.text.secondary,
-  },
-  elementRight: {
-    alignItems: 'flex-end',
-  },
-  elementCalories: {
-    ...typography.h5,
+  caloriesText: {
+    ...typography.body1,
     color: colors.primary,
     fontWeight: '600',
-    marginBottom: spacing.sm,
   },
   deleteButton: {
-    padding: spacing.sm,
+    padding: spacing.xs,
+  },
+  deleteButtonText: {
+    fontSize: 18,
   },
   emptyState: {
     alignItems: 'center',
