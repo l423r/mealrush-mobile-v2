@@ -11,6 +11,7 @@ import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { MaterialIcons } from '@expo/vector-icons';
 import type { MainStackParamList } from '../../types/navigation.types';
 import type { PhotoAnalysisIngredient, Meal } from '../../types/api.types';
 import { useStores } from '../../stores';
@@ -23,6 +24,7 @@ import {
 } from '../../theme';
 import { formatNumber, formatMeasurementType, formatMealType } from '../../utils/formatting';
 import { recalculateNutrients } from '../../utils/calculations';
+import { imageUriToBase64 } from '../../utils/imageUtils';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
@@ -176,6 +178,21 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
   const saveIngredientsToMeal = async (currentMealId: number) => {
     console.log('📝 [PhotoAnalysisScreen] Сохранение ингредиентов в прием пищи:', currentMealId);
     
+    // Check if we have only one ingredient - then save with photo
+    const shouldSaveImage = ingredients.length === 1;
+    let imageBase64: string | undefined;
+
+    if (shouldSaveImage && imageUri) {
+      console.log('📷 [PhotoAnalysisScreen] Один ингредиент - конвертируем фото для сохранения');
+      const convertedImage = await imageUriToBase64(imageUri);
+      if (convertedImage) {
+        imageBase64 = convertedImage;
+        console.log('✅ [PhotoAnalysisScreen] Фото конвертировано в base64');
+      } else {
+        console.warn('⚠️ [PhotoAnalysisScreen] Не удалось конвертировать фото');
+      }
+    }
+    
       for (const ingredient of ingredients) {
         await mealStore.createMealElement({
           mealId: currentMealId,
@@ -191,10 +208,16 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
           defaultCarbohydrates: ingredient.carbohydrates,
           defaultCalories: ingredient.calories,
           defaultQuantity: ingredient.editedQuantity.toString(),
+        imageBase64: shouldSaveImage ? imageBase64 : undefined,
         });
       }
 
-      uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');
+    uiStore.showSnackbar(
+      shouldSaveImage && imageBase64
+        ? 'Блюдо добавлено с фотографией'
+        : 'Блюда добавлены в прием пищи',
+      'success'
+    );
       console.log('🚀 [PhotoAnalysisScreen] Навигация на HomeTabs > Main');
       navigation.navigate('HomeTabs', { screen: 'Main' });
   };
@@ -339,6 +362,16 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
             variant="large"
           />
         </View>
+
+        {/* Photo Save Banner */}
+        {ingredients.length === 1 && imageUri && (
+          <View style={styles.photoSaveBanner}>
+            <MaterialIcons name="photo-camera" size={20} color={colors.primary} />
+            <Text style={styles.photoSaveBannerText}>
+              Фотография будет сохранена с блюдом
+            </Text>
+          </View>
+        )}
 
         {/* Ingredients List */}
         <View style={styles.ingredientsContainer}>
@@ -536,6 +569,21 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderColor: colors.border.light,
+  },
+  photoSaveBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.primary + '10',
+    borderRadius: borderRadius.md,
+    marginHorizontal: spacing.lg,
+    marginTop: spacing.md,
+  },
+  photoSaveBannerText: {
+    ...typography.body2,
+    color: colors.primary,
+    fontWeight: '500',
   },
   ingredientsContainer: {
     padding: spacing.lg,

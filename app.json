@@ -13,7 +13,9 @@
       "backgroundColor": "#4CAF50"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.l423r.FoodApp",
+      "usesAppleSignIn": true
     },
     "android": {
       "adaptiveIcon": {
@@ -36,7 +38,9 @@
           "color": "#4CAF50",
           "sounds": []
         }
-      ]
-    ]
+      ],
+      "expo-apple-authentication"
+    ],
+    "scheme": "foodapp"
   }
 }

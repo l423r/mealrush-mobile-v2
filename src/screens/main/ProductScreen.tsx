@@ -266,7 +266,7 @@ const ProductScreen: React.FC = observer(() => {
                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                     onBlur={onBlur}
                     error={errors.proteins?.message}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     containerStyle={styles.macroInput}
                   />
                 )}
@@ -283,7 +283,7 @@ const ProductScreen: React.FC = observer(() => {
                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                     onBlur={onBlur}
                     error={errors.fats?.message}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     containerStyle={styles.macroInput}
                   />
                 )}
@@ -302,7 +302,7 @@ const ProductScreen: React.FC = observer(() => {
                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                     onBlur={onBlur}
                     error={errors.carbohydrates?.message}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     containerStyle={styles.macroInput}
                   />
                 )}
@@ -319,7 +319,7 @@ const ProductScreen: React.FC = observer(() => {
                     onChangeText={(text) => onChange(parseFloat(text) || 0)}
                     onBlur={onBlur}
                     error={errors.calories?.message}
-                    keyboardType="numeric"
+                    keyboardType="decimal-pad"
                     containerStyle={styles.macroInput}
                     rightIcon={
                       isCalculating ? (

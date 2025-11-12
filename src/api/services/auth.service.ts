@@ -5,6 +5,8 @@ import type {
   LoginResponse,
   RegisterRequest,
   User,
+  OAuthRequest,
+  OAuthResponse,
 } from '../../types/api.types';
 
 export const authService = {
@@ -18,4 +20,7 @@ export const authService = {
 
   resetPassword: (email: string) =>
     apiClient.post(AUTH_ENDPOINTS.RESET_PASSWORD, { email }),
+
+  oauth: (oauthData: OAuthRequest) =>
+    apiClient.post<OAuthResponse>(AUTH_ENDPOINTS.OAUTH, oauthData),
 };

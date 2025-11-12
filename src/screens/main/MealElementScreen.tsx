@@ -483,7 +483,7 @@ const MealElementScreen: React.FC = observer(() => {
                       onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
                       onBlur={onBlur}
                       error={errors.calories?.message}
-                      keyboardType="numeric"
+                      keyboardType="decimal-pad"
                       containerStyle={styles.topRowInput}
                       inputStyle={styles.numericInput}
                       editable={!readOnly}
@@ -505,7 +505,7 @@ const MealElementScreen: React.FC = observer(() => {
                       onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
                       onBlur={onBlur}
                       error={errors.proteins?.message}
-                      keyboardType="numeric"
+                      keyboardType="decimal-pad"
                       containerStyle={styles.bottomRowInput}
                       inputStyle={styles.numericInput}
                       editable={!readOnly}
@@ -524,7 +524,7 @@ const MealElementScreen: React.FC = observer(() => {
                       onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
                       onBlur={onBlur}
                       error={errors.fats?.message}
-                      keyboardType="numeric"
+                      keyboardType="decimal-pad"
                       containerStyle={styles.bottomRowInput}
                       inputStyle={styles.numericInput}
                       editable={!readOnly}
@@ -543,7 +543,7 @@ const MealElementScreen: React.FC = observer(() => {
                       onChangeText={(text) => onChange(Number.parseFloat(text) || 0)}
                       onBlur={onBlur}
                       error={errors.carbohydrates?.message}
-                      keyboardType="numeric"
+                      keyboardType="decimal-pad"
                       containerStyle={styles.bottomRowInput}
                       inputStyle={styles.numericInput}
                       editable={!readOnly}

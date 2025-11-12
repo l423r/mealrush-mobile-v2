@@ -10,13 +10,17 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import Button from './Button';
+import AnalysisModeSelector from './AnalysisModeSelector';
+import type { AnalysisMode } from '../../types/api.types';
+import { getDeviceLanguage } from '../../utils/localeUtils';
 
 interface TextAnalysisDialogProps {
   visible: boolean;
   onClose: () => void;
-  onAnalyze: (description: string, language: string) => void;
+  onAnalyze: (description: string, language: string, analysisMode?: AnalysisMode) => void;
   analyzing?: boolean;
 }
 
@@ -27,18 +31,20 @@ const TextAnalysisDialog: React.FC<TextAnalysisDialogProps> = ({
   analyzing = false,
 }) => {
   const [description, setDescription] = useState('');
-  const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const [language, setLanguage] = useState<'ru' | 'en'>(getDeviceLanguage());
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('AUTO');
 
   const handleAnalyze = () => {
     if (description.trim().length === 0) {
       return;
     }
-    onAnalyze(description.trim(), language);
+    onAnalyze(description.trim(), language, analysisMode);
   };
 
   const handleClose = () => {
     setDescription('');
-    setLanguage('ru');
+    setLanguage(getDeviceLanguage());
+    setAnalysisMode('AUTO');
     onClose();
   };
 
@@ -63,99 +69,23 @@ const TextAnalysisDialog: React.FC<TextAnalysisDialogProps> = ({
           <TouchableOpacity
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}
-            style={styles.dialog}
+            style={styles.dialogContainer}
           >
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.title}>Анализ по описанию</Text>
-              <Text style={styles.subtitle}>
-                Опишите блюдо и его ингредиенты с указанием количества
-              </Text>
-
-              {/* Description Input */}
-              <View style={styles.inputContainer}>
-                <Text style={styles.label}>Описание блюда</Text>
-                <TextInput
-                  style={styles.textArea}
-                  placeholder="Например: Овсяная каша на молоке 200 грамм, банан 1 штука, мед чайная ложка"
-                  placeholderTextColor={colors.text.secondary}
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                  numberOfLines={6}
-                  textAlignVertical="top"
-                  maxLength={1000}
-                  editable={!analyzing}
-                />
-                <Text style={styles.charCount}>
-                  {description.length}/1000 символов
-                </Text>
-                {description.length > 0 && description.length < 10 && (
-                  <Text style={styles.hint}>
-                    Минимум 10 символов
-                  </Text>
-                )}
+            <View style={styles.dialog}>
+              {/* Header with close button */}
+              <View style={styles.headerRow}>
+                <Text style={styles.title}>Анализ по описанию</Text>
+                <TouchableOpacity
+                  onPress={handleClose}
+                  style={styles.closeButton}
+                  disabled={analyzing}
+                >
+                  <MaterialIcons name="close" size={24} color={colors.text.secondary} />
+                </TouchableOpacity>
               </View>
 
-              {/* Language Selector */}
-              <View style={styles.languageContainer}>
-                <Text style={styles.label}>Язык анализа</Text>
-                <View style={styles.languageButtons}>
-                  <TouchableOpacity
-                    style={[
-                      styles.languageButton,
-                      language === 'ru' && styles.languageButtonActive,
-                    ]}
-                    onPress={() => setLanguage('ru')}
-                    disabled={analyzing}
-                  >
-                    <Text
-                      style={[
-                        styles.languageButtonText,
-                        language === 'ru' && styles.languageButtonTextActive,
-                      ]}
-                    >
-                      🇷🇺 Русский
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.languageButton,
-                      language === 'en' && styles.languageButtonActive,
-                    ]}
-                    onPress={() => setLanguage('en')}
-                    disabled={analyzing}
-                  >
-                    <Text
-                      style={[
-                        styles.languageButtonText,
-                        language === 'en' && styles.languageButtonTextActive,
-                      ]}
-                    >
-                      🇬🇧 English
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
-              {/* Tips */}
-              <View style={styles.tipsContainer}>
-                <Text style={styles.tipsTitle}>💡 Советы:</Text>
-                <Text style={styles.tipText}>
-                  • Указывайте количество ингредиентов
-                </Text>
-                <Text style={styles.tipText}>
-                  • Будьте максимально детальны
-                </Text>
-                <Text style={styles.tipText}>
-                  • Используйте граммы, штуки, ложки и т.д.
-                </Text>
-              </View>
-
-              {/* Buttons */}
-              <View style={styles.buttons}>
+              {/* Buttons always visible at top */}
+              <View style={styles.buttonsRow}>
                 <Button
                   title="Отмена"
                   onPress={handleClose}
@@ -171,7 +101,50 @@ const TextAnalysisDialog: React.FC<TextAnalysisDialogProps> = ({
                   loading={analyzing}
                 />
               </View>
-            </ScrollView>
+
+              {/* Scrollable content */}
+              <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+                {/* Description Input */}
+                <View style={styles.inputContainer}>
+                  <Text style={styles.label}>Описание блюда</Text>
+                  <TextInput
+                    style={styles.textArea}
+                    placeholder="Например: Овсяная каша на молоке 200 грамм, банан 1 штука, мед чайная ложка"
+                    placeholderTextColor={colors.text.secondary}
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline
+                    numberOfLines={4}
+                    textAlignVertical="top"
+                    maxLength={1000}
+                    editable={!analyzing}
+                  />
+                  <View style={styles.inputFooter}>
+                    <Text style={styles.charCount}>{description.length}/1000</Text>
+                    {description.length > 0 && description.length < 10 && (
+                      <Text style={styles.hint}>Минимум 10 символов</Text>
+                    )}
+                  </View>
+                </View>
+
+                {/* Analysis Mode Selector */}
+                <AnalysisModeSelector value={analysisMode} onChange={setAnalysisMode} />
+
+                {/* Tips */}
+                <View style={styles.tipsContainer}>
+                  <Text style={styles.tipsTitle}>💡 Советы:</Text>
+                  <Text style={styles.tipText}>
+                    • Указывайте количество ингредиентов{'\n'}
+                    • Будьте максимально детальны{'\n'}
+                    • Используйте граммы, штуки, ложки и т.д.
+                  </Text>
+                </View>
+              </ScrollView>
+            </View>
           </TouchableOpacity>
         </TouchableOpacity>
       </KeyboardAvoidingView>
@@ -191,32 +164,49 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
+    padding: spacing.md,
   },
-  dialog: {
+  dialogContainer: {
     width: '100%',
     maxWidth: 500,
-    maxHeight: '90%',
+    maxHeight: '85%',
+  },
+  dialog: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     ...shadows.xl,
+    maxHeight: '100%',
+    height: '90%',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   title: {
     ...typography.h3,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
+    flex: 1,
   },
-  subtitle: {
-    ...typography.body2,
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
-    lineHeight: 20,
+  closeButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.sm,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+  },
+  button: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
+  },
+  content: {
+    flex: 1,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   label: {
     ...typography.body2,
@@ -229,78 +219,43 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.light,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    minHeight: 120,
-    maxHeight: 200,
+    minHeight: 100,
+    maxHeight: 150,
     borderWidth: 1,
     borderColor: colors.border.light,
     color: colors.text.primary,
+  },
+  inputFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.xs,
   },
   charCount: {
     ...typography.caption,
     color: colors.text.secondary,
-    textAlign: 'right',
-    marginTop: spacing.xs,
   },
   hint: {
     ...typography.caption,
     color: colors.warning,
-    marginTop: spacing.xs,
-  },
-  languageContainer: {
-    marginBottom: spacing.lg,
-  },
-  languageButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  languageButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    backgroundColor: colors.background.default,
-    alignItems: 'center',
-  },
-  languageButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '20',
-  },
-  languageButtonText: {
-    ...typography.body2,
-    color: colors.text.primary,
-  },
-  languageButtonTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
   },
   tipsContainer: {
     backgroundColor: colors.background.light,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   tipsTitle: {
     ...typography.body2,
     color: colors.text.primary,
     fontWeight: '600',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   tipText: {
     ...typography.caption,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
-    lineHeight: 18,
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  button: {
-    flex: 1,
+    lineHeight: 16,
   },
 });
 
 export default TextAnalysisDialog;
-

@@ -113,7 +113,7 @@ const MealSelectorDialog: React.FC<MealSelectorDialogProps> = observer(({
                         </View>
                         <MaterialIcons
                           name="chevron-right"
-                          size={24}
+                          size={20}
                           color={colors.text.hint}
                         />
                       </TouchableOpacity>
@@ -128,7 +128,7 @@ const MealSelectorDialog: React.FC<MealSelectorDialogProps> = observer(({
                 >
                   <MaterialIcons
                     name="add-circle-outline"
-                    size={24}
+                    size={20}
                     color={colors.primary}
                   />
                   <Text style={styles.createButtonText}>Создать новый прием</Text>
@@ -158,16 +158,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dialogContainer: {
-    width: '85%',
-    maxWidth: 400,
+    width: '90%',
+    maxWidth: 450,
   },
   dialog: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    padding: spacing.md,
     ...shadows.xl,
     elevation: 10,
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
   title: {
     ...typography.h3,
@@ -178,75 +178,77 @@ const styles = StyleSheet.create({
   subtitle: {
     ...typography.body2,
     color: colors.text.secondary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
     textAlign: 'center',
+    lineHeight: 18,
   },
   mealsScrollView: {
-    maxHeight: 300,
-    marginBottom: spacing.md,
+    maxHeight: 350,
+    marginBottom: spacing.sm,
   },
   mealOption: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: spacing.md,
+    padding: spacing.sm,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background.light,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
     borderWidth: 1,
     borderColor: colors.border.light,
   },
   mealIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
+    width: 36,
+    height: 36,
+    borderRadius: borderRadius.sm,
     backgroundColor: colors.background.paper,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
+    marginRight: spacing.sm,
   },
   mealIcon: {
-    fontSize: 24,
+    fontSize: 20,
   },
   mealInfo: {
     flex: 1,
   },
   mealName: {
-    ...typography.body1,
+    ...typography.body2,
     color: colors.text.primary,
     fontWeight: '600',
-    marginBottom: 2,
+    marginBottom: 1,
   },
   mealTime: {
     ...typography.caption,
     color: colors.text.secondary,
+    fontSize: 11,
   },
   createButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.primaryLight + '20',
+    backgroundColor: colors.primary + '15',
     borderWidth: 1,
     borderColor: colors.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   createButtonText: {
-    ...typography.button,
+    ...typography.body2,
     color: colors.primary,
     fontWeight: '600',
     marginLeft: spacing.xs,
   },
   cancelButton: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: borderRadius.md,
     backgroundColor: colors.gray[100],
     alignItems: 'center',
   },
   cancelText: {
-    ...typography.button,
+    ...typography.body2,
     color: colors.text.primary,
     fontWeight: '600',
   },

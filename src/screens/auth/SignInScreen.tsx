@@ -7,20 +7,24 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
+import { MaterialIcons } from '@expo/vector-icons';
+import * as AppleAuthentication from 'expo-apple-authentication';
 import { useStores } from '../../stores';
 import type { AuthStackParamList } from '../../types/navigation.types';
 import { loginSchema } from '../../utils/validation';
-import { colors, typography, spacing } from '../../theme';
+import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
+import { signInWithGoogle, signInWithApple } from '../../utils/oauthUtils';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -30,8 +34,9 @@ type SignInScreenNavigationProp = NativeStackNavigationProp<
 const SignInScreen: React.FC = observer(() => {
   const navigation = useNavigation<SignInScreenNavigationProp>();
   const { authStore, uiStore } = useStores();
-  const { alertState, showInfo, hideAlert } = useAlert();
+  const { alertState, showInfo, showError, hideAlert } = useAlert();
   const [showPassword, setShowPassword] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
 
   const {
     control,
@@ -64,6 +69,34 @@ const SignInScreen: React.FC = observer(() => {
       'Восстановление пароля',
       'Функция восстановления пароля будет доступна в следующей версии'
     );
+  };
+
+  const handleGoogleSignIn = async () => {
+    try {
+      setOauthLoading(true);
+      const result = await signInWithGoogle();
+      await authStore.loginWithOAuth('google', result.idToken);
+      // Navigation handled by auth flow
+    } catch (error: any) {
+      console.error('Google auth error:', error);
+      showError('Ошибка Google Sign In', error.message || 'Не удалось войти через Google');
+    } finally {
+      setOauthLoading(false);
+    }
+  };
+
+  const handleAppleSignIn = async () => {
+    try {
+      setOauthLoading(true);
+      const result = await signInWithApple();
+      await authStore.loginWithOAuth('apple', result.idToken, result.authorizationCode);
+      // Navigation handled by auth flow
+    } catch (error: any) {
+      console.error('Apple auth error:', error);
+      showError('Ошибка Apple Sign In', error.message || 'Не удалось войти через Apple');
+    } finally {
+      setOauthLoading(false);
+    }
   };
 
   return (
@@ -149,6 +182,42 @@ const SignInScreen: React.FC = observer(() => {
             />
           </View>
 
+          {/* OAuth Divider */}
+          <View style={styles.divider}>
+            <View style={styles.dividerLine} />
+            <Text style={styles.dividerText}>или</Text>
+            <View style={styles.dividerLine} />
+          </View>
+
+          {/* OAuth Buttons */}
+          <View style={styles.oauthContainer}>
+            {oauthLoading ? (
+              <ActivityIndicator size="large" color={colors.primary} />
+            ) : (
+              <>
+                <TouchableOpacity
+                  style={styles.googleButton}
+                  onPress={handleGoogleSignIn}
+                  activeOpacity={0.7}
+                  disabled={authStore.loading || oauthLoading}
+                >
+                  <MaterialIcons name="g-translate" size={24} color="#DB4437" />
+                  <Text style={styles.oauthButtonText}>Войти через Google</Text>
+                </TouchableOpacity>
+
+                {Platform.OS === 'ios' && (
+                  <AppleAuthentication.AppleAuthenticationButton
+                    buttonType={AppleAuthentication.AppleAuthenticationButtonType.SIGN_IN}
+                    buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+                    cornerRadius={8}
+                    style={styles.appleButton}
+                    onPress={handleAppleSignIn}
+                  />
+                )}
+              </>
+            )}
+          </View>
+
           <View style={styles.footer}>
             <Text style={styles.footerText}>Нет аккаунта?</Text>
             <Button
@@ -225,6 +294,50 @@ const styles = StyleSheet.create({
   },
   eyeIcon: {
     fontSize: 20,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.xl,
+    paddingHorizontal: spacing.lg,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.border.light,
+  },
+  dividerText: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    marginHorizontal: spacing.md,
+  },
+  oauthContainer: {
+    marginBottom: spacing.xl,
+    paddingHorizontal: spacing.lg,
+    minHeight: 60,
+    justifyContent: 'center',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    marginBottom: spacing.md,
+    gap: spacing.sm,
+  },
+  oauthButtonText: {
+    ...typography.button,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  appleButton: {
+    width: '100%',
+    height: 50,
   },
 });
 

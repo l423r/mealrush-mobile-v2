@@ -9,11 +9,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  ActivityIndicator,
 } from 'react-native';
 import { Audio } from 'expo-av';
+import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import Button from './Button';
+import AnalysisModeSelector from './AnalysisModeSelector';
+import type { AnalysisMode } from '../../types/api.types';
 import {
   startRecording,
   stopRecording,
@@ -23,11 +25,12 @@ import {
   audioUriToBase64,
 } from '../../utils/audioUtils';
 import { useStores } from '../../stores';
+import { getDeviceLanguage } from '../../utils/localeUtils';
 
 interface AudioRecordDialogProps {
   visible: boolean;
   onClose: () => void;
-  onAnalyze: (audioBase64: string, language: string, comment?: string) => void;
+  onAnalyze: (audioBase64: string, language: string, comment?: string, analysisMode?: AnalysisMode) => void;
   analyzing?: boolean;
 }
 
@@ -42,7 +45,8 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
   const [recordingUri, setRecordingUri] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
   const [comment, setComment] = useState('');
-  const [language, setLanguage] = useState<'ru' | 'en'>('ru');
+  const [language, setLanguage] = useState<'ru' | 'en'>(getDeviceLanguage());
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('AUTO');
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -58,9 +62,7 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
     }
 
     return () => {
-      if (interval) {
-        clearInterval(interval);
-      }
+      if (interval) clearInterval(interval);
     };
   }, [recording]);
 
@@ -87,27 +89,25 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
     setIsProcessing(true);
 
     try {
-      // Validate file size
       const isValidSize = await validateAudioSize(recordingUri);
       if (!isValidSize) {
-        uiStore.showSnackbar('Файл слишком большой. Максимальный размер: 25MB', 'error');
+        uiStore.showSnackbar('Файл слишком большой. Максимум: 25MB', 'error');
         setIsProcessing(false);
         return;
       }
 
-      // Convert to base64
       const base64 = await audioUriToBase64(recordingUri);
       if (!base64) {
-        uiStore.showSnackbar('Не удалось обработать аудио файл', 'error');
+        uiStore.showSnackbar('Не удалось обработать аудио', 'error');
         setIsProcessing(false);
         return;
       }
 
       setIsProcessing(false);
-      onAnalyze(base64, language, comment.trim() || undefined);
+      onAnalyze(base64, language, comment.trim() || undefined, analysisMode);
     } catch (error) {
       console.error('Error processing audio:', error);
-      uiStore.showSnackbar('Произошла ошибка при обработке аудио', 'error');
+      uiStore.showSnackbar('Ошибка обработки аудио', 'error');
       setIsProcessing(false);
     }
   };
@@ -120,7 +120,8 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
     setRecordingUri(null);
     setDuration(0);
     setComment('');
-    setLanguage('ru');
+    setLanguage(getDeviceLanguage());
+    setAnalysisMode('AUTO');
     onClose();
   };
 
@@ -152,140 +153,23 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
           <TouchableOpacity
             activeOpacity={1}
             onPress={(e) => e.stopPropagation()}
-            style={styles.dialog}
+            style={styles.dialogContainer}
           >
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              keyboardShouldPersistTaps="handled"
-            >
-              <Text style={styles.title}>Анализ по голосу</Text>
-              <Text style={styles.subtitle}>
-                Запишите описание блюда голосом
-              </Text>
-
-              {/* Recording Area */}
-              <View style={styles.recordingContainer}>
-                <View
-                  style={[
-                    styles.recordingCircle,
-                    isRecording && styles.recordingCircleActive,
-                  ]}
+            <View style={styles.dialog}>
+              {/* Header with close button */}
+              <View style={styles.headerRow}>
+                <Text style={styles.title}>Анализ по голосу</Text>
+                <TouchableOpacity
+                  onPress={handleClose}
+                  style={styles.closeButton}
+                  disabled={analyzing || isProcessing}
                 >
-                  <Text style={styles.recordingIcon}>
-                    {isRecording ? '🔴' : hasRecording ? '✓' : '🎤'}
-                  </Text>
-                </View>
-
-                <Text style={styles.durationText}>{formatDuration(duration)}</Text>
-
-                {isRecording ? (
-                  <Button
-                    title="Остановить запись"
-                    onPress={handleStopRecording}
-                    variant="outline"
-                    style={styles.recordButton}
-                  />
-                ) : hasRecording ? (
-                  <View style={styles.buttonRow}>
-                    <Button
-                      title="Записать заново"
-                      onPress={handleReset}
-                      variant="outline"
-                      style={styles.halfButton}
-                      disabled={analyzing || isProcessing}
-                    />
-                  </View>
-                ) : (
-                  <Button
-                    title="Начать запись"
-                    onPress={handleStartRecording}
-                    style={styles.recordButton}
-                    disabled={analyzing || isProcessing}
-                  />
-                )}
+                  <MaterialIcons name="close" size={24} color={colors.text.secondary} />
+                </TouchableOpacity>
               </View>
 
-              {/* Comment Input */}
-              {hasRecording && (
-                <>
-                  <View style={styles.inputContainer}>
-                    <Text style={styles.label}>
-                      Дополнительный комментарий (опционально)
-                    </Text>
-                    <TextInput
-                      style={styles.textInput}
-                      placeholder="Например: Примерно стандартная порция"
-                      placeholderTextColor={colors.text.secondary}
-                      value={comment}
-                      onChangeText={setComment}
-                      multiline
-                      numberOfLines={3}
-                      textAlignVertical="top"
-                      maxLength={500}
-                      editable={!analyzing && !isProcessing}
-                    />
-                    <Text style={styles.charCount}>{comment.length}/500</Text>
-                  </View>
-
-                  {/* Language Selector */}
-                  <View style={styles.languageContainer}>
-                    <Text style={styles.label}>Язык для транскрипции</Text>
-                    <View style={styles.languageButtons}>
-                      <TouchableOpacity
-                        style={[
-                          styles.languageButton,
-                          language === 'ru' && styles.languageButtonActive,
-                        ]}
-                        onPress={() => setLanguage('ru')}
-                        disabled={analyzing || isProcessing}
-                      >
-                        <Text
-                          style={[
-                            styles.languageButtonText,
-                            language === 'ru' && styles.languageButtonTextActive,
-                          ]}
-                        >
-                          🇷🇺 Русский
-                        </Text>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.languageButton,
-                          language === 'en' && styles.languageButtonActive,
-                        ]}
-                        onPress={() => setLanguage('en')}
-                        disabled={analyzing || isProcessing}
-                      >
-                        <Text
-                          style={[
-                            styles.languageButtonText,
-                            language === 'en' && styles.languageButtonTextActive,
-                          ]}
-                        >
-                          🇬🇧 English
-                        </Text>
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </>
-              )}
-
-              {/* Tips */}
-              <View style={styles.tipsContainer}>
-                <Text style={styles.tipsTitle}>💡 Советы:</Text>
-                <Text style={styles.tipText}>
-                  • Говорите четко и разборчиво
-                </Text>
-                <Text style={styles.tipText}>
-                  • Указывайте количество ингредиентов
-                </Text>
-                <Text style={styles.tipText}>
-                  • Процесс анализа занимает больше времени
-                </Text>
-              </View>
-
-              {/* Buttons */}
-              <View style={styles.buttons}>
+              {/* Buttons always visible at top */}
+              <View style={styles.buttonsRow}>
                 <Button
                   title="Отмена"
                   onPress={handleClose}
@@ -301,7 +185,95 @@ const AudioRecordDialog: React.FC<AudioRecordDialogProps> = ({
                   loading={analyzing || isProcessing}
                 />
               </View>
-            </ScrollView>
+
+              {/* Scrollable content */}
+              <ScrollView
+                style={styles.content}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+              >
+              {/* Recording Area - Compact Horizontal Layout */}
+              <View style={styles.recordingContainer}>
+                <View
+                  style={[
+                    styles.recordingCircle,
+                    isRecording && styles.recordingCircleActive,
+                  ]}
+                >
+                  <Text style={styles.recordingIcon}>
+                    {isRecording ? '🔴' : hasRecording ? '✅' : '🎤'}
+                  </Text>
+                </View>
+
+                <View style={styles.recordingInfo}>
+                  <Text style={styles.durationText}>{formatDuration(duration)}</Text>
+                  
+                  {isRecording ? (
+                    <Button
+                      title="Остановить"
+                      onPress={handleStopRecording}
+                      variant="outline"
+                      style={styles.recordButton}
+                      size="small"
+                    />
+                  ) : hasRecording ? (
+                    <Button
+                      title="Записать заново"
+                      onPress={handleReset}
+                      variant="outline"
+                      style={styles.recordButton}
+                      disabled={analyzing || isProcessing}
+                      size="small"
+                    />
+                  ) : (
+                    <Button
+                      title="Начать запись"
+                      onPress={handleStartRecording}
+                      style={styles.recordButton}
+                      disabled={analyzing || isProcessing}
+                      size="small"
+                    />
+                  )}
+                </View>
+              </View>
+
+                {/* Settings (only when recording exists) */}
+                {hasRecording && (
+                  <>
+                    {/* Comment Input */}
+                    <View style={styles.inputContainer}>
+                      <Text style={styles.label}>Комментарий (опционально)</Text>
+                      <TextInput
+                        style={styles.textInput}
+                        placeholder="Примерно стандартная порция"
+                        placeholderTextColor={colors.text.secondary}
+                        value={comment}
+                        onChangeText={setComment}
+                        multiline
+                        numberOfLines={2}
+                        textAlignVertical="top"
+                        maxLength={500}
+                        editable={!analyzing && !isProcessing}
+                      />
+                      <Text style={styles.charCount}>{comment.length}/500</Text>
+                    </View>
+
+                    {/* Analysis Mode Selector */}
+                    <AnalysisModeSelector value={analysisMode} onChange={setAnalysisMode} />
+                  </>
+                )}
+
+                {/* Tips */}
+                <View style={styles.tipsContainer}>
+                  <Text style={styles.tipsTitle}>💡 Советы:</Text>
+                  <Text style={styles.tipText}>
+                    • Говорите четко и разборчиво{'\n'}
+                    • Указывайте количество ингредиентов{'\n'}
+                    • Процесс анализа занимает больше времени
+                  </Text>
+                </View>
+              </ScrollView>
+            </View>
           </TouchableOpacity>
         </TouchableOpacity>
       </KeyboardAvoidingView>
@@ -321,73 +293,90 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: spacing.lg,
+    padding: spacing.md,
   },
-  dialog: {
+  dialogContainer: {
     width: '100%',
     maxWidth: 500,
-    maxHeight: '90%',
+    maxHeight: '95%',
+  },
+  dialog: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
-    padding: spacing.xl,
+    padding: spacing.lg,
     ...shadows.xl,
+    maxHeight: '100%',
+    height: '90%',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   title: {
     ...typography.h3,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
+    flex: 1,
   },
-  subtitle: {
-    ...typography.body2,
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
+  closeButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.sm,
+  },
+  buttonsRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+  },
+  button: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
+  },
+  content: {
+    flex: 1,
   },
   recordingContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    marginBottom: spacing.md,
+    backgroundColor: colors.background.light,
+    borderRadius: borderRadius.lg,
   },
   recordingCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: colors.background.light,
-    borderWidth: 3,
-    borderColor: colors.border.light,
-    justifyContent: 'center',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: colors.background.paper,
     alignItems: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: colors.border.light,
+    marginRight: spacing.md,
   },
   recordingCircleActive: {
     borderColor: colors.error,
     backgroundColor: colors.error + '10',
   },
   recordingIcon: {
-    fontSize: 48,
+    fontSize: 28,
+  },
+  recordingInfo: {
+    flex: 1,
+    alignItems: 'center',
   },
   durationText: {
-    ...typography.h2,
+    ...typography.h3,
     color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: spacing.lg,
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
+    fontWeight: '600',
+    marginBottom: spacing.xs,
+    fontVariant: ['tabular-nums'],
   },
   recordButton: {
-    minWidth: 200,
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
     width: '100%',
-    justifyContent: 'center',
-  },
-  halfButton: {
-    minWidth: 200,
   },
   inputContainer: {
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   label: {
     ...typography.body2,
@@ -400,7 +389,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.light,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    minHeight: 80,
+    minHeight: 60,
+    maxHeight: 80,
     borderWidth: 1,
     borderColor: colors.border.light,
     color: colors.text.primary,
@@ -411,61 +401,23 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     marginTop: spacing.xs,
   },
-  languageContainer: {
-    marginBottom: spacing.lg,
-  },
-  languageButtons: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-  },
-  languageButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    backgroundColor: colors.background.default,
-    alignItems: 'center',
-  },
-  languageButtonActive: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary + '20',
-  },
-  languageButtonText: {
-    ...typography.body2,
-    color: colors.text.primary,
-  },
-  languageButtonTextActive: {
-    color: colors.primary,
-    fontWeight: '600',
-  },
   tipsContainer: {
     backgroundColor: colors.background.light,
     padding: spacing.md,
     borderRadius: borderRadius.md,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
   tipsTitle: {
     ...typography.body2,
     color: colors.text.primary,
     fontWeight: '600',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   tipText: {
     ...typography.caption,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
-    lineHeight: 18,
-  },
-  buttons: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  button: {
-    flex: 1,
+    lineHeight: 16,
   },
 });
 
 export default AudioRecordDialog;
-

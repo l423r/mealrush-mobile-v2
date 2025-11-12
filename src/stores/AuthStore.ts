@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { authService } from '../api/services/auth.service';
 import type RootStore from './RootStore';
-import type { User, LoginRequest, RegisterRequest } from '../types/api.types';
+import type { User, LoginRequest, RegisterRequest, OAuthProvider } from '../types/api.types';
 import { saveToken, deleteToken, getToken } from '../api/axios.config';
 
 class AuthStore {
@@ -32,14 +32,16 @@ class AuthStore {
 
       runInAction(() => {
         this.token = String(response.data.jwtToken);
+        this.user = response.data.user;
         this.isAuthenticated = true;
         this.error = null;
       });
 
       await saveToken(String(response.data.jwtToken));
 
-      // Get user data
-      await this.getUser();
+      // User is already in login response, no need to call getUser separately
+      // But keeping it for consistency with old flow (can be removed in future)
+      // await this.getUser();
 
       // Check if user has profile (не сбрасываем loading до завершения проверки профиля)
       await this.rootStore.profileStore.checkProfile();
@@ -86,6 +88,56 @@ class AuthStore {
       runInAction(() => {
         this.loading = false;
         this.error = error.response?.data?.message || 'Ошибка регистрации';
+      });
+      throw error;
+    }
+  }
+
+  async loginWithOAuth(provider: OAuthProvider, idToken: string, authorizationCode?: string) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const response = await authService.oauth({
+        provider,
+        idToken,
+        authorizationCode,
+      });
+
+      runInAction(() => {
+        this.token = response.data.jwtToken;
+        this.user = response.data.user;
+        this.isAuthenticated = true;
+        this.error = null;
+      });
+
+      await saveToken(response.data.jwtToken);
+
+      // Check if user has profile
+      await this.rootStore.profileStore.checkProfile();
+
+      // Register for push notifications
+      this.rootStore.notificationStore.registerForPushNotifications().catch((err) => {
+        console.warn('Failed to register for push notifications:', err);
+      });
+
+      runInAction(() => {
+        this.loading = false;
+      });
+    } catch (error: any) {
+      let errorMessage = 'Ошибка OAuth авторизации';
+      
+      if (error.response?.status === 409) {
+        errorMessage = error.response.data.message || 'Email уже зарегистрирован с другим провайдером';
+      } else if (error.response?.status === 401) {
+        errorMessage = 'Не удалось проверить токен. Попробуйте еще раз';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+
+      runInAction(() => {
+        this.loading = false;
+        this.error = errorMessage;
       });
       throw error;
     }

@@ -40,6 +40,7 @@ export interface LoginResponse {
   jwtToken: string;
   tokenType: string;
   expiresIn: number;
+  user: User;
 }
 
 export interface RegisterRequest {
@@ -48,10 +49,28 @@ export interface RegisterRequest {
   name: string;
 }
 
+// OAuth2 types
+export type OAuthProvider = 'google' | 'apple';
+
+export interface OAuthRequest {
+  provider: OAuthProvider;
+  idToken: string;
+  authorizationCode?: string;
+}
+
+export interface OAuthResponse {
+  jwtToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: User;
+}
+
 export interface User {
   id: number;
   email: string;
   name: string;
+  avatarUrl: string | null;
+  oauthProvider: 'google' | 'apple' | null;
   roles: string[];
   createdAt?: string;
 }
@@ -78,6 +97,8 @@ export type MealType =
   | 'DINNER'
   | 'SUPPER'
   | 'LATE_SUPPER';
+
+export type AnalysisMode = 'SIMPLE' | 'DETAILED' | 'AUTO';
 
 export interface UserProfile {
   id: number;
@@ -273,6 +294,7 @@ export interface PhotoAnalysisRequest {
   imageBase64: string;
   language?: string;
   comment?: string;
+  analysisMode?: AnalysisMode;
 }
 
 // Alias for backward compatibility
@@ -283,6 +305,7 @@ export type PhotoAnalysisResponse = AnalysisResponse;
 export interface TextAnalysisRequest {
   description: string;
   language?: string;
+  analysisMode?: AnalysisMode;
 }
 
 // Audio Analysis types
@@ -290,6 +313,7 @@ export interface AudioAnalysisRequest {
   audioBase64: string;
   language?: string;
   comment?: string;
+  analysisMode?: AnalysisMode;
 }
 
 // Device types

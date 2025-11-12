@@ -69,7 +69,9 @@ const Button: React.FC<ButtonProps> = ({
           size="small"
         />
       ) : (
-        <Text style={textStyleCombined}>{title}</Text>
+        <Text style={textStyleCombined} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+          {title}
+        </Text>
       )}
     </TouchableOpacity>
   );

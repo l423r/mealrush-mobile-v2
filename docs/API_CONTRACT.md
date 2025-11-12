@@ -1,8 +1,13 @@
 # API Contract: MealRush Backend
 
-**Версия:** 2.5.0  
-**Дата:** 7 ноября 2024  
+**Версия:** 2.8.0  
+**Дата:** 11 ноября 2025  
 **Статус:** Утверждено
+
+**Изменения в версии 2.8.0:**
+- Добавлен параметр `analysisMode` для всех эндпоинтов AI анализа
+- Три режима анализа: SIMPLE (блюдо целиком), DETAILED (детальная разбивка), AUTO (автоматический выбор)
+- Обратная совместимость: по умолчанию используется режим AUTO
 
 ---
 
@@ -12,7 +17,7 @@
 
 **Development:**
 ```
-http://localhost:8081/my-food
+http://localhost:8083/my-food
 ```
 
 **Production (через Gateway):**
@@ -168,15 +173,47 @@ POST /my-food/auth/token
 **Response (200 OK):**
 ```json
 {
-  "jwt_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "Bearer",
-  "expires_in": 2592000
+  "jwtToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 2592000,
+  "user": {
+    "id": 1,
+    "email": "user@example.com",
+    "name": "Иван Иванов",
+    "avatarUrl": null,
+    "oauthProvider": null,
+    "roles": ["USER"],
+    "createdAt": "2024-10-20T12:00:00Z"
+  }
 }
 ```
+
+**Response Fields:**
+- `jwtToken` (string) - JWT токен для использования в API
+- `tokenType` (string) - Тип токена (всегда "Bearer")
+- `expiresIn` (number) - Время жизни токена в секундах (по умолчанию: 2592000 = 30 дней)
+- `user` (object) - Полная информация о пользователе:
+  - `id` (number) - ID пользователя
+  - `email` (string) - Email пользователя
+  - `name` (string) - Имя пользователя
+  - `avatarUrl` (string, nullable) - URL аватара пользователя
+  - `oauthProvider` (string, nullable) - OAuth провайдер ("google", "apple", или null)
+  - `roles` (array) - Роли пользователя
+  - `createdAt` (string) - Дата создания аккаунта
 
 **Errors:**
 - 401: Неверный email или пароль
 - 400: Невалидные данные
+  ```json
+  {
+    "timestamp": "2024-10-20T12:00:00Z",
+    "status": 400,
+    "error": "Bad Request",
+    "message": "This account is linked to GOOGLE. Please use GOOGLE to sign in",
+    "path": "/my-food/auth/token"
+  }
+  ```
+  **Примечание:** Эта ошибка возвращается если пользователь зарегистрирован через OAuth (Google/Apple) и пытается войти через password. OAuth пользователи должны использовать соответствующий провайдер для входа.
 
 ### 2.2. Регистрация пользователя
 
@@ -200,6 +237,8 @@ POST /my-food/auth/user
   "id": 1,
   "email": "user@example.com",
   "name": "Иван Иванов",
+  "avatarUrl": null,
+  "oauthProvider": null,
   "roles": ["USER"],
   "createdAt": "2024-10-20T12:00:00Z"
 }
@@ -223,7 +262,10 @@ Headers: Authorization: Bearer {token}
   "id": 1,
   "email": "user@example.com",
   "name": "Иван Иванов",
-  "roles": ["USER"]
+  "avatarUrl": null,
+  "oauthProvider": null,
+  "roles": ["USER"],
+  "createdAt": "2024-10-20T12:00:00Z"
 }
 ```
 
@@ -249,6 +291,129 @@ POST /my-food/auth/reset-password
 ```
 
 **Примечание:** В текущей версии (dev mode) новый пароль возвращается в ответе. В production версии пароль будет отправляться на email и не будет возвращаться в response.
+
+### 2.5. OAuth2 авторизация (Google/Apple)
+
+**Endpoint:**
+```
+POST /my-food/auth/oauth
+```
+
+**Описание:**  
+Аутентификация через Google или Apple Sign In. Мобильное приложение получает ID token от провайдера OAuth, отправляет его на бекенд для верификации. Бекенд проверяет токен, создает или находит пользователя, и возвращает JWT токен для дальнейшего использования API.
+
+**Request Body:**
+```json
+{
+  "provider": "google",
+  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjU5N...",
+  "authorizationCode": null
+}
+```
+
+**Поля:**
+- `provider` (string, required) - OAuth провайдер. Возможные значения: `"google"`, `"apple"`
+- `idToken` (string, required) - ID token от OAuth провайдера
+- `authorizationCode` (string, optional) - Authorization code (используется только для Apple, опционально)
+
+**Response (200 OK):**
+```json
+{
+  "jwtToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "tokenType": "Bearer",
+  "expiresIn": 2592000,
+  "user": {
+    "id": 1,
+    "email": "user@gmail.com",
+    "name": "John Doe",
+    "avatarUrl": "https://lh3.googleusercontent.com/a/ACg8ocK...",
+    "oauthProvider": "google",
+    "roles": ["USER"],
+    "createdAt": "2025-01-15T10:30:00"
+  }
+}
+```
+
+**Response Fields:**
+- `jwtToken` (string) - JWT токен для использования в API
+- `tokenType` (string) - Тип токена (всегда "Bearer")
+- `expiresIn` (number) - Время жизни токена в секундах (по умолчанию: 2592000 = 30 дней)
+- `user` (object) - Данные пользователя:
+  - `id` (number) - ID пользователя
+  - `email` (string) - Email пользователя
+  - `name` (string) - Имя пользователя
+  - `avatarUrl` (string, nullable) - URL аватара (для Google - ссылка на Google фото, для Apple - null)
+  - `oauthProvider` (string, nullable) - OAuth провайдер ("google", "apple", или null для обычных пользователей)
+  - `roles` (array) - Роли пользователя
+  - `createdAt` (string) - Дата создания аккаунта
+
+**Примеры для разных провайдеров:**
+
+1. **Google OAuth:**
+```json
+{
+  "provider": "google",
+  "idToken": "eyJhbGciOiJSUzI1NiIsImtpZCI6IjU5N2JhOGI4ZTk1OGU1..."
+}
+```
+
+2. **Apple OAuth:**
+```json
+{
+  "provider": "apple",
+  "idToken": "eyJraWQiOiJlWGF1bm1MIiwiYWxnIjoiUlMyNTYifQ...",
+  "authorizationCode": "c1234567890abcdef.0.ruy.vZ1234567890"
+}
+```
+
+**Errors:**
+- 400 Bad Request - Неподдерживаемый провайдер или невалидный формат запроса
+  ```json
+  {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "status": 400,
+    "error": "Bad Request",
+    "message": "Unsupported OAuth provider: facebook",
+    "path": "/my-food/auth/oauth"
+  }
+  ```
+- 401 Unauthorized - ID token не прошел верификацию (невалидный, expired, или подпись не совпадает)
+  ```json
+  {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "status": 401,
+    "error": "Unauthorized",
+    "message": "Failed to verify Google token: Invalid ID token",
+    "path": "/my-food/auth/oauth"
+  }
+  ```
+- 409 Conflict - Email уже зарегистрирован с другим OAuth провайдером
+  ```json
+  {
+    "timestamp": "2025-01-15T10:30:00Z",
+    "status": 409,
+    "error": "Conflict",
+    "message": "Email already registered with APPLE",
+    "path": "/my-food/auth/oauth"
+  }
+  ```
+
+**Логика работы:**
+
+1. **Новый пользователь**: Если пользователя с таким email не существует - создается новый пользователь без пароля (только OAuth)
+2. **Существующий OAuth пользователь**: Если пользователь уже входил через этот провайдер - возвращается JWT токен
+3. **Связывание аккаунта**: Если пользователь зарегистрирован с паролем, но входит через OAuth в первый раз - OAuth провайдер привязывается к существующему аккаунту
+4. **Конфликт провайдеров**: Если пользователь уже использует другой OAuth провайдер (например, зарегистрирован через Google, но пытается войти через Apple) - возвращается ошибка 409
+
+**Примечания:**
+- OAuth пользователи не могут изменить пароль (у них нет пароля)
+- Можно иметь аккаунт одновременно с паролем и OAuth провайдером (после связывания)
+- ID token должен быть получен на клиенте (мобильном приложении) через официальные SDK Google/Apple
+- Верификация ID token происходит на сервере для безопасности
+- Avatar URL для Google - прямая ссылка на Google фото, для Apple - null (Apple не предоставляет аватары)
+
+**Детальная документация:**  
+См. [OAUTH2_IMPLEMENTATION_GUIDE.md](./OAUTH2_IMPLEMENTATION_GUIDE.md) для полной инструкции по интеграции OAuth2.
 
 ---
 
@@ -1232,7 +1397,8 @@ Headers: Authorization: Bearer {token}
 {
   "imageBase64": "data:image/jpeg;base64,/9j/4AAQSkZJRg...",
   "language": "ru",
-  "comment": "Это домашний обед с макаронами и котлетой"
+  "comment": "Это домашний обед с макаронами и котлетой",
+  "analysisMode": "AUTO"
 }
 ```
 
@@ -1240,6 +1406,10 @@ Headers: Authorization: Bearer {token}
 - `imageBase64` (обязательное) - base64 строка изображения
 - `language` (опциональное) - язык для распознавания (`ru`/`en`, по умолчанию `ru`)
 - `comment` (опциональное) - комментарий пользователя для более точного анализа блюда (макс. 500 символов)
+- `analysisMode` (опциональное) - режим анализа блюда (по умолчанию `AUTO`):
+  - `SIMPLE` - анализировать блюдо как одно целое (одно наименование с общими КБЖУ)
+  - `DETAILED` - разбить блюдо на отдельные ингредиенты с индивидуальными КБЖУ
+  - `AUTO` - AI сам решает (простые блюда как одно целое, сложные - разбивает на ингредиенты)
 
 **Response (200 OK):**
 ```json
@@ -1305,13 +1475,18 @@ Headers: Authorization: Bearer {token}
 ```json
 {
   "description": "Овсяная каша на молоке 200 грамм, банан 1 штука, мед чайная ложка",
-  "language": "ru"
+  "language": "ru",
+  "analysisMode": "AUTO"
 }
 ```
 
 **Поля:**
 - `description` (обязательное) - текстовое описание блюда с ингредиентами (1-1000 символов)
 - `language` (опциональное) - язык для анализа (`ru`/`en`, по умолчанию `ru`)
+- `analysisMode` (опциональное) - режим анализа блюда (по умолчанию `AUTO`):
+  - `SIMPLE` - анализировать блюдо как одно целое (одно наименование с общими КБЖУ)
+  - `DETAILED` - разбить блюдо на отдельные ингредиенты с индивидуальными КБЖУ
+  - `AUTO` - AI сам решает (простые блюда как одно целое, сложные - разбивает на ингредиенты)
 
 **Response (200 OK):**
 ```json
@@ -1379,7 +1554,8 @@ Headers: Authorization: Bearer {token}
 {
   "audioBase64": "data:audio/mp3;base64,//uQxAAAAAAAAAAAAAAAAAAAAAAASW5mb...",
   "language": "ru",
-  "comment": "Примерно стандартная порция"
+  "comment": "Примерно стандартная порция",
+  "analysisMode": "AUTO"
 }
 ```
 
@@ -1387,6 +1563,10 @@ Headers: Authorization: Bearer {token}
 - `audioBase64` (обязательное) - base64 строка аудио файла
 - `language` (опциональное) - язык для транскрипции (`ru`/`en`, по умолчанию `ru`)
 - `comment` (опциональное) - дополнительный контекст для анализа (макс. 500 символов)
+- `analysisMode` (опциональное) - режим анализа блюда (по умолчанию `AUTO`):
+  - `SIMPLE` - анализировать блюдо как одно целое (одно наименование с общими КБЖУ)
+  - `DETAILED` - разбить блюдо на отдельные ингредиенты с индивидуальными КБЖУ
+  - `AUTO` - AI сам решает (простые блюда как одно целое, сложные - разбивает на ингредиенты)
 
 **Поддерживаемые форматы аудио:**
 - mp3
@@ -1445,6 +1625,184 @@ Headers: Authorization: Bearer {token}
 - В поле `notes` может быть включена транскрипция для проверки
 - Клиент должен позволить пользователю откорректировать данные перед сохранением
 
+### 11.4. Примеры использования режимов анализа
+
+#### Режим SIMPLE (блюдо целиком)
+
+**Когда использовать:**
+- Простые напитки (кофе, чай, сок)
+- Простые блюда без сложных компонентов
+- Когда не нужна детальная разбивка
+
+**Пример запроса:**
+```json
+POST /my-food/meal_element/analyze-photo
+{
+  "imageBase64": "data:image/jpeg;base64,...",
+  "language": "ru",
+  "comment": "Латте 350 мл",
+  "analysisMode": "SIMPLE"
+}
+```
+
+**Пример ответа:**
+```json
+{
+  "ingredients": [
+    {
+      "name": "Латте",
+      "quantity": 350,
+      "measurement_type": "GRAM",
+      "proteins": 7.0,
+      "fats": 6.3,
+      "carbohydrates": 12.6,
+      "calories": 135
+    }
+  ],
+  "total_nutrients": {
+    "proteins": 7.0,
+    "fats": 6.3,
+    "carbohydrates": 12.6,
+    "calories": 135
+  },
+  "confidence": 0.9,
+  "notes": "Блюдо проанализировано как одно целое"
+}
+```
+
+#### Режим DETAILED (детальная разбивка)
+
+**Когда использовать:**
+- Сложные блюда (салаты, супы, боулы)
+- Когда нужна детальная информация по каждому компоненту
+- Для точного учета макронутриентов
+
+**Пример запроса:**
+```json
+POST /my-food/meal_element/analyze-photo
+{
+  "imageBase64": "data:image/jpeg;base64,...",
+  "language": "ru",
+  "comment": "Салат Цезарь с курицей",
+  "analysisMode": "DETAILED"
+}
+```
+
+**Пример ответа:**
+```json
+{
+  "ingredients": [
+    {
+      "name": "Куриная грудка",
+      "quantity": 120,
+      "measurement_type": "GRAM",
+      "proteins": 27.6,
+      "fats": 3.6,
+      "carbohydrates": 0.0,
+      "calories": 150
+    },
+    {
+      "name": "Салат Романо",
+      "quantity": 80,
+      "measurement_type": "GRAM",
+      "proteins": 1.2,
+      "fats": 0.2,
+      "carbohydrates": 2.4,
+      "calories": 16
+    },
+    {
+      "name": "Сухарики",
+      "quantity": 30,
+      "measurement_type": "GRAM",
+      "proteins": 2.4,
+      "fats": 3.0,
+      "carbohydrates": 15.0,
+      "calories": 105
+    },
+    {
+      "name": "Соус Цезарь",
+      "quantity": 40,
+      "measurement_type": "GRAM",
+      "proteins": 1.2,
+      "fats": 18.0,
+      "carbohydrates": 2.0,
+      "calories": 180
+    },
+    {
+      "name": "Пармезан",
+      "quantity": 20,
+      "measurement_type": "GRAM",
+      "proteins": 7.0,
+      "fats": 6.0,
+      "carbohydrates": 0.8,
+      "calories": 86
+    }
+  ],
+  "total_nutrients": {
+    "proteins": 39.4,
+    "fats": 30.8,
+    "carbohydrates": 20.2,
+    "calories": 537
+  },
+  "confidence": 0.85,
+  "notes": "Все компоненты определены отдельно"
+}
+```
+
+#### Режим AUTO (автоматический выбор)
+
+**Когда использовать:**
+- Когда не уверены, какой режим лучше подходит
+- По умолчанию для всех запросов
+- AI сам определит оптимальный подход
+
+**Поведение AI:**
+- **Простые блюда** → возвращает как одно целое (как SIMPLE)
+  - Примеры: кофе, чай, сок, простой бутерброд
+- **Сложные блюда** → разбивает на компоненты (как DETAILED)
+  - Примеры: салаты, супы, гарниры с несколькими элементами
+
+**Пример запроса:**
+```json
+POST /my-food/meal_element/analyze-text
+{
+  "description": "Капучино большой",
+  "language": "ru",
+  "analysisMode": "AUTO"
+}
+```
+
+**Пример ответа (AI выбрал SIMPLE):**
+```json
+{
+  "ingredients": [
+    {
+      "name": "Капучино",
+      "quantity": 300,
+      "measurement_type": "GRAM",
+      "proteins": 6.0,
+      "fats": 5.4,
+      "carbohydrates": 10.8,
+      "calories": 115
+    }
+  ],
+  "total_nutrients": {
+    "proteins": 6.0,
+    "fats": 5.4,
+    "carbohydrates": 10.8,
+    "calories": 115
+  },
+  "confidence": 0.88,
+  "notes": "Режим AUTO выбрал простой анализ: напиток не требует детальной разбивки"
+}
+```
+
+**Рекомендации по использованию:**
+- Используйте `AUTO` по умолчанию - AI хорошо определяет сложность блюда
+- Используйте `SIMPLE` когда точно знаете, что блюдо простое (напитки, цельные блюда)
+- Используйте `DETAILED` когда важна детальная информация по каждому компоненту
+- Всегда проверяйте и корректируйте результаты перед сохранением
+
 ---
 
 ## 12. Примеры типичных flow
@@ -1467,11 +1825,11 @@ POST /my-food/auth/token
   "email": "user@example.com",
   "password": "password123"
 }
-→ Response: { jwt_token, token_type, expires_in }
+→ Response: { jwtToken, tokenType, expiresIn, user }
 
 // 3. Создание профиля
 POST /my-food/user-profile
-Headers: Authorization: Bearer {jwt_token}
+Headers: Authorization: Bearer {jwtToken}
 {
   "height": 180,
   "weight": 75,
@@ -1819,7 +2177,75 @@ GET /my-food/swagger-ui/index.html
 
 ## 15. Changelog API
 
-### Версия 2.5.0 (текущая - 7 ноября 2024)
+### Версия 2.7.0 (9 ноября 2025)
+
+**BREAKING CHANGE - Унификация Naming Convention:**
+- ✅ **ВСЕ API теперь используют camelCase** для всех полей (request и response)
+- ✅ Удалены все `@JsonProperty` аннотации из DTO
+- ✅ `avatar_url` → `avatarUrl`
+- ✅ `oauth_provider` → `oauthProvider`
+- ✅ `created_at` → `createdAt`
+
+**Затронутые Response DTO:**
+- UserResponse: `avatarUrl`, `oauthProvider`, `createdAt` (было snake_case, стало camelCase)
+- DeviceResponse: убраны избыточные `@JsonProperty` (уже были camelCase)
+
+**Затронутые Request DTO:**
+- RegisterDeviceRequest: убраны избыточные `@JsonProperty`
+
+**Миграция для Frontend:**
+```typescript
+// БЫЛО (v2.6.1):
+interface UserResponse {
+  avatar_url: string | null;      // snake_case
+  oauth_provider: string | null;  // snake_case
+  created_at: string;              // snake_case
+}
+
+// СТАЛО (v2.7.0):
+interface UserResponse {
+  avatarUrl: string | null;      // camelCase ✅
+  oauthProvider: string | null;  // camelCase ✅
+  createdAt: string;              // camelCase ✅
+}
+```
+
+**Все эндпоинты обновлены:**
+- POST /auth/token
+- POST /auth/user
+- GET /auth/user
+- POST /auth/oauth
+- POST /notifications/register
+
+**Преимущества:**
+- ✅ Консистентность во всем API
+- ✅ Упрощение Frontend парсинга
+- ✅ Стандартный Jackson naming без кастомизации
+
+### Версия 2.6.1 (9 ноября 2025)
+
+**Исправления документации:**
+- ✅ Исправлено название поля `token` → `jwtToken` в TokenResponse (разделы 2.1, 2.5, 12.1)
+- ✅ Добавлено поле `tokenType: "Bearer"` во все auth responses
+- ✅ Добавлено поле `user` в TokenResponse для всех auth endpoints
+- ✅ Обновлено значение `expiresIn` на реальное (2592000 = 30 дней)
+- ✅ Добавлена документация ошибки 400 для OAuth users пытающихся войти через password
+- ✅ Обновлены примеры в разделе Flow (12.1)
+
+### Версия 2.6.0 (8 ноября 2025)
+
+**OAuth2 Integration:**
+- ✅ Добавлен раздел 2.5 - OAuth2 авторизация (Google/Apple)
+- ✅ Новый endpoint: `POST /auth/oauth`
+- ✅ Поддержка Google и Apple Sign In
+- ✅ Обновлен UserResponse: добавлены поля `avatarUrl`, `oauthProvider`
+- ✅ Обновлен TokenResponse: добавлено поле `user`
+- ✅ Документация полного OAuth2 flow
+- ✅ Security: OAuth users не могут войти через password endpoint
+
+См. [OAUTH2_IMPLEMENTATION_GUIDE.md](./OAUTH2_IMPLEMENTATION_GUIDE.md) для детальной документации.
+
+### Версия 2.5.0 (7 ноября 2024)
 
 Интеграция S3/MinIO хранилища для изображений продуктов и элементов приема пищи.
 

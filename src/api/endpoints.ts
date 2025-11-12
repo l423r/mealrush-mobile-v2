@@ -10,9 +10,9 @@ const getBaseURL = () => {
     // Для физического устройства используйте IP адрес вашего компьютера в локальной сети
     // Для Android эмулятора используйте: http://10.0.2.2:8080/my-food
     // Для физического Android устройства используйте IP компьютера:
-    // return 'http://192.168.1.9:8080/my-food';
+    return 'http://192.168.1.14:8083/my-food';
     // return 'http://10.0.2.2:8080/my-food';
-    return 'http://88.210.20.137:8083/my-food';
+    // return 'http://88.210.20.137:8083/my-food';
   } else {
     // В production
     return 'http://88.210.20.137:8083/my-food';
@@ -27,6 +27,7 @@ export const AUTH_ENDPOINTS = {
   REGISTER: '/auth/user',
   USER: '/auth/user',
   RESET_PASSWORD: '/auth/reset-password',
+  OAUTH: '/auth/oauth',
 } as const;
 
 // My-food endpoints

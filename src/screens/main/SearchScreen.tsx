@@ -112,7 +112,7 @@ const SearchScreen: React.FC = observer(() => {
     setShowPhotoAnalysisDialog(true);
   };
 
-  const handleStartAnalysis = async (comment?: string) => {
+  const handleStartAnalysis = async (comment?: string, analysisMode?: import('../../types/api.types').AnalysisMode) => {
     if (!selectedImageUri) return;
 
     setShowPhotoAnalysisDialog(false);
@@ -132,7 +132,8 @@ const SearchScreen: React.FC = observer(() => {
       const analysisResult = await mealStore.analyzePhoto(
         base64,
         'ru',
-        comment
+        comment,
+        analysisMode
       );
 
       setIsAnalyzing(false);
@@ -210,13 +211,13 @@ const SearchScreen: React.FC = observer(() => {
     setShowTextAnalysisDialog(true);
   };
 
-  const handleStartTextAnalysis = async (description: string, language: string) => {
+  const handleStartTextAnalysis = async (description: string, language: string, analysisMode?: import('../../types/api.types').AnalysisMode) => {
     setShowTextAnalysisDialog(false);
 
     try {
       setIsAnalyzing(true);
 
-      const analysisResult = await mealStore.analyzeText(description, language);
+      const analysisResult = await mealStore.analyzeText(description, language, analysisMode);
 
       setIsAnalyzing(false);
 
@@ -242,7 +243,8 @@ const SearchScreen: React.FC = observer(() => {
   const handleStartAudioAnalysis = async (
     audioBase64: string,
     language: string,
-    comment?: string
+    comment?: string,
+    analysisMode?: import('../../types/api.types').AnalysisMode
   ) => {
     setShowAudioRecordDialog(false);
 
@@ -252,7 +254,8 @@ const SearchScreen: React.FC = observer(() => {
       const analysisResult = await mealStore.analyzeAudio(
         audioBase64,
         language,
-        comment
+        comment,
+        analysisMode
       );
 
       setIsAnalyzing(false);

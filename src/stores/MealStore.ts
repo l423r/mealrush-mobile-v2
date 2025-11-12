@@ -7,6 +7,7 @@ import type {
   MealElement,
   MealElementCreate,
   MealElementUpdate,
+  AnalysisMode,
 } from '../types/api.types';
 import { formatDateForAPI } from '../utils/formatting';
 
@@ -325,7 +326,8 @@ class MealStore {
   async analyzePhoto(
     imageBase64: string,
     language: string = 'ru',
-    comment?: string
+    comment?: string,
+    analysisMode?: AnalysisMode
   ) {
     this.analyzingPhoto = true;
     this.photoAnalysisError = null;
@@ -335,6 +337,7 @@ class MealStore {
         imageBase64,
         language,
         comment,
+        analysisMode,
       });
 
       runInAction(() => {
@@ -368,7 +371,7 @@ class MealStore {
     }
   }
 
-  async analyzeText(description: string, language: string = 'ru') {
+  async analyzeText(description: string, language: string = 'ru', analysisMode?: AnalysisMode) {
     this.analyzingText = true;
     this.textAnalysisError = null;
 
@@ -376,6 +379,7 @@ class MealStore {
       const response = await mealService.analyzeText({
         description,
         language,
+        analysisMode,
       });
 
       runInAction(() => {
@@ -412,7 +416,8 @@ class MealStore {
   async analyzeAudio(
     audioBase64: string,
     language: string = 'ru',
-    comment?: string
+    comment?: string,
+    analysisMode?: AnalysisMode
   ) {
     this.analyzingAudio = true;
     this.audioAnalysisError = null;
@@ -422,6 +427,7 @@ class MealStore {
         audioBase64,
         language,
         comment,
+        analysisMode,
       });
 
       runInAction(() => {

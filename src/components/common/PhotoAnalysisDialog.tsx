@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   TextInput,
+  ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import {
@@ -17,11 +18,13 @@ import {
   shadows,
 } from '../../theme';
 import Button from './Button';
+import AnalysisModeSelector from './AnalysisModeSelector';
+import type { AnalysisMode } from '../../types/api.types';
 
 interface PhotoAnalysisDialogProps {
   visible: boolean;
   onClose: () => void;
-  onAnalyze: (comment?: string) => void;
+  onAnalyze: (comment?: string, analysisMode?: AnalysisMode) => void;
   analyzing: boolean;
 }
 
@@ -32,18 +35,20 @@ const PhotoAnalysisDialog: React.FC<PhotoAnalysisDialogProps> = ({
   analyzing,
 }) => {
   const [comment, setComment] = useState('');
-  const [showComment, setShowComment] = useState(false);
+  const [analysisMode, setAnalysisMode] = useState<AnalysisMode>('AUTO');
 
   const handleAnalyze = () => {
-    onAnalyze(showComment && comment.trim() ? comment.trim() : undefined);
-    // Сбрасываем состояние после отправки
+    onAnalyze(
+      comment.trim() ? comment.trim() : undefined,
+      analysisMode
+    );
     setComment('');
-    setShowComment(false);
+    setAnalysisMode('AUTO');
   };
 
   const handleClose = () => {
     setComment('');
-    setShowComment(false);
+    setAnalysisMode('AUTO');
     onClose();
   };
 
@@ -59,80 +64,69 @@ const PhotoAnalysisDialog: React.FC<PhotoAnalysisDialogProps> = ({
           <TouchableWithoutFeedback>
             <View style={styles.dialogContainer}>
               <View style={styles.dialog}>
-                <Text style={styles.title}>Анализ фотографии</Text>
-                <Text style={styles.subtitle}>
-                  Добавьте комментарий для более точного анализа (опционально)
-                </Text>
-
-                {/* Кнопка для раскрытия комментария */}
-                {!showComment && (
+                {/* Header with close button */}
+                <View style={styles.headerRow}>
+                  <Text style={styles.title}>Анализ фотографии</Text>
                   <TouchableOpacity
-                    style={styles.commentToggle}
-                    onPress={() => setShowComment(true)}
-                    activeOpacity={0.7}
-                  >
-                    <MaterialIcons
-                      name="add-comment"
-                      size={20}
-                      color={colors.primary}
-                    />
-                    <Text style={styles.commentToggleText}>
-                      Добавить комментарий
-                    </Text>
-                  </TouchableOpacity>
-                )}
-
-                {/* Поле комментария */}
-                {showComment && (
-                  <View style={styles.commentContainer}>
-                    <TextInput
-                      style={styles.commentInput}
-                      placeholder="Например: Домашний обед с макаронами и котлетой, порция примерно 300г"
-                      placeholderTextColor={colors.text.hint}
-                      value={comment}
-                      onChangeText={setComment}
-                      multiline
-                      maxLength={500}
-                      textAlignVertical="top"
-                    />
-                    <View style={styles.commentFooter}>
-                      <Text style={styles.commentLength}>
-                        {comment.length}/500
-                      </Text>
-                      <TouchableOpacity
-                        onPress={() => {
-                          setShowComment(false);
-                          setComment('');
-                        }}
-                        activeOpacity={0.7}
-                      >
-                        <MaterialIcons
-                          name="close"
-                          size={18}
-                          color={colors.text.secondary}
-                        />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                )}
-
-                <View style={styles.buttonsContainer}>
-                  <TouchableOpacity
-                    style={styles.cancelButton}
                     onPress={handleClose}
-                    activeOpacity={0.7}
+                    style={styles.closeButton}
                     disabled={analyzing}
                   >
-                    <Text style={styles.cancelText}>Отмена</Text>
+                    <MaterialIcons name="close" size={24} color={colors.text.secondary} />
                   </TouchableOpacity>
+                </View>
+
+                {/* Buttons always visible at top */}
+                <View style={styles.buttonsRow}>
+                  <Button
+                    title="Отмена"
+                    onPress={handleClose}
+                    variant="outline"
+                    style={styles.button}
+                    disabled={analyzing}
+                  />
                   <Button
                     title={analyzing ? 'Анализ...' : 'Анализировать'}
                     onPress={handleAnalyze}
                     disabled={analyzing}
                     loading={analyzing}
-                    style={styles.analyzeButton}
+                    style={styles.button}
                   />
                 </View>
+
+                {/* Scrollable content */}
+                <ScrollView
+                  style={styles.content}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {/* Comment Input */}
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.label}>Комментарий (опционально)</Text>
+                    <TextInput
+                      style={styles.commentInput}
+                      placeholder="Домашний обед с макаронами и котлетой, порция примерно 300г"
+                      placeholderTextColor={colors.text.secondary}
+                      value={comment}
+                      onChangeText={setComment}
+                      multiline
+                      numberOfLines={3}
+                      maxLength={500}
+                      textAlignVertical="top"
+                      editable={!analyzing}
+                    />
+                    <Text style={styles.charCount}>{comment.length}/500</Text>
+                  </View>
+
+                  {/* Analysis Mode Selector */}
+                  <AnalysisModeSelector value={analysisMode} onChange={setAnalysisMode} />
+
+                  {/* Tip */}
+                  <View style={styles.tipContainer}>
+                    <Text style={styles.tipText}>
+                      💡 Комментарий помогает AI лучше определить блюдо и его количество
+                    </Text>
+                  </View>
+                </ScrollView>
               </View>
             </View>
           </TouchableWithoutFeedback>
@@ -148,93 +142,83 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.md,
   },
   dialogContainer: {
-    width: '85%',
-    maxWidth: 400,
+    width: '100%',
+    maxWidth: 480,
+    maxHeight: '85%',
   },
   dialog: {
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.xl,
     padding: spacing.lg,
     ...shadows.xl,
-    elevation: 10,
+    maxHeight: '100%',
+    height: '90%',
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   title: {
     ...typography.h3,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
-    textAlign: 'center',
+    flex: 1,
   },
-  subtitle: {
-    ...typography.body2,
-    color: colors.text.secondary,
-    marginBottom: spacing.lg,
-    textAlign: 'center',
+  closeButton: {
+    padding: spacing.xs,
+    marginLeft: spacing.sm,
   },
-  commentToggle: {
+  buttonsRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.background.light,
-    borderRadius: borderRadius.md,
     marginBottom: spacing.md,
-    gap: spacing.sm,
   },
-  commentToggleText: {
+  button: {
+    flex: 1,
+    marginHorizontal: spacing.xs,
+  },
+  content: {
+    flex: 1,
+  },
+  inputContainer: {
+    marginBottom: spacing.md,
+  },
+  label: {
     ...typography.body2,
-    color: colors.primary,
-    fontWeight: '500',
-  },
-  commentContainer: {
-    marginBottom: spacing.md,
+    color: colors.text.primary,
+    fontWeight: '600',
+    marginBottom: spacing.sm,
   },
   commentInput: {
     ...typography.body1,
     backgroundColor: colors.background.light,
     borderRadius: borderRadius.md,
     padding: spacing.md,
-    minHeight: 80,
-    maxHeight: 120,
+    minHeight: 70,
+    maxHeight: 100,
     color: colors.text.primary,
     borderWidth: 1,
     borderColor: colors.border.light,
   },
-  commentFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    paddingHorizontal: spacing.xs,
-  },
-  commentLength: {
+  charCount: {
     ...typography.caption,
-    color: colors.text.hint,
+    color: colors.text.secondary,
+    textAlign: 'right',
+    marginTop: spacing.xs,
   },
-  buttonsContainer: {
-    flexDirection: 'row',
-    gap: spacing.sm,
+  tipContainer: {
+    backgroundColor: colors.background.light,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
     marginTop: spacing.sm,
   },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.gray[100],
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  cancelText: {
-    ...typography.button,
-    color: colors.text.primary,
-    fontWeight: '600',
-  },
-  analyzeButton: {
-    flex: 1,
+  tipText: {
+    ...typography.caption,
+    color: colors.text.secondary,
+    lineHeight: 16,
   },
 });
 
