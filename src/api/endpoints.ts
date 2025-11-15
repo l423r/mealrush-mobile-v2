@@ -10,9 +10,9 @@ const getBaseURL = () => {
     // Для физического устройства используйте IP адрес вашего компьютера в локальной сети
     // Для Android эмулятора используйте: http://10.0.2.2:8080/my-food
     // Для физического Android устройства используйте IP компьютера:
-    return 'http://192.168.1.14:8083/my-food';
+    // return 'http://192.168.1.14:8083/my-food';
     // return 'http://10.0.2.2:8080/my-food';
-    // return 'http://88.210.20.137:8083/my-food';
+    return 'http://88.210.20.137:8083/my-food';
   } else {
     // В production
     return 'http://88.210.20.137:8083/my-food';
@@ -51,6 +51,11 @@ export const MY_FOOD_ENDPOINTS = {
   MEAL_ELEMENT_ANALYZE_PHOTO: '/meal_element/analyze-photo',
   MEAL_ELEMENT_ANALYZE_TEXT: '/meal_element/analyze-text',
   MEAL_ELEMENT_ANALYZE_AUDIO: '/meal_element/analyze-audio',
+
+  // Meal Templates
+  MEAL_TEMPLATES: '/meal-template',
+  MEAL_TEMPLATE_FROM_MEAL: '/meal-template/from-meal',
+  MEAL_TEMPLATE_USE: '/meal-template',
 
   // Favorites
   FAVORITES: '/favorite',

@@ -141,8 +141,8 @@ const GetTargetWeightScreen: React.FC = () => {
               name="targetWeight"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Целевой вес"
-                  placeholder={`Введите вес в ${unit === 'kg' ? 'килограммах' : 'фунтах'}`}
+                  label={`Целевой вес в ${unit === 'kg' ? 'килограммах' : 'фунтах'}:`}
+                  // placeholder={`Целевой вес в ${unit === 'kg' ? 'килограммах' : 'фунтах'}`}
                   value={value?.toString() || ''}
                   onChangeText={(text) => {
                     const numValue = parseFloat(text);

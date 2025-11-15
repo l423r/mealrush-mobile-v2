@@ -17,7 +17,6 @@ import type { Meal } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import {
-  formatTime,
   formatTimeInTimezone,
   formatMealType,
   formatCalories,
@@ -30,6 +29,8 @@ import NutrientRow from '../../components/common/NutrientRow';
 import CompactSummary from '../../components/common/CompactSummary';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 import MealSelectorDialog from '../../components/common/MealSelectorDialog';
+import MealActionsMenu from '../../components/common/MealActionsMenu';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -40,7 +41,7 @@ type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
-  const { mealStore, uiStore, profileStore } = useStores();
+  const { mealStore, uiStore, profileStore, mealTemplateStore } = useStores();
 
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
@@ -49,6 +50,7 @@ const MealScreen: React.FC = observer(() => {
   const [showCopyDialog, setShowCopyDialog] = useState(false);
   const [todayMeals, setTodayMeals] = useState<Meal[]>([]);
   const [isCopying, setIsCopying] = useState(false);
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
 
   useEffect(() => {
     // Load meal elements if not already loaded
@@ -147,6 +149,23 @@ const MealScreen: React.FC = observer(() => {
 
   const handleCopyMeal = () => {
     setShowCopyDialog(true);
+  };
+
+  const handleSaveAsTemplate = async () => {
+    if (elements.length === 0) {
+      uiStore.showSnackbar('Нет блюд для сохранения в шаблон', 'error');
+      return;
+    }
+
+    try {
+      await mealTemplateStore.createFromMeal(meal.id);
+      uiStore.showSnackbar('Прием пищи сохранен как шаблон', 'success');
+    } catch (error) {
+      uiStore.showSnackbar(
+        mealTemplateStore.error || 'Не удалось сохранить шаблон',
+        'error'
+      );
+    }
   };
 
   const copyMealElements = async (targetMealId: number, showSuccessMessage: boolean = true) => {
@@ -335,19 +354,20 @@ const MealScreen: React.FC = observer(() => {
   return (
     <View style={styles.container}>
       <Header
-        title={`${formatMealType(meal.mealType)} • ${formatTimeInTimezone(meal.dateTime, userTimezone)}`}
+        title={formatMealType(meal.mealType)}
+        subtitle={<Text style={styles.headerSubtitle}>{formatTimeInTimezone(meal.dateTime, userTimezone)}</Text>}
         showBackButton
         onBackPress={handleBack}
         rightComponent={
           <View style={styles.headerActions}>
-            <TouchableOpacity onPress={handleCopyMeal} style={styles.copyButton}>
-              <Text style={styles.copyIcon}>📋</Text>
-            </TouchableOpacity>
             <TouchableOpacity onPress={handleEditMealType} style={styles.editButton}>
               <Text style={styles.editIcon}>✏️</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={handleDeleteMeal}>
-              <Text style={styles.deleteIcon}>🗑️</Text>
+            <TouchableOpacity
+              onPress={() => setShowActionsMenu(true)}
+              style={styles.menuButton}
+            >
+              <MaterialIcons name="more-vert" size={24} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
         }
@@ -411,6 +431,15 @@ const MealScreen: React.FC = observer(() => {
         onMealSelect={handleMealSelect}
         onCreateNew={handleCreateNewMeal}
       />
+
+      {/* Actions Menu */}
+      <MealActionsMenu
+        visible={showActionsMenu}
+        onClose={() => setShowActionsMenu(false)}
+        onSaveAsTemplate={handleSaveAsTemplate}
+        onCopy={handleCopyMeal}
+        onDelete={handleDeleteMeal}
+      />
     </View>
   );
 });
@@ -432,11 +461,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  copyButton: {
-    padding: spacing.xs,
-  },
-  copyIcon: {
-    fontSize: 20,
+  headerSubtitle: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    fontSize: 12,
   },
   editButton: {
     padding: spacing.xs,
@@ -444,8 +472,8 @@ const styles = StyleSheet.create({
   editIcon: {
     fontSize: 20,
   },
-  deleteIcon: {
-    fontSize: 22,
+  menuButton: {
+    padding: spacing.xs,
   },
   summary: {
     margin: spacing.md,

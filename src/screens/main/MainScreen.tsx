@@ -26,6 +26,7 @@ import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import CalendarModal from '../../components/common/CalendarModal';
+import MealTemplateSelectorDialog from '../../components/common/MealTemplateSelectorDialog';
 
 type MainScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -34,9 +35,10 @@ type MainScreenNavigationProp = NativeStackNavigationProp<
 
 const MainScreen: React.FC = observer(() => {
   const navigation = useNavigation<MainScreenNavigationProp>();
-  const { mealStore, profileStore } = useStores();
+  const { mealStore, profileStore, mealTemplateStore, uiStore } = useStores();
   const [refreshing, setRefreshing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   
   const userTimezone = profileStore.profile?.timezone || 'UTC';
 
@@ -62,6 +64,37 @@ const MainScreen: React.FC = observer(() => {
     navigation.navigate('Search', {
       date: mealStore.selectedDate.toISOString().split('T')[0],
     });
+  };
+
+  const handleAddFromTemplate = () => {
+    setShowTemplateDialog(true);
+  };
+
+  const handleTemplateSelect = async (templateId: number) => {
+    try {
+      const now = new Date();
+      const selectedDate = new Date(mealStore.selectedDate);
+      // Set time to current time, but keep the selected date
+      selectedDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
+      
+      const meal = await mealTemplateStore.useTemplate(
+        templateId,
+        selectedDate.toISOString()
+      );
+      
+      // Reload meals for the selected date
+      await mealStore.loadMealsForDate(mealStore.selectedDate);
+      
+      uiStore.showSnackbar('Прием пищи создан из шаблона', 'success');
+      
+      // Navigate to the created meal
+      navigation.navigate('Meal', { meal });
+    } catch (error) {
+      uiStore.showSnackbar(
+        mealTemplateStore.error || 'Не удалось создать прием пищи из шаблона',
+        'error'
+      );
+    }
   };
 
   const handleMealPress = (meal: any) => {
@@ -153,6 +186,7 @@ const MainScreen: React.FC = observer(() => {
     <View style={styles.container}>
       <Header
         title="Расписание питания"
+        titleStyle={styles.headerTitle}
         rightComponent={
           <TouchableOpacity onPress={handleCalendarPress}>
             <Text style={styles.calendarIcon}>📅</Text>
@@ -268,14 +302,29 @@ const MainScreen: React.FC = observer(() => {
         </View>
       </ScrollView>
 
-      {/* Add Button */}
+      {/* Add Buttons */}
       <View style={styles.addButtonContainer}>
-        <Button
-          title="+ Добавить прием пищи"
-          onPress={handleAddMeal}
-          style={styles.addButton}
-        />
+        <View style={styles.addButtonsRow}>
+          <Button
+            title="+ Добавить"
+            onPress={handleAddMeal}
+            style={[styles.addButton, styles.addButtonHalf]}
+            variant="outline"
+          />
+          <Button
+            title="📌 Из шаблона"
+            onPress={handleAddFromTemplate}
+            style={[styles.addButton, styles.addButtonHalf]}
+          />
+        </View>
       </View>
+
+      {/* Template Selector Dialog */}
+      <MealTemplateSelectorDialog
+        visible={showTemplateDialog}
+        onClose={() => setShowTemplateDialog(false)}
+        onTemplateSelect={handleTemplateSelect}
+      />
     </View>
   );
 });
@@ -290,6 +339,10 @@ const styles = StyleSheet.create({
   },
   calendarIcon: {
     fontSize: 24,
+  },
+  headerTitle: {
+    ...typography.h5,
+    fontSize: 16,
   },
   dateSelector: {
     flexDirection: 'row',
@@ -464,8 +517,15 @@ const styles = StyleSheet.create({
     borderTopWidth: 0,
     ...shadows.xl,
   },
+  addButtonsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
   addButton: {
-    width: '100%',
+    flex: 1,
+  },
+  addButtonHalf: {
+    flex: 1,
   },
 });
 

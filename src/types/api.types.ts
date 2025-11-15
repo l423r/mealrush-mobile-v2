@@ -266,6 +266,53 @@ export interface MealElementUpdate {
   imageBase64?: string;
 }
 
+// Meal Template types
+export interface MealTemplateElement {
+  id: number;
+  templateId: number;
+  parentProductId: number | null;
+  name: string;
+  proteins: number;
+  fats: number;
+  carbohydrates: number;
+  calories: number;
+  quantity: string;
+  measurementType: MeasurementType;
+  defaultProteins: number;
+  defaultFats: number;
+  defaultCarbohydrates: number;
+  defaultCalories: number;
+  defaultQuantity: string;
+  imageUrl?: string;
+}
+
+export interface MealTemplate {
+  id: number;
+  userId: number;
+  mealType: MealType;
+  name: string;
+  createdAt: string;
+  updatedAt?: string;
+  elements: MealTemplateElement[];
+}
+
+export interface MealTemplateCreate {
+  mealId?: number;
+  mealType?: MealType;
+  name?: string;
+}
+
+export interface MealTemplateUpdate {
+  mealType?: MealType;
+  name?: string;
+}
+
+export interface MealTemplateUseRequest {
+  dateTime: string;
+  mealType?: MealType;
+  name?: string;
+}
+
 // Analysis types (shared by photo, text, and audio analysis)
 export interface AnalysisIngredient {
   name: string;

@@ -17,7 +17,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { MainStackParamList } from '../../types/navigation.types';
-import type { Product, MealElement, Meal } from '../../types/api.types';
+import type { Product, MealElement, Meal, ProductCreate } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { formatCalories, formatWeight, formatMealType } from '../../utils/formatting';
@@ -362,7 +362,7 @@ const MealElementScreen: React.FC = observer(() => {
       const carbohydratesFor100g = Math.round(formData.carbohydrates * ratio * 10) / 10;
       const caloriesFor100g = Math.round(formData.calories * ratio * 10) / 10;
       
-      const productData = {
+      const productData: ProductCreate = {
         name: productName,
         proteins: proteinsFor100g,
         fats: fatsFor100g,
@@ -371,6 +371,12 @@ const MealElementScreen: React.FC = observer(() => {
         quantity: '100',
         measurementType: 'GRAM' as const,
       };
+
+      // Передаем изображение из meal element, если оно есть
+      if (item && 'imageUrl' in item && item.imageUrl) {
+        productData.imageUrl = item.imageUrl;
+        console.log('  - Изображение найдено:', item.imageUrl);
+      }
 
       console.log('  - Текущее количество:', currentQuantity + 'г');
       console.log('  - Текущие КБЖУ:', {

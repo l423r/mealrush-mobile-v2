@@ -117,12 +117,16 @@ const GetHeightScreen: React.FC = () => {
               name="height"
               render={({ field: { onChange, onBlur, value } }) => (
                 <Input
-                  label="Рост"
-                  placeholder={
+                  label={
                     unit === 'cm'
-                      ? 'Введите рост в сантиметрах'
-                      : 'Введите рост в футах'
+                      ? 'Рост в сантиметрах:'
+                      : 'Рост в футах:'
                   }
+                  // placeholder={
+                  //   unit === 'cm'
+                  //     ? 'Введите рост в сантиметрах'
+                  //     : 'Введите рост в футах'
+                  // }
                   value={value?.toString() || ''}
                   onChangeText={(text) => {
                     const numValue = parseFloat(text);

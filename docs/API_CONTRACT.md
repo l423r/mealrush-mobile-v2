@@ -474,6 +474,9 @@ Headers: Authorization: Bearer {token}
 - 409: Профиль уже существует для этого пользователя
 - 400: Невалидные данные (вес < 30, рост < 100, и т.д.)
 
+**Автоматическое создание истории взвешивания:**
+При создании профиля автоматически создается первая запись в истории взвешивания (Weight History) с текущим весом пользователя и заметкой "Initial weight". Это позволяет сразу отслеживать динамику веса с момента создания профиля. Запись доступна через `GET /my-food/weight-history/latest`.
+
 ### 3.2. Получение профиля
 
 **Endpoint:**
@@ -748,8 +751,8 @@ Headers: Authorization: Bearer {token}
 
 **Логика поиска:**
 - Поиск по подстроке (case-insensitive)
-- Сначала пользовательские продукты, потом общие
-- Сортировка по релевантности
+- Возвращает все продукты, соответствующие запросу: свои, общие и продукты других пользователей
+- Сортировка по названию (алфавитная)
 
 **Response (200 OK):**
 ```json
@@ -1079,6 +1082,449 @@ Headers: Authorization: Bearer {token}
 **Response (204 No Content)**
 
 **Примечание:** При удалении Meal каскадно удаляются все связанные MealElement
+
+---
+
+## 6.7. Шаблоны приемов пищи
+
+### 6.7.1. Создание шаблона из существующего приема пищи
+
+**Endpoint:**
+```
+POST /my-food/meal-template/from-meal?mealId={mealId}
+Headers: Authorization: Bearer {token}
+```
+
+**Описание:**
+Создает шаблон прием пищи из существующего приема пищи. Все элементы приема пищи копируются в шаблон.
+
+**Query Parameters:**
+- `mealId` (Long, required) - ID существующего приема пищи
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "mealType": "BREAKFAST",
+  "name": "Завтрак",
+  "createdAt": "2024-10-20T12:00:00Z",
+  "updatedAt": "2024-10-20T12:00:00Z",
+  "elements": [
+    {
+      "id": 1,
+      "templateId": 1,
+      "parentProductId": 123,
+      "name": "Гречка отварная",
+      "proteins": 6.3,
+      "fats": 1.65,
+      "carbohydrates": 31.95,
+      "calories": 165.0,
+      "quantity": "150",
+      "measurementType": "GRAM",
+      "imageUrl": "http://minio.../images/uuid.jpg",
+      "defaultProteins": 4.2,
+      "defaultFats": 1.1,
+      "defaultCarbohydrates": 21.3,
+      "defaultCalories": 110.0,
+      "defaultQuantity": "100"
+    }
+  ]
+}
+```
+
+**Errors:**
+- 404: Прием пищи не найден
+- 403: Нет доступа к приему пищи
+- 400: Прием пищи не содержит элементов
+
+### 6.7.2. Создание шаблона
+
+**Endpoint:**
+```
+POST /my-food/meal-template
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body (вариант 1 - из существующего приема пищи):**
+```json
+{
+  "mealId": 1
+}
+```
+
+**Request Body (вариант 2 - создать с нуля):**
+```json
+{
+  "mealType": "BREAKFAST",
+  "name": "Мой завтрак"
+}
+```
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "mealType": "BREAKFAST",
+  "name": "Мой завтрак",
+  "createdAt": "2024-10-20T12:00:00Z",
+  "updatedAt": "2024-10-20T12:00:00Z",
+  "elements": []
+}
+```
+
+**Примечание:** Если указан `mealId`, шаблон создается из существующего приема пищи со всеми элементами. Если `mealId` не указан, создается пустой шаблон (элементы можно добавить позже).
+
+### 6.7.3. Получение шаблона
+
+**Endpoint:**
+```
+GET /my-food/meal-template/{id}
+Headers: Authorization: Bearer {token}
+```
+
+**Response (200 OK):**
+```json
+{
+  "id": 1,
+  "userId": 1,
+  "mealType": "BREAKFAST",
+  "name": "Мой завтрак",
+  "createdAt": "2024-10-20T12:00:00Z",
+  "updatedAt": "2024-10-20T12:00:00Z",
+  "elements": [
+    {
+      "id": 1,
+      "templateId": 1,
+      "parentProductId": 123,
+      "name": "Гречка отварная",
+      "proteins": 6.3,
+      "fats": 1.65,
+      "carbohydrates": 31.95,
+      "calories": 165.0,
+      "quantity": "150",
+      "measurementType": "GRAM",
+      "imageUrl": "http://minio.../images/uuid.jpg",
+      "defaultProteins": 4.2,
+      "defaultFats": 1.1,
+      "defaultCarbohydrates": 21.3,
+      "defaultCalories": 110.0,
+      "defaultQuantity": "100"
+    }
+  ]
+}
+```
+
+**Errors:**
+- 404: Шаблон не найден
+- 403: Нет доступа к шаблону
+
+### 6.7.4. Обновление шаблона
+
+**Endpoint:**
+```
+PUT /my-food/meal-template/{id}
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+  "mealType": "LUNCH",
+  "name": "Мой обед"
+}
+```
+
+**Примечание:** Все поля опциональны. ID передается в URL path.
+
+**Response (200 OK):**
+Обновленный шаблон с элементами (формат как в GET).
+
+**Errors:**
+- 404: Шаблон не найден
+- 403: Нет доступа к шаблону
+
+### 6.7.5. Удаление шаблона
+
+**Endpoint:**
+```
+DELETE /my-food/meal-template/{id}
+Headers: Authorization: Bearer {token}
+```
+
+**Response (204 No Content)**
+
+**Примечание:** При удалении шаблона каскадно удаляются все связанные элементы шаблона.
+
+**Errors:**
+- 404: Шаблон не найден
+- 403: Нет доступа к шаблону
+
+### 6.7.6. Список шаблонов пользователя
+
+**Endpoint:**
+```
+GET /my-food/meal-template?page=0&size=20
+Headers: Authorization: Bearer {token}
+```
+
+**Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "userId": 1,
+      "mealType": "BREAKFAST",
+      "name": "Мой завтрак",
+      "createdAt": "2024-10-20T12:00:00Z",
+      "updatedAt": "2024-10-20T12:00:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 20,
+  "totalElements": 5,
+  "totalPages": 1
+}
+```
+
+**Примечание:** Элементы шаблонов не включаются в список (только при получении конкретного шаблона).
+
+### 6.7.7. Использование шаблона для создания приема пищи
+
+**Endpoint:**
+```
+POST /my-food/meal-template/{id}/use
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+  "dateTime": "2024-10-21T08:30:00",
+  "mealType": "BREAKFAST",
+  "name": "Завтрак"
+}
+```
+
+**Поля:**
+- `dateTime` (LocalDateTime, required) - дата и время приема пищи
+- `mealType` (String, optional) - тип приема пищи (если не указан, используется из шаблона)
+- `name` (String, optional) - название приема пищи (если не указано, используется из шаблона)
+
+**Response (201 Created):**
+```json
+{
+  "id": 10,
+  "userId": 1,
+  "mealType": "BREAKFAST",
+  "name": "Завтрак",
+  "dateTime": "2024-10-21T08:30:00",
+  "createdAt": "2024-10-21T08:30:00Z",
+  "updatedAt": "2024-10-21T08:30:00Z"
+}
+```
+
+**Описание:**
+Создает новый прием пищи на основе шаблона. Все элементы шаблона копируются в новый прием пищи с сохранением всех данных (КБЖУ, изображения, ссылки на продукты).
+
+**Errors:**
+- 404: Шаблон не найден
+- 403: Нет доступа к шаблону
+- 400: Шаблон не содержит элементов
+
+### 6.7.8. Управление элементами шаблона
+
+#### 6.7.8.1. Создание элемента шаблона
+
+**Endpoint:**
+```
+POST /my-food/meal-template-element
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+  "templateId": 1,
+  "parentProductId": 123,
+  "name": "Гречка отварная",
+  "proteins": 6.3,
+  "fats": 1.65,
+  "carbohydrates": 31.95,
+  "calories": 165.0,
+  "quantity": "150",
+  "measurementType": "GRAM",
+  "code": "1234567890123",
+  "imageUrl": "http://minio.../images/uuid.jpg",
+  "defaultProteins": 4.2,
+  "defaultFats": 1.1,
+  "defaultCarbohydrates": 21.3,
+  "defaultCalories": 110.0,
+  "defaultQuantity": "100",
+  "imageBase64": "data:image/jpeg;base64,..."
+}
+```
+
+**Поля:**
+- `templateId` (Long, required) - ID шаблона
+- `parentProductId` (Long, optional) - ID продукта-источника
+- `name` (String, required) - название элемента
+- `proteins`, `fats`, `carbohydrates`, `calories` (BigDecimal, optional) - КБЖУ
+- `quantity` (String, optional) - количество
+- `measurementType` (String, optional) - тип измерения (GRAM, PIECE, etc.)
+- `code` (String, optional) - штрих-код продукта
+- `imageUrl` (String, optional) - URL изображения
+- `defaultProteins`, `defaultFats`, `defaultCarbohydrates`, `defaultCalories` (BigDecimal, optional) - базовые значения КБЖУ
+- `defaultQuantity` (String, optional) - базовое количество
+- `imageBase64` (String, optional) - изображение в формате base64
+
+**Примечание:** Если указан `parentProductId`, базовые значения КБЖУ заполняются автоматически из продукта, и КБЖУ пересчитываются для указанного `quantity`.
+
+**Response (201 Created):**
+```json
+{
+  "id": 1,
+  "templateId": 1,
+  "parentProductId": 123,
+  "name": "Гречка отварная",
+  "proteins": 6.3,
+  "fats": 1.65,
+  "carbohydrates": 31.95,
+  "calories": 165.0,
+  "quantity": "150",
+  "measurementType": "GRAM",
+  "code": "1234567890123",
+  "imageUrl": "http://minio.../images/uuid.jpg",
+  "defaultProteins": 4.2,
+  "defaultFats": 1.1,
+  "defaultCarbohydrates": 21.3,
+  "defaultCalories": 110.0,
+  "defaultQuantity": "100",
+  "createdAt": "2024-10-20T12:00:00Z",
+  "updatedAt": "2024-10-20T12:00:00Z"
+}
+```
+
+**Errors:**
+- 400: Невалидные данные (валидация полей)
+- 404: Шаблон не найден
+- 403: Нет доступа к шаблону
+- 404: Продукт не найден (если указан parentProductId)
+
+#### 6.7.8.2. Получение элемента шаблона
+
+**Endpoint:**
+```
+GET /my-food/meal-template-element/{id}
+Headers: Authorization: Bearer {token}
+```
+
+**Response (200 OK):**
+Формат как в создании элемента.
+
+**Errors:**
+- 404: Элемент не найден
+- 403: Нет доступа к шаблону
+
+#### 6.7.8.3. Обновление элемента шаблона
+
+**Endpoint:**
+```
+PUT /my-food/meal-template-element/{id}
+Headers: Authorization: Bearer {token}
+```
+
+**Request Body:**
+```json
+{
+  "name": "Гречка отварная (обновлено)",
+  "quantity": "200",
+  "proteins": 8.4,
+  "fats": 2.2,
+  "carbohydrates": 42.6,
+  "calories": 220.0,
+  "measurementType": "GRAM",
+  "imageUrl": "http://minio.../images/new-uuid.jpg",
+  "imageBase64": "data:image/jpeg;base64,..."
+}
+```
+
+**Поля:** Все поля опциональны. При изменении `quantity` автоматически пересчитываются КБЖУ на основе `default` значений (если они заданы).
+
+**Response (200 OK):**
+Обновленный элемент (формат как в создании).
+
+**Errors:**
+- 400: Невалидные данные
+- 404: Элемент не найден
+- 403: Нет доступа к шаблону
+
+#### 6.7.8.4. Удаление элемента шаблона
+
+**Endpoint:**
+```
+DELETE /my-food/meal-template-element/{id}
+Headers: Authorization: Bearer {token}
+```
+
+**Response (204 No Content)**
+
+**Errors:**
+- 404: Элемент не найден
+- 403: Нет доступа к шаблону
+
+#### 6.7.8.5. Получение списка элементов шаблона
+
+**Endpoint:**
+```
+GET /my-food/meal-template-element/template/{templateId}?page=0&size=50
+Headers: Authorization: Bearer {token}
+```
+
+**Query Parameters:**
+- `page` (int, default: 0) - номер страницы
+- `size` (int, default: 50, max: 100) - размер страницы
+
+**Response (200 OK):**
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "templateId": 1,
+      "parentProductId": 123,
+      "name": "Гречка отварная",
+      "proteins": 6.3,
+      "fats": 1.65,
+      "carbohydrates": 31.95,
+      "calories": 165.0,
+      "quantity": "150",
+      "measurementType": "GRAM",
+      "code": "1234567890123",
+      "imageUrl": "http://minio.../images/uuid.jpg",
+      "defaultProteins": 4.2,
+      "defaultFats": 1.1,
+      "defaultCarbohydrates": 21.3,
+      "defaultCalories": 110.0,
+      "defaultQuantity": "100",
+      "createdAt": "2024-10-20T12:00:00Z",
+      "updatedAt": "2024-10-20T12:00:00Z"
+    }
+  ],
+  "page": 0,
+  "size": 50,
+  "totalElements": 1,
+  "totalPages": 1,
+  "first": true,
+  "last": true
+}
+```
+
+**Errors:**
+- 404: Шаблон не найден
+- 403: Нет доступа к шаблону
 
 ---
 

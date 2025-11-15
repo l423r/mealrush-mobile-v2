@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   StyleSheet,
   StatusBar,
+  TextStyle,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,6 +17,7 @@ interface HeaderProps {
   showBackButton?: boolean;
   rightComponent?: React.ReactNode;
   onBackPress?: () => void;
+  titleStyle?: TextStyle;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -24,6 +26,7 @@ const Header: React.FC<HeaderProps> = ({
   showBackButton = false,
   rightComponent,
   onBackPress,
+  titleStyle,
 }) => {
   const navigation = useNavigation();
   const insets = useSafeAreaInsets();
@@ -61,7 +64,7 @@ const Header: React.FC<HeaderProps> = ({
         </View>
 
         <View style={styles.center}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={[styles.title, titleStyle]} numberOfLines={1}>
             {title}
           </Text>
           {subtitle && (
