@@ -40,7 +40,7 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<
 
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
-  const { productStore, recommendationsStore, mealStore } = useStores();
+  const { productStore, recommendationsStore, mealStore, uiStore } = useStores();
 
   const [activeTab, setActiveTab] = useState<
     'my' | 'favorites' | 'search' | 'reco'
@@ -59,6 +59,8 @@ const ProductsScreen: React.FC = observer(() => {
     console.log(
       `🚀 [ProductsScreen] Mount/Initial load - activeTab: ${activeTab}`
     );
+    // Load favorites on mount to enable favorite toggle functionality
+    productStore.getFavorites();
     // Don't load data on mount for search tab, only for my and favorites
     if (activeTab === 'my' || activeTab === 'favorites') {
       loadData(activeTab);
@@ -182,8 +184,21 @@ const ProductsScreen: React.FC = observer(() => {
     navigation.navigate('Product', {});
   };
 
+  const handleFavoriteToggle = async (product: ProductResponse) => {
+    try {
+      if (productStore.favorites.find((f) => f.id === product.id)) {
+        await productStore.removeFromFavorites(product.id);
+      } else {
+        await productStore.addToFavorites(product.id);
+      }
+    } catch {
+      uiStore.showSnackbar('Не удалось обновить избранное', 'error');
+    }
+  };
+
   const renderProductItem = ({ item: product }: { item: any }) => {
     const showAddButton = activeTab === 'favorites' || activeTab === 'my';
+    const isFavorite = productStore.favorites.some((f) => f.id === product.id);
     
     return (
       <TouchableOpacity
@@ -220,19 +235,35 @@ const ProductsScreen: React.FC = observer(() => {
           )}
         </View>
 
-        {showAddButton ? (
+        <View style={styles.productActions}>
           <TouchableOpacity
-            style={styles.addButtonSmall}
+            style={styles.favoriteButton}
             onPress={(e) => {
               e.stopPropagation();
-              handleAddProductToMeal(product);
+              handleFavoriteToggle(product);
             }}
           >
-            <Text style={styles.addButtonSmallIcon}>+</Text>
+            <Text
+              style={[styles.favoriteIcon, isFavorite && styles.favoriteActive]}
+            >
+              {isFavorite ? '⭐' : '☆'}
+            </Text>
           </TouchableOpacity>
-        ) : (
-          <Text style={styles.productArrow}>›</Text>
-        )}
+
+          {showAddButton ? (
+            <TouchableOpacity
+              style={styles.addButtonSmall}
+              onPress={(e) => {
+                e.stopPropagation();
+                handleAddProductToMeal(product);
+              }}
+            >
+              <Text style={styles.addButtonSmallIcon}>+</Text>
+            </TouchableOpacity>
+          ) : (
+            <Text style={styles.productArrow}>›</Text>
+          )}
+        </View>
       </TouchableOpacity>
     );
   };
@@ -652,10 +683,24 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.text.hint,
   },
+  productActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  favoriteButton: {
+    padding: spacing.sm,
+  },
+  favoriteIcon: {
+    fontSize: 24,
+    color: colors.text.secondary,
+  },
+  favoriteActive: {
+    color: colors.warning,
+  },
   productArrow: {
     ...typography.h3,
     color: colors.text.secondary,
-    marginLeft: spacing.sm,
   },
   addButtonSmall: {
     width: 40,
@@ -664,7 +709,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: spacing.sm,
     ...shadows.md,
   },
   addButtonSmallIcon: {

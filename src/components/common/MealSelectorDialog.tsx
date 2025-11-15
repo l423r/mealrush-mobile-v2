@@ -158,16 +158,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dialogContainer: {
-    width: '90%',
-    maxWidth: 450,
+    width: '95%',
+    maxWidth: 500,
   },
   dialog: {
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
     ...shadows.xl,
     elevation: 10,
-    maxHeight: '85%',
+    maxHeight: '90%',
   },
   title: {
     ...typography.h3,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   mealsScrollView: {
-    maxHeight: 350,
+    maxHeight: 450,
     marginBottom: spacing.sm,
   },
   mealOption: {

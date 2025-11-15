@@ -13,6 +13,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
+import type { Meal } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import {
@@ -28,6 +29,7 @@ import Loading from '../../components/common/Loading';
 import NutrientRow from '../../components/common/NutrientRow';
 import CompactSummary from '../../components/common/CompactSummary';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
+import MealSelectorDialog from '../../components/common/MealSelectorDialog';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -44,6 +46,9 @@ const MealScreen: React.FC = observer(() => {
   const elements = mealStore.mealElements[meal.id] || [];
   const userTimezone = profileStore.profile?.timezone || 'UTC';
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [todayMeals, setTodayMeals] = useState<Meal[]>([]);
+  const [isCopying, setIsCopying] = useState(false);
 
   useEffect(() => {
     // Load meal elements if not already loaded
@@ -51,6 +56,30 @@ const MealScreen: React.FC = observer(() => {
       mealStore.loadMealElements(meal.id);
     }
   }, [elements.length, mealStore, meal.id]);
+
+  // Load today's meals when copy dialog opens
+  useEffect(() => {
+    if (showCopyDialog) {
+      loadTodayMeals();
+    }
+  }, [showCopyDialog]);
+
+  const loadTodayMeals = async () => {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const originalDate = mealStore.selectedDate;
+      await mealStore.loadMealsForDate(today);
+      // Get meals for today (mealsForSelectedDate now returns today's meals)
+      const todayMealsList = mealStore.mealsForSelectedDate;
+      setTodayMeals(todayMealsList);
+      // Restore original selected date to not affect the main screen
+      mealStore.setSelectedDate(originalDate);
+      await mealStore.loadMealsForDate(originalDate);
+    } catch (error) {
+      console.error('Error loading today meals:', error);
+    }
+  };
 
   const handleAddElement = () => {
     navigation.navigate('Search', {
@@ -114,6 +143,86 @@ const MealScreen: React.FC = observer(() => {
 
   const handleEditMealType = () => {
     setShowEditDialog(true);
+  };
+
+  const handleCopyMeal = () => {
+    setShowCopyDialog(true);
+  };
+
+  const copyMealElements = async (targetMealId: number, showSuccessMessage: boolean = true) => {
+    if (elements.length === 0) {
+      uiStore.showSnackbar('Нет блюд для копирования', 'error');
+      return;
+    }
+
+    try {
+      for (const element of elements) {
+        await mealStore.createMealElement({
+          mealId: targetMealId,
+          name: element.name,
+          quantity: element.quantity,
+          proteins: element.proteins,
+          fats: element.fats,
+          carbohydrates: element.carbohydrates,
+          calories: element.calories,
+          measurementType: element.measurementType,
+          defaultProteins: element.defaultProteins,
+          defaultFats: element.defaultFats,
+          defaultCarbohydrates: element.defaultCarbohydrates,
+          defaultCalories: element.defaultCalories,
+          defaultQuantity: element.defaultQuantity,
+          parentProductId: element.parentProductId || undefined,
+        });
+      }
+      // Reload meal elements for target meal
+      await mealStore.loadMealElements(targetMealId);
+      if (showSuccessMessage) {
+        uiStore.showSnackbar('Прием пищи скопирован', 'success');
+      }
+      setShowCopyDialog(false);
+    } catch (error) {
+      uiStore.showSnackbar('Не удалось скопировать прием пищи', 'error');
+      throw error;
+    }
+  };
+
+  const handleMealSelect = async (mealId: number) => {
+    setIsCopying(true);
+    try {
+      await copyMealElements(mealId);
+    } catch (error) {
+      // Error already handled in copyMealElements
+    } finally {
+      setIsCopying(false);
+    }
+  };
+
+  const handleCreateNewMeal = async () => {
+    setIsCopying(true);
+    try {
+      // Create new meal with same type and time, but for today
+      const today = new Date();
+      const mealDateTime = new Date(meal.dateTime);
+      today.setHours(mealDateTime.getHours(), mealDateTime.getMinutes(), 0, 0);
+      
+      const newMeal = await mealStore.createMeal({
+        mealType: meal.mealType,
+        dateTime: today.toISOString(),
+        name: meal.name,
+      });
+      
+      // Copy elements to new meal (don't show success message here, we'll show it after)
+      await copyMealElements(newMeal.id, false);
+      
+      // Reload today's meals
+      await loadTodayMeals();
+      
+      uiStore.showSnackbar('Прием пищи создан и скопирован', 'success');
+    } catch (error) {
+      uiStore.showSnackbar('Не удалось создать прием пищи', 'error');
+    } finally {
+      setIsCopying(false);
+    }
   };
 
   const handleMealTypeSelect = async (newType: string) => {
@@ -215,8 +324,12 @@ const MealScreen: React.FC = observer(() => {
     0
   );
 
-  if (mealStore.loading) {
+  if (mealStore.loading && !isCopying) {
     return <Loading message="Загрузка приема пищи..." />;
+  }
+
+  if (isCopying) {
+    return <Loading message="Копирование приема пищи..." />;
   }
 
   return (
@@ -227,6 +340,9 @@ const MealScreen: React.FC = observer(() => {
         onBackPress={handleBack}
         rightComponent={
           <View style={styles.headerActions}>
+            <TouchableOpacity onPress={handleCopyMeal} style={styles.copyButton}>
+              <Text style={styles.copyIcon}>📋</Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={handleEditMealType} style={styles.editButton}>
               <Text style={styles.editIcon}>✏️</Text>
             </TouchableOpacity>
@@ -283,6 +399,18 @@ const MealScreen: React.FC = observer(() => {
         onSelect={handleMealTypeSelect}
         onCancel={() => setShowEditDialog(false)}
       />
+
+      {/* Copy Meal Dialog */}
+      <MealSelectorDialog
+        visible={showCopyDialog}
+        meals={todayMeals}
+        onClose={() => {
+          setShowCopyDialog(false);
+          setIsCopying(false);
+        }}
+        onMealSelect={handleMealSelect}
+        onCreateNew={handleCreateNewMeal}
+      />
     </View>
   );
 });
@@ -303,6 +431,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
+  },
+  copyButton: {
+    padding: spacing.xs,
+  },
+  copyIcon: {
+    fontSize: 20,
   },
   editButton: {
     padding: spacing.xs,

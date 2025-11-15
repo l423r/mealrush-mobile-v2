@@ -55,7 +55,7 @@ const SearchScreen: React.FC = observer(() => {
   const imageSource = useImageSource();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'my'>('all');
   const [isSearching, setIsSearching] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
@@ -69,6 +69,13 @@ const SearchScreen: React.FC = observer(() => {
     // Load favorites on mount
     productStore.getFavorites();
   }, [productStore]);
+
+  useEffect(() => {
+    // Load my products when switching to 'my' tab
+    if (activeTab === 'my') {
+      productStore.getAll();
+    }
+  }, [activeTab, productStore]);
 
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -360,6 +367,16 @@ const SearchScreen: React.FC = observer(() => {
       );
     }
 
+    if (activeTab === 'my') {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyEmoji}>🥗</Text>
+          <Text style={styles.emptyTitle}>Нет продуктов</Text>
+          <Text style={styles.emptySubtitle}>Создайте свой первый продукт</Text>
+        </View>
+      );
+    }
+
     if (searchQuery.length < 2) {
       return (
         <View style={styles.emptyState}>
@@ -392,6 +409,9 @@ const SearchScreen: React.FC = observer(() => {
   const getData = () => {
     if (activeTab === 'favorites') {
       return productStore.favorites;
+    }
+    if (activeTab === 'my') {
+      return productStore.myProducts;
     }
     return productStore.products;
   };
@@ -441,6 +461,19 @@ const SearchScreen: React.FC = observer(() => {
               ]}
             >
               Избранное
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'my' && styles.activeTab]}
+            onPress={() => setActiveTab('my')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'my' && styles.activeTabText,
+              ]}
+            >
+              Мои
             </Text>
           </TouchableOpacity>
         </View>
