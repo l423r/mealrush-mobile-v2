@@ -56,6 +56,8 @@ export const MY_FOOD_ENDPOINTS = {
   MEAL_TEMPLATES: '/meal-template',
   MEAL_TEMPLATE_FROM_MEAL: '/meal-template/from-meal',
   MEAL_TEMPLATE_USE: '/meal-template',
+  MEAL_TEMPLATE_ELEMENTS: '/meal-template-element',
+  MEAL_TEMPLATE_ELEMENTS_BY_TEMPLATE: '/meal-template-element/template',
 
   // Favorites
   FAVORITES: '/favorite',

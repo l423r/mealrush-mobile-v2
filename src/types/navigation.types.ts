@@ -5,6 +5,8 @@ import type {
   Meal,
   AnalysisResponse,
   ProductResponse,
+  MealTemplate,
+  MealTemplateElement,
 } from './api.types';
 
 // Root Stack
@@ -116,6 +118,7 @@ export type MainStackParamList = {
   Search: {
     date?: string;
     mealId?: number;
+    templateId?: number;
     preselectedProduct?: ProductResponse;
     quantity?: number;
   };
@@ -131,10 +134,14 @@ export type MainStackParamList = {
   Meal: {
     meal: Meal;
   };
+  MealTemplate: {
+    template: MealTemplate;
+  };
   MealElement: {
-    item?: Product | MealElement | ProductResponse;
+    item?: Product | MealElement | ProductResponse | MealTemplateElement;
     date?: string;
     mealId?: number;
+    templateId?: number;
     fromSearch?: boolean;
     readOnly?: boolean;
   };

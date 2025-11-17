@@ -6,6 +6,7 @@ import SearchScreen from '../screens/main/SearchScreen';
 import ScannerScreen from '../screens/main/ScannerScreen';
 import ProductScreen from '../screens/main/ProductScreen';
 import MealScreen from '../screens/main/MealScreen';
+import MealTemplateScreen from '../screens/main/MealTemplateScreen';
 import MealElementScreen from '../screens/main/MealElementScreen';
 import PhotoAnalysisScreen from '../screens/main/PhotoAnalysisScreen';
 import TextAnalysisScreen from '../screens/main/TextAnalysisScreen';
@@ -34,6 +35,7 @@ const MainNavigator: React.FC = () => {
       <Stack.Screen name="Scanner" component={ScannerScreen} />
       <Stack.Screen name="Product" component={ProductScreen} />
       <Stack.Screen name="Meal" component={MealScreen} />
+      <Stack.Screen name="MealTemplate" component={MealTemplateScreen} />
       <Stack.Screen name="MealElement" component={MealElementScreen} />
       <Stack.Screen name="PhotoAnalysis" component={PhotoAnalysisScreen} />
       <Stack.Screen name="TextAnalysis" component={TextAnalysisScreen} />

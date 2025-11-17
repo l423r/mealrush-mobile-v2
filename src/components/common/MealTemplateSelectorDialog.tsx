@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { MainStackParamList } from '../../types/navigation.types';
 import {
   colors,
   typography,
@@ -20,10 +23,15 @@ import {
 import { useStores } from '../../stores';
 import Loading from './Loading';
 
+type MealTemplateSelectorDialogNavigationProp = NativeStackNavigationProp<
+  MainStackParamList,
+  'MealTemplate'
+>;
+
 interface MealTemplateSelectorDialogProps {
   visible: boolean;
   onClose: () => void;
-  onTemplateSelect: (templateId: number) => void;
+  onTemplateSelect?: (templateId: number) => void; // Optional for backward compatibility
 }
 
 const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = observer(({
@@ -32,6 +40,7 @@ const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = ob
   onTemplateSelect,
 }) => {
   const { mealTemplateStore } = useStores();
+  const navigation = useNavigation<MealTemplateSelectorDialogNavigationProp>();
 
   useEffect(() => {
     if (visible) {
@@ -61,9 +70,19 @@ const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = ob
     return icons[mealType] || '🍽️';
   };
 
-  const handleTemplatePress = (templateId: number) => {
-    onTemplateSelect(templateId);
-    onClose();
+  const handleTemplatePress = async (templateId: number) => {
+    try {
+      // Load template and navigate to template screen
+      const template = await mealTemplateStore.loadTemplate(templateId);
+      onClose();
+      navigation.navigate('MealTemplate', { template });
+    } catch (error) {
+      // If loading fails, fall back to onTemplateSelect if provided
+      if (onTemplateSelect) {
+        onTemplateSelect(templateId);
+        onClose();
+      }
+    }
   };
 
   const renderEmptyState = () => (

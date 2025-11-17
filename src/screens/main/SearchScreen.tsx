@@ -97,11 +97,15 @@ const SearchScreen: React.FC = observer(() => {
     setSearchQuery(text);
   };
 
+  const templateId = route.params?.templateId;
+  const mealId = route.params?.mealId;
+
   const handleProductPress = (product: Product) => {
     navigation.navigate('MealElement', {
       item: product,
       date: route.params?.date,
-      mealId: route.params?.mealId,
+      mealId: templateId ? undefined : mealId,
+      templateId: templateId,
       fromSearch: true,
     });
   };
@@ -109,7 +113,8 @@ const SearchScreen: React.FC = observer(() => {
   const handleScannerPress = () => {
     navigation.navigate('Scanner', {
       date: route.params?.date,
-      mealId: route.params?.mealId,
+      mealId: templateId ? undefined : mealId,
+      templateId: templateId,
     });
   };
 
@@ -298,6 +303,17 @@ const SearchScreen: React.FC = observer(() => {
       }
     } catch {
       uiStore.showSnackbar('Не удалось обновить избранное', 'error');
+    }
+  };
+
+  const handleLoadMore = () => {
+    if (
+      activeTab === 'all' &&
+      productStore.pagination.hasMore &&
+      !productStore.loading &&
+      searchQuery.trim().length >= 2
+    ) {
+      productStore.searchProducts(searchQuery, productStore.pagination.page + 1);
     }
   };
 
@@ -532,6 +548,8 @@ const SearchScreen: React.FC = observer(() => {
               ListEmptyComponent={renderEmptyState}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}
+              onEndReached={handleLoadMore}
+              onEndReachedThreshold={0.5}
             />
           );
         })()}

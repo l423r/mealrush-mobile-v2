@@ -21,6 +21,7 @@ import {
   formatMealType,
   formatCalories,
   formatWeight,
+  formatDate,
 } from '../../utils/formatting';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -30,6 +31,8 @@ import CompactSummary from '../../components/common/CompactSummary';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 import MealSelectorDialog from '../../components/common/MealSelectorDialog';
 import MealActionsMenu from '../../components/common/MealActionsMenu';
+import TemplateNameDialog from '../../components/common/TemplateNameDialog';
+import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
 import { MaterialIcons } from '@expo/vector-icons';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
@@ -48,9 +51,11 @@ const MealScreen: React.FC = observer(() => {
   const userTimezone = profileStore.profile?.timezone || 'UTC';
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showCopyDialog, setShowCopyDialog] = useState(false);
+  const [showCopyDateTimeDialog, setShowCopyDateTimeDialog] = useState(false);
   const [todayMeals, setTodayMeals] = useState<Meal[]>([]);
   const [isCopying, setIsCopying] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
+  const [showTemplateNameDialog, setShowTemplateNameDialog] = useState(false);
 
   useEffect(() => {
     // Load meal elements if not already loaded
@@ -59,27 +64,22 @@ const MealScreen: React.FC = observer(() => {
     }
   }, [elements.length, mealStore, meal.id]);
 
-  // Load today's meals when copy dialog opens
+  // Load meals for selected date when copy dialog opens
   useEffect(() => {
     if (showCopyDialog) {
-      loadTodayMeals();
+      loadMealsForSelectedDate();
     }
   }, [showCopyDialog]);
 
-  const loadTodayMeals = async () => {
+  const loadMealsForSelectedDate = async () => {
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
       const originalDate = mealStore.selectedDate;
-      await mealStore.loadMealsForDate(today);
-      // Get meals for today (mealsForSelectedDate now returns today's meals)
-      const todayMealsList = mealStore.mealsForSelectedDate;
-      setTodayMeals(todayMealsList);
-      // Restore original selected date to not affect the main screen
-      mealStore.setSelectedDate(originalDate);
       await mealStore.loadMealsForDate(originalDate);
+      // Get meals for selected date
+      const mealsList = mealStore.mealsForSelectedDate;
+      setTodayMeals(mealsList);
     } catch (error) {
-      console.error('Error loading today meals:', error);
+      console.error('Error loading meals:', error);
     }
   };
 
@@ -151,21 +151,32 @@ const MealScreen: React.FC = observer(() => {
     setShowCopyDialog(true);
   };
 
-  const handleSaveAsTemplate = async () => {
+  const handleSaveAsTemplate = () => {
     if (elements.length === 0) {
       uiStore.showSnackbar('Нет блюд для сохранения в шаблон', 'error');
       return;
     }
+    setShowTemplateNameDialog(true);
+  };
 
+  const handleTemplateNameConfirm = async (templateName: string) => {
     try {
-      await mealTemplateStore.createFromMeal(meal.id);
+      // Создаем шаблон из приема пищи
+      const template = await mealTemplateStore.createTemplate({ mealId: meal.id });
+      // Обновляем шаблон с именем
+      await mealTemplateStore.updateTemplate(template.id, { name: templateName });
       uiStore.showSnackbar('Прием пищи сохранен как шаблон', 'success');
+      setShowTemplateNameDialog(false);
     } catch (error) {
       uiStore.showSnackbar(
         mealTemplateStore.error || 'Не удалось сохранить шаблон',
         'error'
       );
     }
+  };
+
+  const getDefaultTemplateName = () => {
+    return `${formatMealType(meal.mealType)} от ${formatDate(meal.dateTime, 'dd.MM.yyyy')}`;
   };
 
   const copyMealElements = async (targetMealId: number, showSuccessMessage: boolean = true) => {
@@ -191,6 +202,7 @@ const MealScreen: React.FC = observer(() => {
           defaultCalories: element.defaultCalories,
           defaultQuantity: element.defaultQuantity,
           parentProductId: element.parentProductId || undefined,
+          imageUrl: element.imageUrl || undefined,
         });
       }
       // Reload meal elements for target meal
@@ -216,27 +228,46 @@ const MealScreen: React.FC = observer(() => {
     }
   };
 
-  const handleCreateNewMeal = async () => {
+  const handleCreateNewMeal = () => {
+    // Close meal selector dialog and show date/time picker
+    setShowCopyDialog(false);
+    setShowCopyDateTimeDialog(true);
+  };
+
+  const handleCopyDateTimeConfirm = async (dateTime: Date) => {
     setIsCopying(true);
+    setShowCopyDateTimeDialog(false);
+    
     try {
-      // Create new meal with same type and time, but for today
-      const today = new Date();
+      // Create new meal with same type and time, but for selected date/time
       const mealDateTime = new Date(meal.dateTime);
-      today.setHours(mealDateTime.getHours(), mealDateTime.getMinutes(), 0, 0);
+      dateTime.setHours(mealDateTime.getHours(), mealDateTime.getMinutes(), 0, 0);
       
       const newMeal = await mealStore.createMeal({
         mealType: meal.mealType,
-        dateTime: today.toISOString(),
+        dateTime: dateTime.toISOString(),
         name: meal.name,
       });
       
       // Copy elements to new meal (don't show success message here, we'll show it after)
       await copyMealElements(newMeal.id, false);
       
-      // Reload today's meals
-      await loadTodayMeals();
+      // Reload meals for the date where meal was created
+      const mealDate = new Date(dateTime);
+      mealDate.setHours(0, 0, 0, 0);
+      const originalDate = mealStore.selectedDate;
+      await mealStore.loadMealsForDate(mealDate);
+      
+      // Restore original selected date if different
+      if (mealDate.getTime() !== originalDate.getTime()) {
+        mealStore.setSelectedDate(originalDate);
+        await mealStore.loadMealsForDate(originalDate);
+      }
       
       uiStore.showSnackbar('Прием пищи создан и скопирован', 'success');
+      
+      // Navigate to the created meal
+      navigation.navigate('Meal', { meal: newMeal });
     } catch (error) {
       uiStore.showSnackbar('Не удалось создать прием пищи', 'error');
     } finally {
@@ -244,24 +275,61 @@ const MealScreen: React.FC = observer(() => {
     }
   };
 
-  const handleMealTypeSelect = async (newType: string) => {
+  const handleMealTypeSelect = async (newType: string, newDateTime?: Date) => {
     setShowEditDialog(false);
     
-    if (newType === meal.mealType) {
+    const mealDate = new Date(meal.dateTime);
+    const hasTypeChanged = newType !== meal.mealType;
+    
+    if (!newDateTime) {
+      // This shouldn't happen for meals, but handle it gracefully
+      if (!hasTypeChanged) {
+        return; // No change
+      }
+      
+      try {
+        await mealStore.updateMeal(meal.id, {
+          mealType: newType,
+          dateTime: meal.dateTime,
+          name: meal.name,
+        } as any);
+        uiStore.showSnackbar('Тип приема пищи изменен', 'success');
+        await mealStore.loadMealsForDate(mealStore.selectedDate);
+      } catch (error) {
+        uiStore.showSnackbar('Не удалось изменить прием пищи', 'error');
+      }
+      return;
+    }
+    
+    const hasTimeChanged = 
+      newDateTime.getHours() !== mealDate.getHours() ||
+      newDateTime.getMinutes() !== mealDate.getMinutes();
+    
+    if (!hasTypeChanged && !hasTimeChanged) {
       return; // No change
     }
 
     try {
       await mealStore.updateMeal(meal.id, {
         mealType: newType,
-        dateTime: meal.dateTime,
+        dateTime: newDateTime.toISOString(),
         name: meal.name,
       } as any);
-      uiStore.showSnackbar('Тип приема пищи изменен', 'success');
+      
+      let message = '';
+      if (hasTypeChanged && hasTimeChanged) {
+        message = 'Тип и время приема пищи изменены';
+      } else if (hasTypeChanged) {
+        message = 'Тип приема пищи изменен';
+      } else {
+        message = 'Время приема пищи изменено';
+      }
+      
+      uiStore.showSnackbar(message, 'success');
       // Reload meal data
       await mealStore.loadMealsForDate(mealStore.selectedDate);
     } catch (error) {
-      uiStore.showSnackbar('Не удалось изменить тип', 'error');
+      uiStore.showSnackbar('Не удалось изменить прием пищи', 'error');
     }
   };
 
@@ -416,6 +484,7 @@ const MealScreen: React.FC = observer(() => {
       <MealTypeEditDialog
         visible={showEditDialog}
         currentType={meal.mealType}
+        currentDateTime={new Date(meal.dateTime)}
         onSelect={handleMealTypeSelect}
         onCancel={() => setShowEditDialog(false)}
       />
@@ -432,6 +501,26 @@ const MealScreen: React.FC = observer(() => {
         onCreateNew={handleCreateNewMeal}
       />
 
+      {/* Copy DateTime Picker Dialog */}
+      <DateTimePickerDialog
+        visible={showCopyDateTimeDialog}
+        defaultDate={(() => {
+          // Use selected date from mealStore, not current date
+          const selectedDate = new Date(mealStore.selectedDate);
+          const mealDateTime = new Date(meal.dateTime);
+          // Set time to original meal time, but keep the selected date
+          selectedDate.setHours(mealDateTime.getHours(), mealDateTime.getMinutes(), 0, 0);
+          return selectedDate;
+        })()}
+        defaultTime={(() => {
+          // Use original meal time
+          const mealDateTime = new Date(meal.dateTime);
+          return mealDateTime;
+        })()}
+        onConfirm={handleCopyDateTimeConfirm}
+        onCancel={() => setShowCopyDateTimeDialog(false)}
+      />
+
       {/* Actions Menu */}
       <MealActionsMenu
         visible={showActionsMenu}
@@ -439,6 +528,14 @@ const MealScreen: React.FC = observer(() => {
         onSaveAsTemplate={handleSaveAsTemplate}
         onCopy={handleCopyMeal}
         onDelete={handleDeleteMeal}
+      />
+
+      {/* Template Name Dialog */}
+      <TemplateNameDialog
+        visible={showTemplateNameDialog}
+        defaultName={getDefaultTemplateName()}
+        onConfirm={handleTemplateNameConfirm}
+        onCancel={() => setShowTemplateNameDialog(false)}
       />
     </View>
   );

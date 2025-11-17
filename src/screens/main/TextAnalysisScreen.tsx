@@ -56,7 +56,13 @@ const TextAnalysisScreen: React.FC = observer(() => {
   const [mealType, setMealType] = useState<
     'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'
   >('BREAKFAST');
-  const [mealTime] = useState(new Date());
+  const [mealTime] = useState(() => {
+    const now = new Date();
+    const selectedDate = new Date(mealStore.selectedDate);
+    // Set time to current time, but keep the selected date
+    selectedDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
+    return selectedDate;
+  });
   const [ingredients, setIngredients] = useState<EditableIngredient[]>(
     analysisResult.ingredients.map((ing) => ({
       ...ing,

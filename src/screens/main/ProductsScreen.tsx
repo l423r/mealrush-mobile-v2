@@ -196,6 +196,17 @@ const ProductsScreen: React.FC = observer(() => {
     }
   };
 
+  const handleLoadMore = () => {
+    if (
+      activeTab === 'search' &&
+      productStore.pagination.hasMore &&
+      !productStore.loading &&
+      searchQuery.trim().length >= 2
+    ) {
+      productStore.searchProducts(searchQuery, productStore.pagination.page + 1);
+    }
+  };
+
   const renderProductItem = ({ item: product }: { item: any }) => {
     const showAddButton = activeTab === 'favorites' || activeTab === 'my';
     const isFavorite = productStore.favorites.some((f) => f.id === product.id);
@@ -422,6 +433,8 @@ const ProductsScreen: React.FC = observer(() => {
                 onRefresh={handleRefresh}
               />
             }
+            onEndReached={handleLoadMore}
+            onEndReachedThreshold={0.5}
           />
         ) : (
           <ScrollView

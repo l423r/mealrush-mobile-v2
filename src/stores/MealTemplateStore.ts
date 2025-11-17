@@ -1,11 +1,15 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { mealTemplateService } from '../api/services/mealTemplate.service';
+import { mealTemplateElementService } from '../api/services/mealTemplateElement.service';
 import type RootStore from './RootStore';
 import type {
   MealTemplate,
   MealTemplateCreate,
   MealTemplateUpdate,
   MealTemplateUseRequest,
+  MealTemplateElement,
+  MealTemplateElementCreate,
+  MealTemplateElementUpdate,
   Meal,
   PaginatedResponse,
 } from '../types/api.types';
@@ -15,6 +19,8 @@ class MealTemplateStore {
 
   // State
   templates: MealTemplate[] = [];
+  selectedTemplate: MealTemplate | null = null;
+  templateElements: MealTemplateElement[] = [];
   loading: boolean = false;
   error: string | null = null;
 
@@ -99,7 +105,7 @@ class MealTemplateStore {
     }
   }
 
-  async getTemplate(id: number) {
+  async loadTemplate(id: number) {
     this.loading = true;
     this.error = null;
 
@@ -107,6 +113,8 @@ class MealTemplateStore {
       const response = await mealTemplateService.getById(id);
 
       runInAction(() => {
+        this.selectedTemplate = response.data;
+        this.templateElements = response.data.elements || [];
         this.loading = false;
         this.error = null;
       });
@@ -117,6 +125,127 @@ class MealTemplateStore {
         this.loading = false;
         this.error =
           error.response?.data?.message || 'Ошибка загрузки шаблона';
+      });
+      throw error;
+    }
+  }
+
+  async getTemplate(id: number) {
+    return this.loadTemplate(id);
+  }
+
+  async loadTemplateElements(templateId: number, page: number = 0, size: number = 50) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const response = await mealTemplateElementService.getByTemplate(templateId, page, size);
+
+      runInAction(() => {
+        const content = response.data.content || [];
+        if (page === 0) {
+          this.templateElements = content;
+        } else {
+          this.templateElements = [...this.templateElements, ...content];
+        }
+        this.loading = false;
+        this.error = null;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка загрузки элементов шаблона';
+      });
+      throw error;
+    }
+  }
+
+  async createElement(templateId: number, elementData: MealTemplateElementCreate) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const response = await mealTemplateElementService.create({
+        ...elementData,
+        templateId,
+      });
+
+      runInAction(() => {
+        this.templateElements.push(response.data);
+        if (this.selectedTemplate) {
+          this.selectedTemplate.elements = [...this.selectedTemplate.elements, response.data];
+        }
+        this.loading = false;
+        this.error = null;
+      });
+
+      return response.data;
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка создания элемента шаблона';
+      });
+      throw error;
+    }
+  }
+
+  async updateElement(elementId: number, elementData: MealTemplateElementUpdate) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const response = await mealTemplateElementService.update(elementId, elementData);
+
+      runInAction(() => {
+        const index = this.templateElements.findIndex((e) => e.id === elementId);
+        if (index !== -1) {
+          this.templateElements[index] = response.data;
+        }
+        if (this.selectedTemplate) {
+          const templateIndex = this.selectedTemplate.elements.findIndex((e) => e.id === elementId);
+          if (templateIndex !== -1) {
+            this.selectedTemplate.elements[templateIndex] = response.data;
+          }
+        }
+        this.loading = false;
+        this.error = null;
+      });
+
+      return response.data;
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка обновления элемента шаблона';
+      });
+      throw error;
+    }
+  }
+
+  async deleteElement(elementId: number) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      await mealTemplateElementService.delete(elementId);
+
+      runInAction(() => {
+        this.templateElements = this.templateElements.filter((e) => e.id !== elementId);
+        if (this.selectedTemplate) {
+          this.selectedTemplate.elements = this.selectedTemplate.elements.filter(
+            (e) => e.id !== elementId
+          );
+        }
+        this.loading = false;
+        this.error = null;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка удаления элемента шаблона';
       });
       throw error;
     }
@@ -207,6 +336,8 @@ class MealTemplateStore {
 
   reset() {
     this.templates = [];
+    this.selectedTemplate = null;
+    this.templateElements = [];
     this.loading = false;
     this.error = null;
   }

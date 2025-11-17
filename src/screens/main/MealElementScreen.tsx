@@ -17,7 +17,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 import type { MainStackParamList } from '../../types/navigation.types';
-import type { Product, MealElement, Meal, ProductCreate } from '../../types/api.types';
+import type { Product, MealElement, Meal, ProductCreate, MealTemplateElement } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import { formatCalories, formatWeight, formatMealType } from '../../utils/formatting';
@@ -56,12 +56,14 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, uiStore, productStore } = useStores();
+  const { mealStore, uiStore, productStore, mealTemplateStore } = useStores();
 
   const item = route.params?.item;
-  const isEditing = !!item && 'mealId' in item; // MealElement has mealId
+  const templateId = route.params?.templateId;
+  const isEditing = !!item && (('mealId' in item) || ('templateId' in item)); // MealElement or MealTemplateElement
   const isFromSearch = route.params?.fromSearch;
   const readOnly = route.params?.readOnly || false;
+  const isTemplateElement = !!templateId || (!!item && 'templateId' in item);
 
   const [mealType, setMealType] = useState<
     'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'
@@ -82,18 +84,20 @@ const MealElementScreen: React.FC = observer(() => {
     resolver: yupResolver(mealElementSchema),
     mode: 'onChange',
     defaultValues: {
-      quantity: isEditing ? (item as MealElement).quantity : '100',
+      quantity: isEditing 
+        ? (isTemplateElement ? (item as MealTemplateElement).quantity : (item as MealElement).quantity)
+        : '100',
       proteins: isEditing
-        ? (item as MealElement).proteins
+        ? (isTemplateElement ? (item as MealTemplateElement).proteins : (item as MealElement).proteins)
         : (item as Product)?.proteins || 0,
       fats: isEditing
-        ? (item as MealElement).fats
+        ? (isTemplateElement ? (item as MealTemplateElement).fats : (item as MealElement).fats)
         : (item as Product)?.fats || 0,
       carbohydrates: isEditing
-        ? (item as MealElement).carbohydrates
+        ? (isTemplateElement ? (item as MealTemplateElement).carbohydrates : (item as MealElement).carbohydrates)
         : (item as Product)?.carbohydrates || 0,
       calories: isEditing
-        ? (item as MealElement).calories
+        ? (isTemplateElement ? (item as MealTemplateElement).calories : (item as MealElement).calories)
         : (item as Product)?.calories || 0,
     },
   });
@@ -184,20 +188,33 @@ const MealElementScreen: React.FC = observer(() => {
       console.log('🔄 [MealElementScreen] onSubmit - начало', { isEditing, data });
       
       if (isEditing) {
-        // Update existing meal element
+        // Update existing element (meal or template)
         console.log('✏️ [MealElementScreen] Обновление существующего элемента');
-        const mealElement = item as MealElement;
-        await mealStore.updateMealElement(mealElement.id, {
-          quantity: data.quantity,
-          proteins: data.proteins,
-          fats: data.fats,
-          carbohydrates: data.carbohydrates,
-          calories: data.calories,
-        });
-        uiStore.showSnackbar('Блюдо обновлено', 'success');
-        console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
-        navigation.navigate('HomeTabs', { screen: 'Main' });
-        console.log('✅ [MealElementScreen] Команда навигации выполнена');
+        if (isTemplateElement) {
+          const templateElement = item as MealTemplateElement;
+          await mealTemplateStore.updateElement(templateElement.id, {
+            quantity: data.quantity,
+            proteins: data.proteins,
+            fats: data.fats,
+            carbohydrates: data.carbohydrates,
+            calories: data.calories,
+          });
+          uiStore.showSnackbar('Элемент шаблона обновлен', 'success');
+          navigation.goBack();
+        } else {
+          const mealElement = item as MealElement;
+          await mealStore.updateMealElement(mealElement.id, {
+            quantity: data.quantity,
+            proteins: data.proteins,
+            fats: data.fats,
+            carbohydrates: data.carbohydrates,
+            calories: data.calories,
+          });
+          uiStore.showSnackbar('Блюдо обновлено', 'success');
+          console.log('🚀 [MealElementScreen] Навигация на HomeTabs > Main');
+          navigation.navigate('HomeTabs', { screen: 'Main' });
+          console.log('✅ [MealElementScreen] Команда навигации выполнена');
+        }
       } else {
         // Create new meal element
         console.log('➕ [MealElementScreen] Создание нового элемента');
@@ -244,15 +261,45 @@ const MealElementScreen: React.FC = observer(() => {
           console.log('ℹ️ [MealElementScreen] mealId передан:', mealId, '- добавляем к существующему');
         }
 
-        await createMealElementWithId(mealId, data);
+        if (isTemplateElement && templateId) {
+          // Create template element
+          await createTemplateElementWithId(templateId, data);
+        } else {
+          await createMealElementWithId(mealId, data);
+        }
       }
     } catch (error) {
       console.error('❌ [MealElementScreen] Ошибка в onSubmit:', error);
-      uiStore.showSnackbar(
-        mealStore.error || 'Не удалось сохранить блюдо',
-        'error'
-      );
+      const errorMessage = isTemplateElement 
+        ? (mealTemplateStore.error || 'Не удалось сохранить элемент шаблона')
+        : (mealStore.error || 'Не удалось сохранить блюдо');
+      uiStore.showSnackbar(errorMessage, 'error');
     }
+  };
+
+  const createTemplateElementWithId = async (templateId: number, data: any) => {
+    const elementData = {
+      templateId: templateId,
+      parentProductId: item && 'id' in item ? item.id : undefined,
+      name: item?.name || 'Блюдо',
+      quantity: data.quantity,
+      proteins: data.proteins,
+      fats: data.fats,
+      carbohydrates: data.carbohydrates,
+      calories: data.calories,
+      measurementType: 'GRAM' as const,
+      defaultProteins: item?.proteins || data.proteins,
+      defaultFats: item?.fats || data.fats,
+      defaultCarbohydrates: item?.carbohydrates || data.carbohydrates,
+      defaultCalories: item?.calories || data.calories,
+      defaultQuantity: item?.quantity || '100',
+      imageUrl: item?.imageUrl || undefined,
+    };
+
+    console.log('📝 [MealElementScreen] Создание элемента шаблона:', elementData);
+    await mealTemplateStore.createElement(templateId, elementData);
+    uiStore.showSnackbar('Элемент добавлен в шаблон', 'success');
+    navigation.goBack();
   };
 
   const createMealElementWithId = async (mealId: number, data: any) => {

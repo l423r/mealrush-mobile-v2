@@ -284,6 +284,40 @@ export interface MealTemplateElement {
   defaultCalories: number;
   defaultQuantity: string;
   imageUrl?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MealTemplateElementCreate {
+  templateId: number;
+  parentProductId?: number;
+  name: string;
+  proteins: number;
+  fats: number;
+  carbohydrates: number;
+  calories: number;
+  quantity: string;
+  measurementType: MeasurementType;
+  defaultProteins: number;
+  defaultFats: number;
+  defaultCarbohydrates: number;
+  defaultCalories: number;
+  defaultQuantity: string;
+  imageBase64?: string;
+  imageUrl?: string;
+  code?: string;
+}
+
+export interface MealTemplateElementUpdate {
+  name?: string;
+  quantity?: string;
+  proteins?: number;
+  fats?: number;
+  carbohydrates?: number;
+  calories?: number;
+  measurementType?: MeasurementType;
+  imageBase64?: string;
+  imageUrl?: string;
 }
 
 export interface MealTemplate {
