@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   Image,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
@@ -28,6 +27,8 @@ import CompactSummary from '../../components/common/CompactSummary';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
 import MealActionsMenu from '../../components/common/MealActionsMenu';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 import { MaterialIcons } from '@expo/vector-icons';
 
 type MealTemplateScreenNavigationProp = NativeStackNavigationProp<
@@ -40,6 +41,7 @@ const MealTemplateScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealTemplateScreenNavigationProp>();
   const route = useRoute<MealTemplateScreenRouteProp>();
   const { mealTemplateStore, uiStore, mealStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
 
   const template = route.params.template;
   const elements = mealTemplateStore.templateElements;
@@ -72,47 +74,33 @@ const MealTemplateScreen: React.FC = observer(() => {
   };
 
   const handleDeleteElement = async (elementId: number) => {
-    Alert.alert(
+    showConfirm(
       'Удаление блюда',
       'Вы уверены, что хотите удалить это блюдо из шаблона?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await mealTemplateStore.deleteElement(elementId);
-              uiStore.showSnackbar('Блюдо удалено из шаблона', 'success');
-            } catch {
-              uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await mealTemplateStore.deleteElement(elementId);
+          uiStore.showSnackbar('Блюдо удалено из шаблона', 'success');
+        } catch {
+          uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
+        }
+      }
     );
   };
 
   const handleDeleteTemplate = async () => {
-    Alert.alert(
+    showConfirm(
       'Удаление шаблона',
       'Вы уверены, что хотите удалить этот шаблон?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await mealTemplateStore.deleteTemplate(template.id);
-              uiStore.showSnackbar('Шаблон удален', 'success');
-              navigation.goBack();
-            } catch {
-              uiStore.showSnackbar('Не удалось удалить шаблон', 'error');
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await mealTemplateStore.deleteTemplate(template.id);
+          uiStore.showSnackbar('Шаблон удален', 'success');
+          navigation.goBack();
+        } catch {
+          uiStore.showSnackbar('Не удалось удалить шаблон', 'error');
+        }
+      }
     );
   };
 
@@ -319,6 +307,20 @@ const MealTemplateScreen: React.FC = observer(() => {
         onSaveAsTemplate={() => {}} // Not applicable for templates
         onCopy={() => {}} // Not applicable for templates
         onDelete={handleDeleteTemplate}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
       />
     </View>
   );

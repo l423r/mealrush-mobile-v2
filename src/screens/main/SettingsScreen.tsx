@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +14,8 @@ import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 type SettingsScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -24,6 +25,7 @@ type SettingsScreenNavigationProp = NativeStackNavigationProp<
 const SettingsScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
   const { authStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
 
   const handleBack = () => {
     navigation.goBack();
@@ -46,16 +48,9 @@ const SettingsScreen: React.FC = observer(() => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Выход', 'Вы уверены, что хотите выйти из аккаунта?', [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Выйти',
-        style: 'destructive',
-        onPress: async () => {
-          await authStore.logout();
-        },
-      },
-    ]);
+    showConfirm('Выход', 'Вы уверены, что хотите выйти из аккаунта?', async () => {
+      await authStore.logout();
+    });
   };
 
   const settingsOptions = [
@@ -148,6 +143,20 @@ const SettingsScreen: React.FC = observer(() => {
           />
         </View>
       </ScrollView>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 });

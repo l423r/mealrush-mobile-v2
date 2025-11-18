@@ -6,7 +6,6 @@ import {
   ScrollView,
   Switch,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,9 +15,12 @@ import Loading from '../../components/common/Loading';
 import Header from '../../components/common/Header';
 import MealNotificationCard from '../../components/notifications/MealNotificationCard';
 import SnackEnableDialog from '../../components/notifications/SnackEnableDialog';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 const NotificationSettingsScreen: React.FC = observer(() => {
   const { notificationStore, uiStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
   const [snackDialogVisible, setSnackDialogVisible] = useState(false);
   const [lateSnackDialogVisible, setLateSnackDialogVisible] = useState(false);
 
@@ -32,19 +34,12 @@ const NotificationSettingsScreen: React.FC = observer(() => {
   const handleToggleNotifications = async () => {
     if (notificationStore.notificationsEnabled) {
       // Подтверждение отключения
-      Alert.alert(
+      showConfirm(
         'Отключить уведомления?',
         'Вы не будете получать push-уведомления',
-        [
-          { text: 'Отмена', style: 'cancel' },
-          {
-            text: 'Отключить',
-            style: 'destructive',
-            onPress: async () => {
-              await notificationStore.toggleNotifications();
-            },
-          },
-        ]
+        async () => {
+          await notificationStore.toggleNotifications();
+        }
       );
     } else {
       await notificationStore.toggleNotifications();
@@ -164,24 +159,17 @@ const NotificationSettingsScreen: React.FC = observer(() => {
 
   // Handler for reset
   const handleReset = () => {
-    Alert.alert(
+    showConfirm(
       'Сбросить настройки?',
       'Все настройки будут возвращены к значениям по умолчанию',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Сбросить',
-          style: 'destructive',
-          onPress: async () => {
-            const success = await notificationStore.resetPreferences();
-            if (success) {
-              uiStore.showSnackbar('Настройки сброшены', 'success');
-            } else {
-              uiStore.showSnackbar('Ошибка сброса настроек', 'error');
-            }
-          },
-        },
-      ]
+      async () => {
+        const success = await notificationStore.resetPreferences();
+        if (success) {
+          uiStore.showSnackbar('Настройки сброшены', 'success');
+        } else {
+          uiStore.showSnackbar('Ошибка сброса настроек', 'error');
+        }
+      }
     );
   };
 
@@ -449,6 +437,20 @@ const NotificationSettingsScreen: React.FC = observer(() => {
         mealName="Поздний перекус"
         onConfirm={handleLateSnackConfirm}
         onCancel={() => setLateSnackDialogVisible(false)}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
       />
 
       {/* Debug info */}

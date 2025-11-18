@@ -124,6 +124,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    padding: spacing.lg,
   },
   dialogContainer: {
     width: '85%',
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   },
   dialog: {
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.xl,
+    borderRadius: borderRadius.lg,
     padding: spacing.xl,
     ...shadows.xl,
     elevation: 10,

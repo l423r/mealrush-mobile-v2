@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -8,6 +8,8 @@ import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 type SettingsDeleteAccountScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -17,47 +19,45 @@ type SettingsDeleteAccountScreenNavigationProp = NativeStackNavigationProp<
 const SettingsDeleteAccountScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsDeleteAccountScreenNavigationProp>();
   const { authStore, uiStore } = useStores();
+  const { alertState, showAlert, hideAlert } = useAlert();
 
   const handleBack = () => {
     navigation.goBack();
   };
 
   const handleDeleteAccount = () => {
-    Alert.alert(
-      'Удаление аккаунта',
-      'Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить. Все ваши данные будут безвозвратно удалены.',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить аккаунт',
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert(
-              'Последнее предупреждение',
-              'Это действие необратимо. Все ваши данные будут удалены навсегда.',
-              [
-                { text: 'Отмена', style: 'cancel' },
-                {
-                  text: 'Да, удалить',
-                  style: 'destructive',
-                  onPress: async () => {
-                    try {
-                      // TODO: Implement account deletion API
-                      await authStore.logout();
-                      uiStore.showSnackbar(
-                        'Аккаунт был успешно удален',
-                        'success'
-                      );
-                    } catch {
-                      uiStore.showSnackbar('Не удалось удалить аккаунт', 'error');
-                    }
-                  },
-                },
-              ]
-            );
+    showAlert(
+      {
+        title: 'Удаление аккаунта',
+        message: 'Вы уверены, что хотите удалить свой аккаунт? Это действие нельзя отменить. Все ваши данные будут безвозвратно удалены.',
+        type: 'warning',
+        confirmText: 'Удалить аккаунт',
+        cancelText: 'Отмена',
+      },
+      () => {
+        // Второе подтверждение
+        showAlert(
+          {
+            title: 'Последнее предупреждение',
+            message: 'Это действие необратимо. Все ваши данные будут удалены навсегда.',
+            type: 'error',
+            confirmText: 'Да, удалить',
+            cancelText: 'Отмена',
           },
-        },
-      ]
+          async () => {
+            try {
+              // TODO: Implement account deletion API
+              await authStore.logout();
+              uiStore.showSnackbar(
+                'Аккаунт был успешно удален',
+                'success'
+              );
+            } catch {
+              uiStore.showSnackbar('Не удалось удалить аккаунт', 'error');
+            }
+          }
+        );
+      }
     );
   };
 
@@ -103,6 +103,20 @@ const SettingsDeleteAccountScreen: React.FC = observer(() => {
           style={styles.deleteButton}
         />
       </View>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 });

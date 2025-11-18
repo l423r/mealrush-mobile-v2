@@ -3,7 +3,6 @@ import {
   View,
   Text,
   StyleSheet,
-  Alert,
   // TouchableOpacity removed (unused)
   Dimensions,
 } from 'react-native';
@@ -19,6 +18,8 @@ import { colors, typography, spacing, borderRadius } from '../../theme';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 type ScannerScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -32,6 +33,7 @@ const ScannerScreen: React.FC = observer(() => {
   const navigation = useNavigation<ScannerScreenNavigationProp>();
   const route = useRoute<ScannerScreenRouteProp>();
   const { productStore, uiStore } = useStores();
+  const { alertState, showAlert, hideAlert } = useAlert();
 
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
@@ -56,22 +58,20 @@ const ScannerScreen: React.FC = observer(() => {
           fromSearch: true,
         });
       } else {
-        Alert.alert(
-          'Продукт не найден',
-          'Продукт с таким штрихкодом не найден в базе данных. Хотите создать новый продукт?',
-          [
-            {
-              text: 'Отмена',
-              style: 'cancel',
-              onPress: () => setScanned(false),
-            },
-            {
-              text: 'Создать',
-              onPress: () => {
-                navigation.navigate('Product', { barcode: data });
-              },
-            },
-          ]
+        showAlert(
+          {
+            title: 'Продукт не найден',
+            message: 'Продукт с таким штрихкодом не найден в базе данных. Хотите создать новый продукт?',
+            type: 'info',
+            confirmText: 'Создать',
+            cancelText: 'Отмена',
+          },
+          () => {
+            navigation.navigate('Product', { barcode: data });
+          },
+          () => {
+            setScanned(false);
+          }
         );
       }
     } catch {
@@ -175,6 +175,20 @@ const ScannerScreen: React.FC = observer(() => {
           </View>
         )}
       </View>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
+      />
     </View>
   );
 });

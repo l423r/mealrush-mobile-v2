@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dialogContainer: {
-    width: '90%',
+    width: '85%',
     maxWidth: 400,
   },
   dialog: {

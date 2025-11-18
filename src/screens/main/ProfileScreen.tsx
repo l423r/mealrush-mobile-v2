@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -30,6 +29,8 @@ import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import MiniWeightChart from '../../components/weight/MiniWeightChart';
 import WeightEntryModal from '../../components/weight/WeightEntryModal';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -39,6 +40,7 @@ type ProfileScreenNavigationProp = NativeStackNavigationProp<
 const ProfileScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
   const { profileStore, authStore, weightStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
   const [showWeightModal, setShowWeightModal] = useState(false);
 
   useEffect(() => {
@@ -76,16 +78,9 @@ const ProfileScreen: React.FC = observer(() => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Выход', 'Вы уверены, что хотите выйти из аккаунта?', [
-      { text: 'Отмена', style: 'cancel' },
-      {
-        text: 'Выйти',
-        style: 'destructive',
-        onPress: async () => {
-          await authStore.logout();
-        },
-      },
-    ]);
+    showConfirm('Выход', 'Вы уверены, что хотите выйти из аккаунта?', async () => {
+      await authStore.logout();
+    });
   };
 
   if (profileStore.loading) {
@@ -294,6 +289,20 @@ const ProfileScreen: React.FC = observer(() => {
         visible={showWeightModal}
         onClose={() => setShowWeightModal(false)}
         onSuccess={handleWeightAdded}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
       />
     </View>
   );

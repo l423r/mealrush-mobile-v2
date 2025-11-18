@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { observer } from 'mobx-react-lite';
 import type { WeightEntry } from '../../types/api.types';
 import {
   formatDateTime,
@@ -9,6 +10,8 @@ import {
 } from '../../utils/formatting';
 import { formatWeightTrend } from '../../utils/calculations';
 import { colors, typography, spacing, borderRadius } from '../../theme';
+import AlertDialog from '../common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 
 interface WeightHistoryItemProps {
   entry: WeightEntry;
@@ -16,23 +19,18 @@ interface WeightHistoryItemProps {
   onDelete?: (id: number) => void;
 }
 
-const WeightHistoryItem: React.FC<WeightHistoryItemProps> = ({
+const WeightHistoryItem: React.FC<WeightHistoryItemProps> = observer(({
   entry,
   change,
   onDelete,
 }) => {
+  const { alertState, showConfirm, hideAlert } = useAlert();
+
   const handleDelete = () => {
-    Alert.alert(
+    showConfirm(
       'Удалить запись',
       'Вы уверены, что хотите удалить эту запись веса?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: () => onDelete?.(entry.id),
-        },
-      ]
+      () => onDelete?.(entry.id)
     );
   };
 
@@ -68,9 +66,23 @@ const WeightHistoryItem: React.FC<WeightHistoryItemProps> = ({
       <Text style={styles.entryWeight}>{formatWeightKg(entry.weight)}</Text>
 
       {entry.notes && <Text style={styles.entryNotes}>{entry.notes}</Text>}
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
+      />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   entryCard: {

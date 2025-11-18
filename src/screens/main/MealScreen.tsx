@@ -5,7 +5,6 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
-  Alert,
   Image,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
@@ -33,6 +32,8 @@ import MealSelectorDialog from '../../components/common/MealSelectorDialog';
 import MealActionsMenu from '../../components/common/MealActionsMenu';
 import TemplateNameDialog from '../../components/common/TemplateNameDialog';
 import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useAlert } from '../../hooks/useAlert';
 import { MaterialIcons } from '@expo/vector-icons';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
@@ -45,6 +46,7 @@ const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
   const { mealStore, uiStore, profileStore, mealTemplateStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
 
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
@@ -97,45 +99,31 @@ const MealScreen: React.FC = observer(() => {
   };
 
   const handleDeleteElement = async (elementId: number) => {
-    Alert.alert(
+    showConfirm(
       'Удаление блюда',
       'Вы уверены, что хотите удалить это блюдо из приема пищи?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await mealStore.deleteMealElement(elementId);
-            } catch {
-              uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await mealStore.deleteMealElement(elementId);
+        } catch {
+          uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
+        }
+      }
     );
   };
 
   const handleDeleteMeal = async () => {
-    Alert.alert(
+    showConfirm(
       'Удаление приема пищи',
       'Вы уверены, что хотите удалить весь прием пищи?',
-      [
-        { text: 'Отмена', style: 'cancel' },
-        {
-          text: 'Удалить',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await mealStore.deleteMeal(meal.id);
-              navigation.goBack();
-            } catch {
-              uiStore.showSnackbar('Не удалось удалить прием пищи', 'error');
-            }
-          },
-        },
-      ]
+      async () => {
+        try {
+          await mealStore.deleteMeal(meal.id);
+          navigation.goBack();
+        } catch {
+          uiStore.showSnackbar('Не удалось удалить прием пищи', 'error');
+        }
+      }
     );
   };
 
@@ -536,6 +524,20 @@ const MealScreen: React.FC = observer(() => {
         defaultName={getDefaultTemplateName()}
         onConfirm={handleTemplateNameConfirm}
         onCancel={() => setShowTemplateNameDialog(false)}
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
       />
     </View>
   );
