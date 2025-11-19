@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   AnalyticsAggregatePayload,
   AnalyticsPeriod,
@@ -45,7 +45,7 @@ async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
   const { startDate, endDate } = resolveRange(period);
   // Fetch all metrics to build a combined series so UI can switch locally
   // API expects: CALORIES, PROTEINS, FATS, CARBOHYDRATES (plural forms)
-  const metrics: Array<{ api: string; field: keyof TrendPoint }> = [
+  const metrics: Array<{ api: string; field: Exclude<keyof TrendPoint, 'date'> }> = [
     { api: 'CALORIES', field: 'calories' },
     { api: 'PROTEINS', field: 'protein' },
     { api: 'FATS', field: 'fat' },
@@ -53,7 +53,7 @@ async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
   ];
   const requests = metrics.map((m) =>
     apiClient
-      .get<any>(MY_FOOD_ENDPOINTS.NUTRITION_TREND, {
+      .get<any>(ApiRoutes.Nutrition.Trend, {
         params: { startDate, endDate, metric: m.api },
       })
       .then((res) => ({ field: m.field, data: res.data }))
@@ -97,7 +97,7 @@ async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
 
 async function fetchStatistics(period: AnalyticsPeriod): Promise<SummaryKpi> {
   const { startDate, endDate } = resolveRange(period);
-  const { data } = await apiClient.get<any>(MY_FOOD_ENDPOINTS.NUTRITION_STATISTICS, {
+  const { data } = await apiClient.get<any>(ApiRoutes.Nutrition.Statistics, {
     params: { startDate, endDate },
   });
   if (__DEV__) {
@@ -124,7 +124,7 @@ async function fetchDistribution(
   // Some backends return macro share and by-meal in one call (STATISTICS),
   // others expose a dedicated endpoint. We'll try STATISTICS first.
   const { startDate, endDate } = resolveRange(period);
-  const { data } = await apiClient.get<any>(MY_FOOD_ENDPOINTS.NUTRITION_STATISTICS, {
+  const { data } = await apiClient.get<any>(ApiRoutes.Nutrition.Statistics, {
     params: { startDate, endDate },
   });
   if (__DEV__) {
@@ -145,10 +145,10 @@ async function fetchDistribution(
     const total = kcalFromP + kcalFromF + kcalFromC;
     macro = total > 0
       ? {
-          proteinPct: kcalFromP / total,
-          fatPct: kcalFromF / total,
-          carbsPct: kcalFromC / total,
-        }
+        proteinPct: kcalFromP / total,
+        fatPct: kcalFromF / total,
+        carbsPct: kcalFromC / total,
+      }
       : { proteinPct: 0, fatPct: 0, carbsPct: 0 };
   }
 
@@ -161,7 +161,7 @@ async function fetchTopProducts(
 ): Promise<TopProductItem[]> {
   // If there is a specific recommendations endpoint, use it; otherwise return empty.
   try {
-    const { data } = await apiClient.get<TopProductItem[]>(MY_FOOD_ENDPOINTS.RECOMMENDATIONS_PRODUCTS, {
+    const { data } = await apiClient.get<TopProductItem[]>(ApiRoutes.Recommendations.Products, {
       params: { page: 0, size: 10 },
     });
     if (__DEV__) {

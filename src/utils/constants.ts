@@ -50,29 +50,7 @@ export const STORAGE_KEYS = {
   THEME: 'theme',
 } as const;
 
-// API endpoints
-export const API_ENDPOINTS = {
-  AUTH: {
-    LOGIN: '/auth/token',
-    REGISTER: '/auth/user',
-    USER: '/auth/user',
-    RESET_PASSWORD: '/auth/reset-password',
-  },
-  MY_FOOD: {
-    USER_PROFILE: '/user-profile',
-    PRODUCTS: '/product',
-    PRODUCT_SEARCH_NAME: '/product/search/name',
-    PRODUCT_SEARCH_BARCODE: '/product/search/barcode',
-    PRODUCT_CATEGORIES: '/product_category',
-    MEALS: '/meal',
-    MEALS_BY_DATE: '/meal/findByDate',
-    MEAL_ELEMENTS: '/meal_element',
-    MEAL_ELEMENTS_BY_MEAL: '/meal_element/meal',
-    MEAL_ELEMENT_ANALYZE_PHOTO: '/meal_element/analyze-photo',
-    FAVORITES: '/favorite',
-    DEVICES: '/device',
-  },
-} as const;
+
 
 // Product categories
 export const PRODUCT_CATEGORIES = [

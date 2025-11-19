@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   DeviceRegistrationRequest,
   DeviceRegistrationResponse,
@@ -13,7 +13,7 @@ export const notificationService = {
    */
   registerDevice: (data: DeviceRegistrationRequest) =>
     apiClient.post<DeviceRegistrationResponse>(
-      MY_FOOD_ENDPOINTS.NOTIFICATIONS_REGISTER,
+      ApiRoutes.Notifications.Register,
       data
     ),
 
@@ -21,14 +21,14 @@ export const notificationService = {
    * Удаление устройства из уведомлений
    */
   unregisterDevice: (deviceToken: string) =>
-    apiClient.delete(`${MY_FOOD_ENDPOINTS.NOTIFICATIONS_DEVICE}/${deviceToken}`),
+    apiClient.delete(`${ApiRoutes.Notifications.Device}/${deviceToken}`),
 
   /**
    * Получение настроек уведомлений (создает defaults при первом запросе)
    */
   getPreferences: () =>
     apiClient.get<NotificationPreferences>(
-      MY_FOOD_ENDPOINTS.NOTIFICATIONS_PREFERENCES
+      ApiRoutes.Notifications.Preferences
     ),
 
   /**
@@ -36,7 +36,7 @@ export const notificationService = {
    */
   updatePreferences: (data: NotificationPreferencesUpdateRequest) =>
     apiClient.patch<NotificationPreferences>(
-      MY_FOOD_ENDPOINTS.NOTIFICATIONS_PREFERENCES,
+      ApiRoutes.Notifications.Preferences,
       data
     ),
 
@@ -45,7 +45,7 @@ export const notificationService = {
    */
   resetPreferences: () =>
     apiClient.post<NotificationPreferences>(
-      MY_FOOD_ENDPOINTS.NOTIFICATIONS_PREFERENCES_RESET
+      ApiRoutes.Notifications.ResetPreferences
     ),
 };
 

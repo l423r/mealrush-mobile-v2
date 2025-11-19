@@ -1,4 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { makePersistable } from 'mobx-persist-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profileService } from '../api/services/profile.service';
 import type RootStore from './RootStore';
 import type {
@@ -24,6 +26,12 @@ class ProfileStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeAutoObservable(this);
+
+    makePersistable(this, {
+      name: 'ProfileStore',
+      properties: ['profile'],
+      storage: AsyncStorage,
+    });
   }
 
   // Computed

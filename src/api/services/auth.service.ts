@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { AUTH_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   LoginRequest,
   LoginResponse,
@@ -11,16 +11,16 @@ import type {
 
 export const authService = {
   login: (credentials: LoginRequest) =>
-    apiClient.post<LoginResponse>(AUTH_ENDPOINTS.LOGIN, credentials),
+    apiClient.post<LoginResponse>(ApiRoutes.Auth.Login, credentials),
 
   register: (userData: RegisterRequest) =>
-    apiClient.post<User>(AUTH_ENDPOINTS.REGISTER, userData),
+    apiClient.post<User>(ApiRoutes.Auth.Register, userData),
 
-  getUser: () => apiClient.get<User>(AUTH_ENDPOINTS.USER),
+  getUser: () => apiClient.get<User>(ApiRoutes.Auth.User),
 
   resetPassword: (email: string) =>
-    apiClient.post(AUTH_ENDPOINTS.RESET_PASSWORD, { email }),
+    apiClient.post(ApiRoutes.Auth.ResetPassword, { email }),
 
   oauth: (oauthData: OAuthRequest) =>
-    apiClient.post<OAuthResponse>(AUTH_ENDPOINTS.OAUTH, oauthData),
+    apiClient.post<OAuthResponse>(ApiRoutes.Auth.OAuth, oauthData),
 };

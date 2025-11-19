@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -35,12 +35,73 @@ import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
 import { MaterialIcons } from '@expo/vector-icons';
+import { haptics } from '../../utils/haptics';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
   'Meal'
 >;
 type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
+
+const MealElementItem = React.memo(
+  ({
+    element,
+    onPress,
+    onDelete,
+  }: {
+    element: any;
+    onPress: (element: any) => void;
+    onDelete: (id: number) => void;
+  }) => {
+    return (
+      <TouchableOpacity
+        style={styles.elementCard}
+        onPress={() => onPress(element)}
+      >
+        {element.imageUrl ? (
+          <Image
+            source={{ uri: element.imageUrl }}
+            style={styles.elementImage}
+            resizeMode="cover"
+          />
+        ) : (
+          <View style={styles.elementImagePlaceholder}>
+            <Text style={styles.elementImagePlaceholderIcon}>🍽️</Text>
+          </View>
+        )}
+
+        <View style={styles.elementInfo}>
+          <Text style={styles.elementName} numberOfLines={1}>
+            {element.name}
+          </Text>
+          <NutrientRow
+            proteins={element.proteins}
+            fats={element.fats}
+            carbohydrates={element.carbohydrates}
+            calories={element.calories}
+            showCaloriesFirst={false}
+            compact
+          />
+          <View style={styles.quantityCaloriesRow}>
+            <Text style={styles.quantityText}>
+              {formatWeight(parseFloat(element.quantity))}
+            </Text>
+            <Text style={styles.caloriesText}>
+              {formatCalories(element.calories)}
+            </Text>
+          </View>
+        </View>
+
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => onDelete(element.id)}
+        >
+          <Text style={styles.deleteButtonText}>🗑️</Text>
+        </TouchableOpacity>
+      </TouchableOpacity>
+    );
+  }
+);
 
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
@@ -86,41 +147,55 @@ const MealScreen: React.FC = observer(() => {
   };
 
   const handleAddElement = () => {
+    haptics.light();
     navigation.navigate('Search', {
       mealId: meal.id,
     });
   };
 
-  const handleElementPress = (element: any) => {
-    navigation.navigate('MealElement', {
-      item: element,
-      mealId: meal.id,
-    });
-  };
+  const handleElementPress = useCallback(
+    (element: any) => {
+      haptics.light();
+      navigation.navigate('MealElement', {
+        item: element,
+        mealId: meal.id,
+      });
+    },
+    [navigation, meal.id]
+  );
 
-  const handleDeleteElement = async (elementId: number) => {
-    showConfirm(
-      'Удаление блюда',
-      'Вы уверены, что хотите удалить это блюдо из приема пищи?',
-      async () => {
-        try {
-          await mealStore.deleteMealElement(elementId);
-        } catch {
-          uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
+  const handleDeleteElement = useCallback(
+    async (elementId: number) => {
+      haptics.medium();
+      showConfirm(
+        'Удаление блюда',
+        'Вы уверены, что хотите удалить это блюдо из приема пищи?',
+        async () => {
+          try {
+            await mealStore.deleteMealElement(elementId);
+            haptics.success();
+          } catch {
+            haptics.error();
+            uiStore.showSnackbar('Не удалось удалить блюдо', 'error');
+          }
         }
-      }
-    );
-  };
+      );
+    },
+    [showConfirm, mealStore, uiStore]
+  );
 
   const handleDeleteMeal = async () => {
+    haptics.medium();
     showConfirm(
       'Удаление приема пищи',
       'Вы уверены, что хотите удалить весь прием пищи?',
       async () => {
         try {
           await mealStore.deleteMeal(meal.id);
+          haptics.success();
           navigation.goBack();
         } catch {
+          haptics.error();
           uiStore.showSnackbar('Не удалось удалить прием пищи', 'error');
         }
       }
@@ -132,15 +207,19 @@ const MealScreen: React.FC = observer(() => {
   };
 
   const handleEditMealType = () => {
+    haptics.light();
     setShowEditDialog(true);
   };
 
   const handleCopyMeal = () => {
+    haptics.light();
     setShowCopyDialog(true);
   };
 
   const handleSaveAsTemplate = () => {
+    haptics.light();
     if (elements.length === 0) {
+      haptics.warning();
       uiStore.showSnackbar('Нет блюд для сохранения в шаблон', 'error');
       return;
     }
@@ -150,12 +229,18 @@ const MealScreen: React.FC = observer(() => {
   const handleTemplateNameConfirm = async (templateName: string) => {
     try {
       // Создаем шаблон из приема пищи
-      const template = await mealTemplateStore.createTemplate({ mealId: meal.id });
+      const template = await mealTemplateStore.createTemplate({
+        mealId: meal.id,
+      });
       // Обновляем шаблон с именем
-      await mealTemplateStore.updateTemplate(template.id, { name: templateName });
+      await mealTemplateStore.updateTemplate(template.id, {
+        name: templateName,
+      });
+      haptics.success();
       uiStore.showSnackbar('Прием пищи сохранен как шаблон', 'success');
       setShowTemplateNameDialog(false);
     } catch (error) {
+      haptics.error();
       uiStore.showSnackbar(
         mealTemplateStore.error || 'Не удалось сохранить шаблон',
         'error'
@@ -167,8 +252,12 @@ const MealScreen: React.FC = observer(() => {
     return `${formatMealType(meal.mealType)} от ${formatDate(meal.dateTime, 'dd.MM.yyyy')}`;
   };
 
-  const copyMealElements = async (targetMealId: number, showSuccessMessage: boolean = true) => {
+  const copyMealElements = async (
+    targetMealId: number,
+    showSuccessMessage: boolean = true
+  ) => {
     if (elements.length === 0) {
+      haptics.warning();
       uiStore.showSnackbar('Нет блюд для копирования', 'error');
       return;
     }
@@ -196,10 +285,12 @@ const MealScreen: React.FC = observer(() => {
       // Reload meal elements for target meal
       await mealStore.loadMealElements(targetMealId);
       if (showSuccessMessage) {
+        haptics.success();
         uiStore.showSnackbar('Прием пищи скопирован', 'success');
       }
       setShowCopyDialog(false);
     } catch (error) {
+      haptics.error();
       uiStore.showSnackbar('Не удалось скопировать прием пищи', 'error');
       throw error;
     }
@@ -217,6 +308,7 @@ const MealScreen: React.FC = observer(() => {
   };
 
   const handleCreateNewMeal = () => {
+    haptics.light();
     // Close meal selector dialog and show date/time picker
     setShowCopyDialog(false);
     setShowCopyDateTimeDialog(true);
@@ -225,38 +317,45 @@ const MealScreen: React.FC = observer(() => {
   const handleCopyDateTimeConfirm = async (dateTime: Date) => {
     setIsCopying(true);
     setShowCopyDateTimeDialog(false);
-    
+
     try {
       // Create new meal with same type and time, but for selected date/time
       const mealDateTime = new Date(meal.dateTime);
-      dateTime.setHours(mealDateTime.getHours(), mealDateTime.getMinutes(), 0, 0);
-      
+      dateTime.setHours(
+        mealDateTime.getHours(),
+        mealDateTime.getMinutes(),
+        0,
+        0
+      );
+
       const newMeal = await mealStore.createMeal({
         mealType: meal.mealType,
         dateTime: dateTime.toISOString(),
         name: meal.name,
       });
-      
+
       // Copy elements to new meal (don't show success message here, we'll show it after)
       await copyMealElements(newMeal.id, false);
-      
+
       // Reload meals for the date where meal was created
       const mealDate = new Date(dateTime);
       mealDate.setHours(0, 0, 0, 0);
       const originalDate = mealStore.selectedDate;
       await mealStore.loadMealsForDate(mealDate);
-      
+
       // Restore original selected date if different
       if (mealDate.getTime() !== originalDate.getTime()) {
         mealStore.setSelectedDate(originalDate);
         await mealStore.loadMealsForDate(originalDate);
       }
-      
+
+      haptics.success();
       uiStore.showSnackbar('Прием пищи создан и скопирован', 'success');
-      
+
       // Navigate to the created meal
       navigation.navigate('Meal', { meal: newMeal });
     } catch (error) {
+      haptics.error();
       uiStore.showSnackbar('Не удалось создать прием пищи', 'error');
     } finally {
       setIsCopying(false);
@@ -265,34 +364,36 @@ const MealScreen: React.FC = observer(() => {
 
   const handleMealTypeSelect = async (newType: string, newDateTime?: Date) => {
     setShowEditDialog(false);
-    
+
     const mealDate = new Date(meal.dateTime);
     const hasTypeChanged = newType !== meal.mealType;
-    
+
     if (!newDateTime) {
       // This shouldn't happen for meals, but handle it gracefully
       if (!hasTypeChanged) {
         return; // No change
       }
-      
+
       try {
         await mealStore.updateMeal(meal.id, {
           mealType: newType,
           dateTime: meal.dateTime,
           name: meal.name,
         } as any);
+        haptics.success();
         uiStore.showSnackbar('Тип приема пищи изменен', 'success');
         await mealStore.loadMealsForDate(mealStore.selectedDate);
       } catch (error) {
+        haptics.error();
         uiStore.showSnackbar('Не удалось изменить прием пищи', 'error');
       }
       return;
     }
-    
-    const hasTimeChanged = 
+
+    const hasTimeChanged =
       newDateTime.getHours() !== mealDate.getHours() ||
       newDateTime.getMinutes() !== mealDate.getMinutes();
-    
+
     if (!hasTypeChanged && !hasTimeChanged) {
       return; // No change
     }
@@ -303,7 +404,7 @@ const MealScreen: React.FC = observer(() => {
         dateTime: newDateTime.toISOString(),
         name: meal.name,
       } as any);
-      
+
       let message = '';
       if (hasTypeChanged && hasTimeChanged) {
         message = 'Тип и время приема пищи изменены';
@@ -312,64 +413,29 @@ const MealScreen: React.FC = observer(() => {
       } else {
         message = 'Время приема пищи изменено';
       }
-      
+
+      haptics.success();
       uiStore.showSnackbar(message, 'success');
       // Reload meal data
       await mealStore.loadMealsForDate(mealStore.selectedDate);
     } catch (error) {
+      haptics.error();
       uiStore.showSnackbar('Не удалось изменить прием пищи', 'error');
     }
   };
 
-  const renderElement = ({ item: element }: { item: any }) => {
-    return (
-      <TouchableOpacity
-        style={styles.elementCard}
-        onPress={() => handleElementPress(element)}
-      >
-        {element.imageUrl ? (
-          <Image
-            source={{ uri: element.imageUrl }}
-            style={styles.elementImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.elementImagePlaceholder}>
-            <Text style={styles.elementImagePlaceholderIcon}>🍽️</Text>
-          </View>
-        )}
-
-        <View style={styles.elementInfo}>
-          <Text style={styles.elementName} numberOfLines={1}>
-            {element.name}
-          </Text>
-          <NutrientRow
-            proteins={element.proteins}
-            fats={element.fats}
-            carbohydrates={element.carbohydrates}
-            calories={element.calories}
-            showCaloriesFirst={false}
-            compact
-          />
-          <View style={styles.quantityCaloriesRow}>
-            <Text style={styles.quantityText}>
-              {formatWeight(parseFloat(element.quantity))}
-            </Text>
-            <Text style={styles.caloriesText}>
-              {formatCalories(element.calories)}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteElement(element.id)}
-        >
-          <Text style={styles.deleteButtonText}>🗑️</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  };
+  const renderElement = useCallback(
+    ({ item }: { item: any }) => {
+      return (
+        <MealElementItem
+          element={item}
+          onPress={handleElementPress}
+          onDelete={handleDeleteElement}
+        />
+      );
+    },
+    [handleElementPress, handleDeleteElement]
+  );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
@@ -411,53 +477,66 @@ const MealScreen: React.FC = observer(() => {
     <View style={styles.container}>
       <Header
         title={formatMealType(meal.mealType)}
-        subtitle={<Text style={styles.headerSubtitle}>{formatTimeInTimezone(meal.dateTime, userTimezone)}</Text>}
+        subtitle={
+          <Text style={styles.headerSubtitle}>
+            {formatTimeInTimezone(meal.dateTime, userTimezone)}
+          </Text>
+        }
         showBackButton
         onBackPress={handleBack}
         rightComponent={
           <View style={styles.headerActions}>
-            <TouchableOpacity onPress={handleEditMealType} style={styles.editButton}>
+            <TouchableOpacity
+              onPress={handleEditMealType}
+              style={styles.editButton}
+            >
               <Text style={styles.editIcon}>✏️</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setShowActionsMenu(true)}
               style={styles.menuButton}
             >
-              <MaterialIcons name="more-vert" size={24} color={colors.text.primary} />
+              <MaterialIcons
+                name="more-vert"
+                size={24}
+                color={colors.text.primary}
+              />
             </TouchableOpacity>
           </View>
         }
       />
 
-      <FlatList
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        data={elements}
-        renderItem={renderElement}
-        keyExtractor={(item) => item.id.toString()}
-        ListHeaderComponent={
-          <>
-            {/* Summary */}
-            <View style={styles.summary}>
-              <CompactSummary
-                calories={totalCalories}
-                proteins={totalProteins}
-                fats={totalFats}
-                carbohydrates={totalCarbohydrates}
-                variant="large"
-              />
-            </View>
+      <View style={styles.content}>
+        <FlashList
+          data={elements}
+          renderItem={renderElement}
+          estimatedItemSize={80}
+          keyExtractor={(item) => item.id.toString()}
+          ListHeaderComponent={
+            <>
+              {/* Summary */}
+              <View style={styles.summary}>
+                <CompactSummary
+                  calories={totalCalories}
+                  proteins={totalProteins}
+                  fats={totalFats}
+                  carbohydrates={totalCarbohydrates}
+                  variant="large"
+                />
+              </View>
 
-            {/* Elements Title */}
-            <View style={styles.elementsTitleContainer}>
-              <Text style={styles.elementsTitle}>Блюда</Text>
-            </View>
-          </>
-        }
-        ListEmptyComponent={renderEmptyState()}
-        ListFooterComponent={<View style={styles.footerSpacing} />}
-        showsVerticalScrollIndicator={false}
-      />
+              {/* Elements Title */}
+              <View style={styles.elementsTitleContainer}>
+                <Text style={styles.elementsTitle}>Блюда</Text>
+              </View>
+            </>
+          }
+          ListEmptyComponent={renderEmptyState()}
+          ListFooterComponent={<View style={styles.footerSpacing} />}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        />
+      </View>
 
       {/* Add Button */}
       <View style={styles.addButtonContainer}>
@@ -497,7 +576,12 @@ const MealScreen: React.FC = observer(() => {
           const selectedDate = new Date(mealStore.selectedDate);
           const mealDateTime = new Date(meal.dateTime);
           // Set time to original meal time, but keep the selected date
-          selectedDate.setHours(mealDateTime.getHours(), mealDateTime.getMinutes(), 0, 0);
+          selectedDate.setHours(
+            mealDateTime.getHours(),
+            mealDateTime.getMinutes(),
+            0,
+            0
+          );
           return selectedDate;
         })()}
         defaultTime={(() => {
@@ -552,7 +636,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    flexGrow: 1,
     paddingBottom: 100, // Space for add button
   },
   headerActions: {

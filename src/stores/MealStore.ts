@@ -10,6 +10,7 @@ import type {
   AnalysisMode,
 } from '../types/api.types';
 import { formatDateForAPI } from '../utils/formatting';
+import { withAsync } from '../utils/storeUtils';
 
 class MealStore {
   rootStore: RootStore;
@@ -92,44 +93,37 @@ class MealStore {
     console.log('  - mealType:', mealType);
     console.log('  - selectedDate:', this.selectedDate.toISOString());
     console.log('  - mealsForSelectedDate:', this.mealsForSelectedDate);
-    
+
     const filtered = this.mealsForSelectedDate.filter((meal) => meal.mealType === mealType);
     console.log('  - filtered by type:', filtered);
-    
+
     const sorted = filtered.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
     console.log('  - sorted (latest first):', sorted);
-    
+
     return sorted;
   }
 
   // Actions
   async loadMealsForDate(date: Date) {
-    this.loading = true;
-    this.error = null;
     this.selectedDate = date;
 
-    try {
-      const dateString = formatDateForAPI(date);
-      const response = await mealService.getMealsByDate(dateString);
+    await withAsync(
+      this,
+      async () => {
+        const dateString = formatDateForAPI(date);
+        const response = await mealService.getMealsByDate(dateString);
 
-      runInAction(() => {
-        this.meals = response.data || [];
-        this.loading = false;
-        this.error = null;
-      });
+        runInAction(() => {
+          this.meals = response.data || [];
+        });
 
-      // Load meal elements for each meal
-      await Promise.all(
-        this.meals.map((meal) => this.loadMealElements(meal.id))
-      );
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message || 'Ошибка загрузки приемов пищи';
-      });
-      throw error;
-    }
+        // Load meal elements for each meal
+        await Promise.all(
+          this.meals.map((meal) => this.loadMealElements(meal.id))
+        );
+      },
+      'Ошибка загрузки приемов пищи'
+    );
   }
 
   async loadMealElements(mealId: number) {
@@ -145,170 +139,106 @@ class MealStore {
   }
 
   async createMeal(mealData: MealCreate) {
-    this.loading = true;
-    this.error = null;
-
-    try {
-      const response = await mealService.createMeal(mealData);
-
-      runInAction(() => {
-        this.meals.push(response.data);
-        this.loading = false;
-        this.error = null;
-      });
-
-      return response.data;
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message || 'Ошибка создания приема пищи';
-      });
-      throw error;
-    }
+    return withAsync(
+      this,
+      async () => {
+        const response = await mealService.createMeal(mealData);
+        runInAction(() => {
+          this.meals.push(response.data);
+        });
+        return response.data;
+      },
+      'Ошибка создания приема пищи'
+    );
   }
 
   async updateMeal(mealId: number, mealData: Partial<Meal>) {
-    this.loading = true;
-    this.error = null;
-
-    try {
-      const response = await mealService.updateMeal(mealId, mealData as Meal);
-
-      runInAction(() => {
-        // Update in meals array
-        const index = this.meals.findIndex((m) => m.id === mealId);
-        if (index !== -1) {
-          this.meals[index] = response.data;
-        }
-        this.loading = false;
-        this.error = null;
-      });
-
-      return response.data;
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message || 'Ошибка обновления приема пищи';
-      });
-      throw error;
-    }
+    return withAsync(
+      this,
+      async () => {
+        const response = await mealService.updateMeal(mealId, mealData as Meal);
+        runInAction(() => {
+          const index = this.meals.findIndex((m) => m.id === mealId);
+          if (index !== -1) {
+            this.meals[index] = response.data;
+          }
+        });
+        return response.data;
+      },
+      'Ошибка обновления приема пищи'
+    );
   }
 
   async createMealElement(elementData: MealElementCreate) {
-    this.loading = true;
-    this.error = null;
-
-    try {
-      const response = await mealService.createMealElement(elementData);
-
-      runInAction(() => {
-        const mealId = elementData.mealId;
-        if (!this.mealElements[mealId]) {
-          this.mealElements[mealId] = [];
-        }
-        this.mealElements[mealId].push(response.data);
-        this.loading = false;
-        this.error = null;
-      });
-
-      return response.data;
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message ||
-          'Ошибка создания элемента приема пищи';
-      });
-      throw error;
-    }
+    return withAsync(
+      this,
+      async () => {
+        const response = await mealService.createMealElement(elementData);
+        runInAction(() => {
+          const mealId = elementData.mealId;
+          if (!this.mealElements[mealId]) {
+            this.mealElements[mealId] = [];
+          }
+          this.mealElements[mealId].push(response.data);
+        });
+        return response.data;
+      },
+      'Ошибка создания элемента приема пищи'
+    );
   }
 
   async updateMealElement(elementId: number, elementData: MealElementUpdate) {
-    this.loading = true;
-    this.error = null;
-
-    try {
-      const response = await mealService.updateMealElement(
-        elementId,
-        elementData
-      );
-
-      runInAction(() => {
-        // Find and update the element in mealElements
-        Object.keys(this.mealElements).forEach((mealId) => {
-          const elements = this.mealElements[parseInt(mealId)];
-          const index = elements.findIndex((e) => e.id === elementId);
-          if (index !== -1) {
-            elements[index] = response.data;
-          }
+    return withAsync(
+      this,
+      async () => {
+        const response = await mealService.updateMealElement(
+          elementId,
+          elementData
+        );
+        runInAction(() => {
+          Object.keys(this.mealElements).forEach((mealId) => {
+            const elements = this.mealElements[parseInt(mealId)];
+            const index = elements.findIndex((e) => e.id === elementId);
+            if (index !== -1) {
+              elements[index] = response.data;
+            }
+          });
         });
-        this.loading = false;
-        this.error = null;
-      });
-
-      return response.data;
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message ||
-          'Ошибка обновления элемента приема пищи';
-      });
-      throw error;
-    }
+        return response.data;
+      },
+      'Ошибка обновления элемента приема пищи'
+    );
   }
 
   async deleteMeal(mealId: number) {
-    this.loading = true;
-    this.error = null;
-
-    try {
-      await mealService.deleteMeal(mealId);
-
-      runInAction(() => {
-        this.meals = this.meals.filter((m) => m.id !== mealId);
-        delete this.mealElements[mealId];
-        this.loading = false;
-        this.error = null;
-      });
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message || 'Ошибка удаления приема пищи';
-      });
-      throw error;
-    }
+    return withAsync(
+      this,
+      async () => {
+        await mealService.deleteMeal(mealId);
+        runInAction(() => {
+          this.meals = this.meals.filter((m) => m.id !== mealId);
+          delete this.mealElements[mealId];
+        });
+      },
+      'Ошибка удаления приема пищи'
+    );
   }
 
   async deleteMealElement(elementId: number) {
-    this.loading = true;
-    this.error = null;
-
-    try {
-      await mealService.deleteMealElement(elementId);
-
-      runInAction(() => {
-        // Find and remove the element from mealElements
-        Object.keys(this.mealElements).forEach((mealId) => {
-          this.mealElements[parseInt(mealId)] = this.mealElements[
-            parseInt(mealId)
-          ].filter((e) => e.id !== elementId);
+    return withAsync(
+      this,
+      async () => {
+        await mealService.deleteMealElement(elementId);
+        runInAction(() => {
+          Object.keys(this.mealElements).forEach((mealId) => {
+            this.mealElements[parseInt(mealId)] = this.mealElements[
+              parseInt(mealId)
+            ].filter((e) => e.id !== elementId);
+          });
         });
-        this.loading = false;
-        this.error = null;
-      });
-    } catch (error: any) {
-      runInAction(() => {
-        this.loading = false;
-        this.error =
-          error.response?.data?.message ||
-          'Ошибка удаления элемента приема пищи';
-      });
-      throw error;
-    }
+      },
+      'Ошибка удаления элемента приема пищи'
+    );
   }
 
   setSelectedDate(date: Date) {

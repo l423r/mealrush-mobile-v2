@@ -20,6 +20,7 @@ import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
+import { haptics } from '../../utils/haptics';
 
 type ScannerScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -49,6 +50,7 @@ const ScannerScreen: React.FC = observer(() => {
       const products = await productStore.searchByBarcode(data);
 
       if (products.length > 0) {
+        haptics.success();
         // Navigate to product selection or directly to meal element
         const product = products[0];
         navigation.navigate('MealElement', {
@@ -58,6 +60,7 @@ const ScannerScreen: React.FC = observer(() => {
           fromSearch: true,
         });
       } else {
+        haptics.warning();
         showAlert(
           {
             title: 'Продукт не найден',
@@ -75,6 +78,7 @@ const ScannerScreen: React.FC = observer(() => {
         );
       }
     } catch {
+      haptics.error();
       uiStore.showSnackbar(
         'Не удалось найти продукт. Попробуйте еще раз',
         'error'

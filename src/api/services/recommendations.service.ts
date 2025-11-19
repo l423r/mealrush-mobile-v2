@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   InsightResponse,
   PageResponse,
@@ -18,27 +18,27 @@ export interface GetMealPicksParams {
 export const recommendationsService = {
   getProducts: async (params: GetRecommendationsProductsParams) => {
     const res = await apiClient.get<PageResponse<ProductResponse>>(
-      MY_FOOD_ENDPOINTS.RECOMMENDATIONS_PRODUCTS,
+      ApiRoutes.Recommendations.Products,
       { params }
     );
     return res.data;
   },
   getInsights: async () => {
     const res = await apiClient.get<InsightResponse[]>(
-      MY_FOOD_ENDPOINTS.RECOMMENDATIONS_INSIGHTS
+      ApiRoutes.Recommendations.Insights
     );
     return res.data;
   },
   refresh: async () => {
     const res = await apiClient.post(
-      MY_FOOD_ENDPOINTS.RECOMMENDATIONS_REFRESH,
+      ApiRoutes.Recommendations.Refresh,
       {}
     );
     return res.status; // 200 OK expected
   },
   getMealPicks: async (params: GetMealPicksParams) => {
     const res = await apiClient.get<ProductResponse[]>(
-      MY_FOOD_ENDPOINTS.RECOMMENDATIONS_MEALS,
+      ApiRoutes.Recommendations.Meals,
       { params }
     );
     return res.data;

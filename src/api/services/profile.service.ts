@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   UserProfile,
   UserProfileCreate,
@@ -8,12 +8,12 @@ import type {
 
 export const profileService = {
   createProfile: (profileData: UserProfileCreate) =>
-    apiClient.post<UserProfile>(MY_FOOD_ENDPOINTS.USER_PROFILE, profileData),
+    apiClient.post<UserProfile>(ApiRoutes.UserProfile, profileData),
 
-  getProfile: () => apiClient.get<UserProfile>(MY_FOOD_ENDPOINTS.USER_PROFILE),
+  getProfile: () => apiClient.get<UserProfile>(ApiRoutes.UserProfile),
 
   updateProfile: (profileData: UserProfileUpdate) =>
-    apiClient.put<UserProfile>(MY_FOOD_ENDPOINTS.USER_PROFILE, profileData),
+    apiClient.put<UserProfile>(ApiRoutes.UserProfile, profileData),
 
-  deleteProfile: () => apiClient.delete(MY_FOOD_ENDPOINTS.USER_PROFILE),
+  deleteProfile: () => apiClient.delete(ApiRoutes.UserProfile),
 };

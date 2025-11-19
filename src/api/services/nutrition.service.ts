@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   NutritionSummaryResponse,
   NutritionTrendResponse,
@@ -34,7 +34,7 @@ export interface GetRangeParams {
 export const nutritionService = {
   getDaily: async (params: GetDailyParams) => {
     const res = await apiClient.get<NutritionSummaryResponse>(
-      MY_FOOD_ENDPOINTS.NUTRITION_DAILY,
+      ApiRoutes.Nutrition.Daily,
       { params }
     );
     console.log('API Response - getDaily:', JSON.stringify(res.data, null, 2));
@@ -42,7 +42,7 @@ export const nutritionService = {
   },
   getWeekly: async (params: GetWeeklyParams) => {
     const res = await apiClient.get<NutritionSummaryResponse>(
-      MY_FOOD_ENDPOINTS.NUTRITION_WEEKLY,
+      ApiRoutes.Nutrition.Weekly,
       { params }
     );
     console.log('API Response - getWeekly:', JSON.stringify(res.data, null, 2));
@@ -50,7 +50,7 @@ export const nutritionService = {
   },
   getMonthly: async (params: GetMonthlyParams) => {
     const res = await apiClient.get<NutritionSummaryResponse>(
-      MY_FOOD_ENDPOINTS.NUTRITION_MONTHLY,
+      ApiRoutes.Nutrition.Monthly,
       { params }
     );
     console.log(
@@ -61,7 +61,7 @@ export const nutritionService = {
   },
   getTrend: async (params: GetTrendParams) => {
     const res = await apiClient.get<NutritionTrendResponse>(
-      MY_FOOD_ENDPOINTS.NUTRITION_TREND,
+      ApiRoutes.Nutrition.Trend,
       { params }
     );
     console.log('API Response - getTrend:', JSON.stringify(res.data, null, 2));
@@ -69,7 +69,7 @@ export const nutritionService = {
   },
   getStatistics: async (params: GetRangeParams) => {
     const res = await apiClient.get<StatisticsResponse>(
-      MY_FOOD_ENDPOINTS.NUTRITION_STATISTICS,
+      ApiRoutes.Nutrition.Statistics,
       { params }
     );
     console.log(
@@ -80,7 +80,7 @@ export const nutritionService = {
   },
   getProgress: async (params: GetRangeParams) => {
     const res = await apiClient.get<ProgressResponse>(
-      MY_FOOD_ENDPOINTS.NUTRITION_PROGRESS,
+      ApiRoutes.Nutrition.Progress,
       { params }
     );
     console.log(

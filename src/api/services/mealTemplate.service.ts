@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   MealTemplate,
   MealTemplateCreate,
@@ -12,18 +12,18 @@ import type {
 export const mealTemplateService = {
   createFromMeal: (mealId: number) =>
     apiClient.post<MealTemplate>(
-      `${MY_FOOD_ENDPOINTS.MEAL_TEMPLATE_FROM_MEAL}?mealId=${mealId}`
+      `${ApiRoutes.MealTemplate.FromMeal}?mealId=${mealId}`
     ),
 
   create: (templateData: MealTemplateCreate) =>
     apiClient.post<MealTemplate>(
-      MY_FOOD_ENDPOINTS.MEAL_TEMPLATES,
+      ApiRoutes.MealTemplate.Base,
       templateData
     ),
 
   getAll: (page: number = 0, size: number = 20) =>
     apiClient.get<PaginatedResponse<MealTemplate>>(
-      MY_FOOD_ENDPOINTS.MEAL_TEMPLATES,
+      ApiRoutes.MealTemplate.Base,
       {
         params: { page, size },
       }
@@ -31,21 +31,21 @@ export const mealTemplateService = {
 
   getById: (id: number) =>
     apiClient.get<MealTemplate>(
-      `${MY_FOOD_ENDPOINTS.MEAL_TEMPLATES}/${id}`
+      `${ApiRoutes.MealTemplate.Base}/${id}`
     ),
 
   update: (id: number, templateData: MealTemplateUpdate) =>
     apiClient.put<MealTemplate>(
-      `${MY_FOOD_ENDPOINTS.MEAL_TEMPLATES}/${id}`,
+      `${ApiRoutes.MealTemplate.Base}/${id}`,
       templateData
     ),
 
   delete: (id: number) =>
-    apiClient.delete(`${MY_FOOD_ENDPOINTS.MEAL_TEMPLATES}/${id}`),
+    apiClient.delete(`${ApiRoutes.MealTemplate.Base}/${id}`),
 
   useTemplate: (id: number, request: MealTemplateUseRequest) =>
     apiClient.post<Meal>(
-      `${MY_FOOD_ENDPOINTS.MEAL_TEMPLATE_USE}/${id}/use`,
+      `${ApiRoutes.MealTemplate.Base}/${id}/use`,
       request
     ),
 };

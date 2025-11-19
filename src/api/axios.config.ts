@@ -4,13 +4,13 @@ import type {
   AxiosResponse,
 } from 'axios';
 import axios from 'axios';
-import { API_BASE_URL, REQUEST_TIMEOUT } from './endpoints';
+import { API_BASE_URL, ApiRoutes, Timeouts } from './apiRoutes';
 import * as SecureStore from 'expo-secure-store';
 
 // Create axios instance
 export const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  timeout: REQUEST_TIMEOUT,
+  timeout: Timeouts.Default,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -69,9 +69,9 @@ apiClient.interceptors.request.use(
     // Skip adding token only for public auth endpoints (POST requests to login, register, reset password)
     const isPublicAuthEndpoint =
       config.method === 'post' &&
-      (config.url === '/auth/user' ||
-        config.url === '/auth/token' ||
-        config.url === '/auth/reset-password');
+      (config.url === ApiRoutes.Auth.Register ||
+        config.url === ApiRoutes.Auth.Login ||
+        config.url === ApiRoutes.Auth.ResetPassword);
 
     if (!isPublicAuthEndpoint) {
       const token = await getToken();

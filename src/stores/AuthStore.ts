@@ -1,4 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { makePersistable } from 'mobx-persist-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../api/services/auth.service';
 import type RootStore from './RootStore';
 import type { User, LoginRequest, RegisterRequest, OAuthProvider } from '../types/api.types';
@@ -18,6 +20,12 @@ class AuthStore {
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeAutoObservable(this);
+
+    makePersistable(this, {
+      name: 'AuthStore',
+      properties: ['token', 'user', 'isAuthenticated'],
+      storage: AsyncStorage,
+    });
   }
 
   // Actions
@@ -126,7 +134,7 @@ class AuthStore {
       });
     } catch (error: any) {
       let errorMessage = 'Ошибка OAuth авторизации';
-      
+
       if (error.response?.status === 409) {
         errorMessage = error.response.data.message || 'Email уже зарегистрирован с другим провайдером';
       } else if (error.response?.status === 401) {
@@ -179,12 +187,12 @@ class AuthStore {
 
     // Load token from SecureStore
     const storedToken = await getToken();
-    
+
     if (storedToken) {
       runInAction(() => {
         this.token = storedToken;
       });
-      
+
       try {
         await this.getUser();
         await this.rootStore.profileStore.checkProfile();

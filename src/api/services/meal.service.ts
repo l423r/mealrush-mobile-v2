@@ -1,5 +1,5 @@
 import { apiClient } from '../axios.config';
-import { MY_FOOD_ENDPOINTS } from '../endpoints';
+import { ApiRoutes } from '../apiRoutes';
 import type {
   Meal,
   MealCreate,
@@ -15,28 +15,28 @@ import type {
 
 export const mealService = {
   createMeal: (mealData: MealCreate) =>
-    apiClient.post<Meal>(MY_FOOD_ENDPOINTS.MEALS, mealData),
+    apiClient.post<Meal>(ApiRoutes.Meal.Base, mealData),
 
   getMealsByDate: (date: string) =>
-    apiClient.get<Meal[]>(MY_FOOD_ENDPOINTS.MEALS_BY_DATE, {
+    apiClient.get<Meal[]>(ApiRoutes.Meal.FindByDate, {
       params: { date },
     }),
 
   getMeal: (id: number) =>
-    apiClient.get<Meal>(`${MY_FOOD_ENDPOINTS.MEALS}/${id}`),
+    apiClient.get<Meal>(`${ApiRoutes.Meal.Base}/${id}`),
 
   updateMeal: (id: number, mealData: Meal) =>
-    apiClient.put<Meal>(`${MY_FOOD_ENDPOINTS.MEALS}/${id}`, mealData),
+    apiClient.put<Meal>(`${ApiRoutes.Meal.Base}/${id}`, mealData),
 
   deleteMeal: (id: number) =>
-    apiClient.delete(`${MY_FOOD_ENDPOINTS.MEALS}/${id}`),
+    apiClient.delete(`${ApiRoutes.Meal.Base}/${id}`),
 
   createMealElement: (elementData: MealElementCreate) =>
-    apiClient.post<MealElement>(MY_FOOD_ENDPOINTS.MEAL_ELEMENTS, elementData),
+    apiClient.post<MealElement>(ApiRoutes.MealElement.Base, elementData),
 
   getMealElements: (mealId: number, page: number = 0, size: number = 50) =>
     apiClient.get<PaginatedResponse<MealElement>>(
-      `${MY_FOOD_ENDPOINTS.MEAL_ELEMENTS_BY_MEAL}/${mealId}`,
+      `${ApiRoutes.MealElement.ByMeal}/${mealId}`,
       {
         params: { page, size },
       }
@@ -44,28 +44,28 @@ export const mealService = {
 
   updateMealElement: (id: number, elementData: MealElementUpdate) =>
     apiClient.put<MealElement>(
-      `${MY_FOOD_ENDPOINTS.MEAL_ELEMENTS}/${id}`,
+      `${ApiRoutes.MealElement.Base}/${id}`,
       elementData
     ),
 
   deleteMealElement: (id: number) =>
-    apiClient.delete(`${MY_FOOD_ENDPOINTS.MEAL_ELEMENTS}/${id}`),
+    apiClient.delete(`${ApiRoutes.MealElement.Base}/${id}`),
 
   analyzePhoto: (request: PhotoAnalysisRequest) =>
     apiClient.post<AnalysisResponse>(
-      MY_FOOD_ENDPOINTS.MEAL_ELEMENT_ANALYZE_PHOTO,
+      ApiRoutes.MealElement.AnalyzePhoto,
       request
     ),
 
   analyzeText: (request: TextAnalysisRequest) =>
     apiClient.post<AnalysisResponse>(
-      MY_FOOD_ENDPOINTS.MEAL_ELEMENT_ANALYZE_TEXT,
+      ApiRoutes.MealElement.AnalyzeText,
       request
     ),
 
   analyzeAudio: (request: AudioAnalysisRequest) =>
     apiClient.post<AnalysisResponse>(
-      MY_FOOD_ENDPOINTS.MEAL_ELEMENT_ANALYZE_AUDIO,
+      ApiRoutes.MealElement.AnalyzeAudio,
       request
     ),
 };
