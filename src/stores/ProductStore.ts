@@ -18,6 +18,7 @@ class ProductStore {
   favorites: Product[] = [];
   searchQuery: string = '';
   loading: boolean = false;
+  loadingMore: boolean = false; // For infinite scroll loading
   error: string | null = null;
   pagination: {
     page: number;
@@ -41,14 +42,20 @@ class ProductStore {
   // Actions
   async searchProducts(query: string, page: number = 0) {
     console.log(
-      `🔍 [ProductStore] searchProducts() called - Query: "${query}"`
+      `🔍 [ProductStore] searchProducts() called - Query: "${query}", Page: ${page}`
     );
     if (!query.trim()) {
       this.products = [];
       return;
     }
 
-    this.loading = true;
+    // Set loading state based on page
+    if (page === 0) {
+      this.loading = true; // Initial load
+      this.loadingMore = false;
+    } else {
+      this.loadingMore = true; // Loading next page
+    }
     this.error = null;
     this.searchQuery = query;
 
@@ -77,13 +84,22 @@ class ProductStore {
           hasMore: !response.data.last,
         };
 
-        this.loading = false;
+        // Reset loading state based on page
+        if (page === 0) {
+          this.loading = false;
+        } else {
+          this.loadingMore = false;
+        }
         this.error = null;
       });
     } catch (error: any) {
       console.error(`❌ [ProductStore] searchProducts() error:`, error);
       runInAction(() => {
-        this.loading = false;
+        if (page === 0) {
+          this.loading = false;
+        } else {
+          this.loadingMore = false;
+        }
         this.error = error.response?.data?.message || 'Ошибка поиска продуктов';
       });
       throw error;
@@ -329,6 +345,8 @@ class ProductStore {
   clearSearch() {
     this.products = [];
     this.searchQuery = '';
+    this.loading = false;
+    this.loadingMore = false;
     this.pagination = {
       page: 0,
       size: 20,
@@ -353,6 +371,7 @@ class ProductStore {
     this.favorites = [];
     this.searchQuery = '';
     this.loading = false;
+    this.loadingMore = false;
     this.error = null;
     this.pagination = {
       page: 0,

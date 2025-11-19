@@ -8,6 +8,7 @@ import {
   Image,
   TextInput,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
@@ -339,10 +340,23 @@ const ProductsScreen: React.FC = observer(() => {
       activeTab === 'search' &&
       productStore.pagination.hasMore &&
       !productStore.loading &&
+      !productStore.loadingMore &&
       searchQuery.trim().length >= 2
     ) {
       productStore.searchProducts(searchQuery, productStore.pagination.page + 1);
     }
+  };
+
+  const renderLoadingFooter = () => {
+    if (!productStore.loadingMore || activeTab !== 'search') {
+      return null;
+    }
+    return (
+      <View style={dynamicStyles.loadingFooter}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={dynamicStyles.loadingFooterText}>Загрузка...</Text>
+      </View>
+    );
   };
 
   const renderProductItem = ({ item: product }: { item: any }) => {
@@ -416,7 +430,9 @@ const ProductsScreen: React.FC = observer(() => {
     return <Text style={dynamicStyles.tabIcon}>{icons[tab]}</Text>;
   };
 
-  if (productStore.loading && !refreshing) {
+  // Show full loading screen only for initial load when list is empty
+  const data = getData();
+  if (productStore.loading && !refreshing && data.length === 0) {
     return <Loading message="Загрузка продуктов..." />;
   }
 
@@ -506,8 +522,9 @@ const ProductsScreen: React.FC = observer(() => {
             renderItem={renderProductItem}
             keyExtractor={(item) => item.id.toString()}
             estimatedItemSize={110}
-            extraData={productStore.favorites.length}
+            extraData={`${productStore.favorites.length}-${productStore.loadingMore}-${productStore.products.length}`}
             ListEmptyComponent={renderEmptyState}
+            ListFooterComponent={renderLoadingFooter}
             contentContainerStyle={dynamicStyles.listContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
@@ -857,6 +874,17 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
   },
   bottomSpacer: {
     height: spacing.xxxl,
+  },
+  loadingFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.sm,
+  },
+  loadingFooterText: {
+    ...typography.body2,
+    color: colors.text.secondary,
   },
 });
 
