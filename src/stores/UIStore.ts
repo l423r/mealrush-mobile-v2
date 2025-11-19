@@ -1,12 +1,14 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { Appearance } from 'react-native';
+import { makePersistable } from 'mobx-persist-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type RootStore from './RootStore';
 
 class UIStore {
   rootStore: RootStore;
 
   // State
-  isDark: boolean = false;
+  isDark: boolean = true; // Default to dark
   loading: boolean = false;
   error: string | null = null;
   snackbar: {
@@ -14,31 +16,39 @@ class UIStore {
     message: string;
     type: 'success' | 'error' | 'info' | 'warning';
   } = {
-    visible: false,
-    message: '',
-    type: 'info',
-  };
+      visible: false,
+      message: '',
+      type: 'info',
+    };
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeAutoObservable(this);
 
-    // Listen to system theme changes
+    // Setup persistence for theme
+    makePersistable(this, {
+      name: 'UIStore',
+      properties: ['isDark'],
+      storage: AsyncStorage,
+    });
+
+    // Listen to system theme changes (but only if user hasn't set preference)
     this.initializeTheme();
   }
 
   // Actions
   initializeTheme() {
+    // Only set from system preference on first launch
+    // After that, use persisted value
     const colorScheme = Appearance.getColorScheme();
-    runInAction(() => {
-      this.isDark = colorScheme === 'dark';
-    });
 
-    // Listen for theme changes
+    // Listen for theme changes (optional - can be disabled if you want manual control only)
     Appearance.addChangeListener(({ colorScheme }) => {
-      runInAction(() => {
-        this.isDark = colorScheme === 'dark';
-      });
+      // Only apply system changes if you want to follow system theme
+      // Comment this out to make theme fully manual
+      // runInAction(() => {
+      //   this.isDark = colorScheme !== 'light';
+      // });
     });
   }
 
@@ -96,7 +106,7 @@ class UIStore {
   }
 
   reset() {
-    this.isDark = false;
+    this.isDark = true; // Reset to dark
     this.loading = false;
     this.error = null;
     this.snackbar = {

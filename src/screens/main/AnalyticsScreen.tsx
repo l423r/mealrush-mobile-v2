@@ -11,16 +11,21 @@ import { observer } from 'mobx-react-lite';
 import AnalyticsStore from '../../stores/AnalyticsStore';
 import { AnalyticsHeader } from '../../components/analytics/AnalyticsHeader';
 import type { AnalyticsPeriod, TrendMetric } from '../../types/analytics.types';
-import { colors, spacing, componentSpacing, typography } from '../../theme';
+import { spacing, componentSpacing, typography } from '../../theme';
 import AnalyticsTrendChart from '../../components/analytics/AnalyticsTrendChart';
 import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribution';
 import Header from '../../components/common/Header';
 import { useStores } from '../../stores';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 type TabKey = 'trend' | 'distributions';
 
 const AnalyticsScreen: React.FC = observer(() => {
   const { profileStore } = useStores();
+  const { colors } = useTheme();
   const store = useMemo(() => new AnalyticsStore(), []);
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [metric, setMetric] = useState<TrendMetric>('calories');
@@ -45,9 +50,11 @@ const AnalyticsScreen: React.FC = observer(() => {
     return `${store.period.from}-${store.period.to}`;
   }, [store.period]);
 
+  const dynamicStyles = createStyles(colors);
+
   return (
     <ScrollView
-      style={styles.container}
+      style={dynamicStyles.container}
       refreshControl={
         <RefreshControl refreshing={store.loading} onRefresh={onRefresh} />
       }
@@ -60,25 +67,29 @@ const AnalyticsScreen: React.FC = observer(() => {
         targetCalories={profileStore.profile?.dayLimitCal}
       />
 
-      <View style={styles.tabbar}>
+      <View style={dynamicStyles.tabbar}>
         <TabButton
           label="Тренд"
           active={activeTab === 'trend'}
           onPress={() => setActiveTab('trend')}
+          colors={colors}
+          styles={dynamicStyles}
         />
         <TabButton
           label="Распределения"
           active={activeTab === 'distributions'}
           onPress={() => setActiveTab('distributions')}
+          colors={colors}
+          styles={dynamicStyles}
         />
       </View>
 
-      <View style={styles.section}>
+      <View style={dynamicStyles.section}>
         {store.loading ? (
-          <Text style={styles.placeholder}>Загрузка данных...</Text>
+          <Text style={dynamicStyles.placeholder}>Загрузка данных...</Text>
         ) : activeTab === 'trend' ? (
           !store.trend || store.trend.length === 0 ? (
-            <Text style={styles.placeholder}>Недостаточно данных за период</Text>
+            <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
           ) : (
             <AnalyticsTrendChart
               key={`trend-${periodKey}-${metric}`}
@@ -88,7 +99,7 @@ const AnalyticsScreen: React.FC = observer(() => {
             />
           )
         ) : store.distribution == null ? (
-          <Text style={styles.placeholder}>Недостаточно данных за период</Text>
+          <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
         ) : (
           <AnalyticsDistribution
             key={`distribution-${periodKey}`}
@@ -104,18 +115,20 @@ const TabButton: React.FC<{
   label: string;
   active: boolean;
   onPress: () => void;
-}> = ({ label, active, onPress }) => (
+  colors: ColorsType;
+  styles: ReturnType<typeof createStyles>;
+}> = ({ label, active, onPress, colors, styles }) => (
   <TouchableOpacity
-    style={[styles.tabButton, active && styles.tabButtonActive]}
+    style={[styles.tabButton, active && { backgroundColor: colors.primary }]}
     onPress={onPress}
   >
-    <Text style={[styles.tabButtonText, active && styles.tabButtonTextActive]}>
+    <Text style={[{ ...typography.button }, { color: active ? colors.white : colors.text.secondary }]}>
       {label}
     </Text>
   </TouchableOpacity>
 );
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.default,
@@ -133,16 +146,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: 10,
     alignItems: 'center',
-  },
-  tabButtonActive: {
-    backgroundColor: colors.primary,
-  },
-  tabButtonText: {
-    ...typography.button,
-    color: colors.text.secondary,
-  },
-  tabButtonTextActive: {
-    color: colors.white,
   },
   section: {
     backgroundColor: colors.background.paper,

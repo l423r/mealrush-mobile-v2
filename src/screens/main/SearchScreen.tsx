@@ -17,12 +17,12 @@ import type { MainStackParamList } from '../../types/navigation.types';
 import type { Product } from '../../types/api.types';
 import { useStores } from '../../stores';
 import {
-  colors,
   typography,
   spacing,
   borderRadius,
   shadows,
 } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import { formatCalories, formatWeight } from '../../utils/formatting';
 import {
   requestCameraPermission,
@@ -51,6 +51,7 @@ const SearchScreen: React.FC = observer(() => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
   const { productStore, mealStore, uiStore } = useStores();
+  const { colors } = useTheme();
   const { alertState, showError, hideAlert } = useAlert();
   const imageSource = useImageSource();
 
@@ -432,6 +433,8 @@ const SearchScreen: React.FC = observer(() => {
     return productStore.products;
   };
 
+  const styles = React.useMemo(() => getStyles(colors), [colors]);
+
   return (
     <View style={styles.container}>
       <Header
@@ -599,7 +602,7 @@ const SearchScreen: React.FC = observer(() => {
   );
 });
 
-const styles = StyleSheet.create({
+const getStyles = (colors: ReturnType<typeof import('../../theme/colors').getThemeColors>) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.default,

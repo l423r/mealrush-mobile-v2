@@ -12,12 +12,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import {
-  colors,
   typography,
   spacing,
   borderRadius,
   shadows,
 } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
 import {
   formatTargetWeightType,
   formatActivityLevel,
@@ -39,7 +39,8 @@ type ProfileScreenNavigationProp = NativeStackNavigationProp<
 
 const ProfileScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { profileStore, authStore, weightStore } = useStores();
+  const { profileStore, authStore, weightStore, uiStore } = useStores();
+  const { colors, isDark } = useTheme();
   const { alertState, showConfirm, hideAlert } = useAlert();
   const [showWeightModal, setShowWeightModal] = useState(false);
 
@@ -89,10 +90,10 @@ const ProfileScreen: React.FC = observer(() => {
 
   if (!profileStore.profile) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { backgroundColor: colors.background.default }]}>
         <Header title="Профиль" />
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Не удалось загрузить профиль</Text>
+          <Text style={[styles.errorText, { color: colors.text.secondary }]}>Не удалось загрузить профиль</Text>
           <Button
             title="Попробовать снова"
             onPress={() => profileStore.getProfile()}
@@ -109,38 +110,43 @@ const ProfileScreen: React.FC = observer(() => {
   const recommendedCalories = profileStore.recommendedCalories;
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background.default }]}>
       <Header
         title="Профиль"
         rightComponent={
-          <TouchableOpacity onPress={handleSettings}>
-            <Text style={styles.settingsIcon}>⚙️</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <TouchableOpacity onPress={() => uiStore.toggleTheme()} style={{ marginRight: 16 }}>
+              <Text style={{ fontSize: 24 }}>{isDark ? '🌙' : '☀️'}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleSettings}>
+              <Text style={[styles.settingsIcon, { color: colors.text.primary }]}>⚙️</Text>
+            </TouchableOpacity>
+          </View>
         }
       />
 
       <ScrollView style={styles.content}>
         {/* User Info */}
-        <View style={styles.userInfo}>
-          <View style={styles.avatar}>
+        <View style={[styles.userInfo, { backgroundColor: colors.background.paper }]}>
+          <View style={[styles.avatar, { backgroundColor: colors.primary + '20' }]}>
             <Text style={styles.avatarText}>
               {profile.gender === 'MALE' ? '👨' : '👩'}
             </Text>
           </View>
-          <Text style={styles.userName}>
+          <Text style={[styles.userName, { color: colors.text.primary }]}>
             {authStore.user?.name || 'Пользователь'}
           </Text>
-          <Text style={styles.userEmail}>{authStore.user?.email}</Text>
+          <Text style={[styles.userEmail, { color: colors.text.secondary }]}>{authStore.user?.email}</Text>
         </View>
 
         {/* Weight Card - Clickable */}
         <TouchableOpacity
-          style={styles.weightCard}
+          style={[styles.weightCard, { backgroundColor: colors.background.paper }]}
           onPress={handleWeightClick}
           activeOpacity={0.7}
         >
           <View style={styles.weightHeader}>
-            <Text style={styles.cardTitle}>Вес</Text>
+            <Text style={[styles.cardTitle, { color: colors.text.primary }]}>Вес</Text>
             {weightStore.weeklyChange !== null && (
               <Text
                 style={[
@@ -160,8 +166,8 @@ const ProfileScreen: React.FC = observer(() => {
           </View>
 
           <View style={styles.weightMain}>
-            <Text style={styles.weightValue}>{profile.weight} кг</Text>
-            <Text style={styles.weightLabel}>текущий</Text>
+            <Text style={[styles.weightValue, { color: colors.primary }]}>{profile.weight} кг</Text>
+            <Text style={[styles.weightLabel, { color: colors.text.secondary }]}>текущий</Text>
           </View>
 
           {/* Mini Chart */}
@@ -170,90 +176,90 @@ const ProfileScreen: React.FC = observer(() => {
           )}
 
           <TouchableOpacity
-            style={styles.quickAddButton}
+            style={[styles.quickAddButton, { backgroundColor: colors.primary + '15' }]}
             onPress={(e) => {
               e.stopPropagation();
               handleAddWeight();
             }}
           >
-            <Text style={styles.quickAddText}>+ Записать вес</Text>
+            <Text style={[styles.quickAddText, { color: colors.primary }]}>+ Записать вес</Text>
           </TouchableOpacity>
         </TouchableOpacity>
 
         {/* Current Stats - without weight */}
-        <View style={styles.statsCard}>
-          <Text style={styles.cardTitle}>Показатели</Text>
+        <View style={[styles.statsCard, { backgroundColor: colors.background.paper }]}>
+          <Text style={[styles.cardTitle, { color: colors.text.primary }]}>Показатели</Text>
 
           <View style={styles.statsGrid}>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{profile.height}</Text>
-              <Text style={styles.statLabel}>см</Text>
+              <Text style={[styles.statValue, { color: colors.primary }]}>{profile.height}</Text>
+              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>см</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>{profileStore.age}</Text>
-              <Text style={styles.statLabel}>лет</Text>
+              <Text style={[styles.statValue, { color: colors.primary }]}>{profileStore.age}</Text>
+              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>лет</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>
+              <Text style={[styles.statValue, { color: colors.primary }]}>
                 {bmi ? Math.round(bmi * 10) / 10 : '—'}
               </Text>
-              <Text style={styles.statLabel}>ИМТ</Text>
+              <Text style={[styles.statLabel, { color: colors.text.secondary }]}>ИМТ</Text>
             </View>
           </View>
 
           {bmi && (
-            <View style={styles.bmiInfo}>
-              <Text style={styles.bmiCategory}>{bmiCategory}</Text>
+            <View style={[styles.bmiInfo, { borderTopColor: colors.border.light }]}>
+              <Text style={[styles.bmiCategory, { color: colors.text.secondary }]}>{bmiCategory}</Text>
             </View>
           )}
         </View>
 
         {/* Goals */}
-        <View style={styles.goalsCard}>
-          <Text style={styles.cardTitle}>Цели и активность</Text>
+        <View style={[styles.goalsCard, { backgroundColor: colors.background.paper }]}>
+          <Text style={[styles.cardTitle, { color: colors.text.primary }]}>Цели и активность</Text>
 
-          <View style={styles.goalItem}>
-            <Text style={styles.goalLabel}>Цель</Text>
-            <Text style={styles.goalValue}>
+          <View style={[styles.goalItem, { borderBottomColor: colors.border.light }]}>
+            <Text style={[styles.goalLabel, { color: colors.text.secondary }]}>Цель</Text>
+            <Text style={[styles.goalValue, { color: colors.text.primary }]}>
               {formatTargetWeightType(profile.targetWeightType)}
             </Text>
           </View>
 
           {profile.targetWeightType !== 'SAVE' && (
-            <View style={styles.goalItem}>
-              <Text style={styles.goalLabel}>Целевой вес</Text>
-              <Text style={styles.goalValue}>{profile.targetWeight} кг</Text>
+            <View style={[styles.goalItem, { borderBottomColor: colors.border.light }]}>
+              <Text style={[styles.goalLabel, { color: colors.text.secondary }]}>Целевой вес</Text>
+              <Text style={[styles.goalValue, { color: colors.text.primary }]}>{profile.targetWeight} кг</Text>
             </View>
           )}
 
-          <View style={styles.goalItem}>
-            <Text style={styles.goalLabel}>Активность</Text>
-            <Text style={styles.goalValue}>
+          <View style={[styles.goalItem, { borderBottomColor: colors.border.light }]}>
+            <Text style={[styles.goalLabel, { color: colors.text.secondary }]}>Активность</Text>
+            <Text style={[styles.goalValue, { color: colors.text.primary }]}>
               {formatActivityLevel(profile.physicalActivityLevel)}
             </Text>
           </View>
         </View>
 
         {/* Calorie Info */}
-        <View style={styles.calorieCard}>
-          <Text style={styles.cardTitle}>Калорийность</Text>
+        <View style={[styles.calorieCard, { backgroundColor: colors.background.paper }]}>
+          <Text style={[styles.cardTitle, { color: colors.text.primary }]}>Калорийность</Text>
 
-          <View style={styles.calorieItem}>
-            <Text style={styles.calorieLabel}>Установленный лимит</Text>
-            <Text style={styles.calorieValue}>{profile.dayLimitCal} ккал</Text>
+          <View style={[styles.calorieItem, { borderBottomColor: colors.border.light }]}>
+            <Text style={[styles.calorieLabel, { color: colors.text.secondary }]}>Установленный лимит</Text>
+            <Text style={[styles.calorieValue, { color: colors.primary }]}>{profile.dayLimitCal} ккал</Text>
           </View>
 
           {recommendedCalories && (
-            <View style={styles.calorieItem}>
-              <Text style={styles.calorieLabel}>Рекомендуемый лимит</Text>
-              <Text style={styles.calorieValue}>
+            <View style={[styles.calorieItem, { borderBottomColor: colors.border.light }]}>
+              <Text style={[styles.calorieLabel, { color: colors.text.secondary }]}>Рекомендуемый лимит</Text>
+              <Text style={[styles.calorieValue, { color: colors.primary }]}>
                 {recommendedCalories} ккал
               </Text>
             </View>
           )}
 
-          <View style={styles.calorieNote}>
-            <Text style={styles.calorieNoteText}>
+          <View style={[styles.calorieNote, { backgroundColor: colors.primary + '10' }]}>
+            <Text style={[styles.calorieNoteText, { color: colors.primary }]}>
               Рекомендуемая калорийность рассчитана на основе ваших параметров и
               целей
             </Text>
@@ -311,7 +317,6 @@ const ProfileScreen: React.FC = observer(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.default,
   },
   content: {
     flex: 1,
@@ -322,7 +327,6 @@ const styles = StyleSheet.create({
   userInfo: {
     alignItems: 'center',
     padding: spacing.xl,
-    backgroundColor: colors.background.paper,
     borderBottomWidth: 0,
     marginBottom: spacing.lg,
     ...shadows.md,
@@ -331,7 +335,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: colors.primary + '20',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.md,
@@ -341,18 +344,15 @@ const styles = StyleSheet.create({
   },
   userName: {
     ...typography.h4,
-    color: colors.text.primary,
     marginBottom: spacing.xs,
   },
   userEmail: {
     ...typography.body2,
-    color: colors.text.secondary,
   },
   weightCard: {
     margin: spacing.lg,
     marginBottom: spacing.md,
     padding: spacing.xl,
-    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
     borderWidth: 0,
     ...shadows.lg,
@@ -373,38 +373,32 @@ const styles = StyleSheet.create({
   },
   weightValue: {
     ...typography.h2,
-    color: colors.primary,
     fontWeight: 'bold',
   },
   weightLabel: {
     ...typography.caption,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   quickAddButton: {
     marginTop: spacing.md,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.primary + '15',
     borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   quickAddText: {
     ...typography.button,
-    color: colors.primary,
     fontWeight: '600',
   },
   statsCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     padding: spacing.xl,
-    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
     borderWidth: 0,
     ...shadows.lg,
   },
   cardTitle: {
     ...typography.h5,
-    color: colors.text.primary,
     marginBottom: spacing.md,
     textAlign: 'center',
   },
@@ -418,29 +412,24 @@ const styles = StyleSheet.create({
   },
   statValue: {
     ...typography.h4,
-    color: colors.primary,
     fontWeight: 'bold',
   },
   statLabel: {
     ...typography.caption,
-    color: colors.text.secondary,
     marginTop: spacing.xs,
   },
   bmiInfo: {
     alignItems: 'center',
     paddingTop: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: colors.border.light,
   },
   bmiCategory: {
     ...typography.body2,
-    color: colors.text.secondary,
   },
   goalsCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     padding: spacing.xl,
-    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
     borderWidth: 0,
     ...shadows.lg,
@@ -451,22 +440,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
   },
   goalLabel: {
     ...typography.body1,
-    color: colors.text.secondary,
   },
   goalValue: {
     ...typography.body1,
-    color: colors.text.primary,
     fontWeight: '600',
   },
   calorieCard: {
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     padding: spacing.xl,
-    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.xl,
     borderWidth: 0,
     ...shadows.lg,
@@ -477,26 +462,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: colors.border.light,
   },
   calorieLabel: {
     ...typography.body1,
-    color: colors.text.secondary,
   },
   calorieValue: {
     ...typography.body1,
-    color: colors.primary,
     fontWeight: '600',
   },
   calorieNote: {
     marginTop: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.primary + '10',
     borderRadius: borderRadius.md,
   },
   calorieNoteText: {
     ...typography.caption,
-    color: colors.primary,
     textAlign: 'center',
     lineHeight: 18,
   },
@@ -515,7 +495,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     ...typography.body1,
-    color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.lg,
   },

@@ -92,3 +92,10 @@ export const haptics = {
         }
     },
 };
+
+export const triggerHaptic = (type: keyof typeof haptics) => {
+    const hapticFunction = haptics[type];
+    if (hapticFunction) {
+        hapticFunction();
+    }
+};

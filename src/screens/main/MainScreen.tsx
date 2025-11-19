@@ -5,8 +5,8 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  FlatList,
   RefreshControl,
+  StatusBar,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -14,19 +14,21 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
 import {
-  colors,
   typography,
   spacing,
   borderRadius,
   shadows,
 } from '../../theme';
-import { formatDate, formatTime, formatTimeInTimezone, formatMealType } from '../../utils/formatting';
-import { calculateProgressPercentage } from '../../utils/calculations';
+import { formatDate } from '../../utils/formatting';
 import Header from '../../components/common/Header';
-import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
 import CalendarModal from '../../components/common/CalendarModal';
 import MealTemplateSelectorDialog from '../../components/common/MealTemplateSelectorDialog';
+import DailySummary from '../../components/main/DailySummary';
+import MealCard from '../../components/main/MealCard';
+import DateStrip from '../../components/main/DateStrip';
+import FAB from '../../components/common/FAB';
+import { useTheme } from '../../hooks/useTheme';
 
 type MainScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -36,10 +38,11 @@ type MainScreenNavigationProp = NativeStackNavigationProp<
 const MainScreen: React.FC = observer(() => {
   const navigation = useNavigation<MainScreenNavigationProp>();
   const { mealStore, profileStore, mealTemplateStore, uiStore } = useStores();
+  const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  
+
   const userTimezone = profileStore.profile?.timezone || 'UTC';
 
   const loadData = React.useCallback(async () => {
@@ -76,17 +79,17 @@ const MainScreen: React.FC = observer(() => {
       const selectedDate = new Date(mealStore.selectedDate);
       // Set time to current time, but keep the selected date
       selectedDate.setHours(now.getHours(), now.getMinutes(), 0, 0);
-      
+
       const meal = await mealTemplateStore.useTemplate(
         templateId,
         selectedDate.toISOString()
       );
-      
+
       // Reload meals for the selected date
       await mealStore.loadMealsForDate(mealStore.selectedDate);
-      
+
       uiStore.showSnackbar('Прием пищи создан из шаблона', 'success');
-      
+
       // Navigate to the created meal
       navigation.navigate('Meal', { meal });
     } catch (error) {
@@ -101,10 +104,8 @@ const MainScreen: React.FC = observer(() => {
     navigation.navigate('Meal', { meal });
   };
 
-  const handleDateChange = (direction: 'prev' | 'next') => {
-    const newDate = new Date(mealStore.selectedDate);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 1 : -1));
-    mealStore.setSelectedDate(newDate);
+  const handleDateSelect = (date: Date) => {
+    mealStore.setSelectedDate(date);
     loadData();
   };
 
@@ -112,67 +113,11 @@ const MainScreen: React.FC = observer(() => {
     setShowDatePicker(true);
   };
 
-  const getMealTypeIcon = (mealType: string): string => {
-    const icons: Record<string, string> = {
-      BREAKFAST: '🌅',
-      LUNCH: '🌞',
-      DINNER: '🌙',
-      SUPPER: '☕',
-      LATE_SUPPER: '🌃',
-    };
-    return icons[mealType] || '🍽️';
-  };
-
-  const renderMealCard = ({ item: meal }: { item: any }) => {
-    const elements = mealStore.mealElements[meal.id] || [];
-    const totalCalories = elements.reduce(
-      (sum, element) => sum + element.calories,
-      0
-    );
-    const totalProteins = elements.reduce(
-      (sum, element) => sum + element.proteins,
-      0
-    );
-    const totalFats = elements.reduce((sum, element) => sum + element.fats, 0);
-    const totalCarbohydrates = elements.reduce(
-      (sum, element) => sum + element.carbohydrates,
-      0
-    );
-
-    return (
-      <TouchableOpacity
-        style={styles.mealCard}
-        onPress={() => handleMealPress(meal)}
-      >
-        <View style={styles.mealIconContainer}>
-          <Text style={styles.mealIcon}>{getMealTypeIcon(meal.mealType)}</Text>
-        </View>
-
-        <View style={styles.mealHeader}>
-          <Text style={styles.mealType}>{formatMealType(meal.mealType)}</Text>
-          <Text style={styles.mealTime}>{formatTimeInTimezone(meal.dateTime, userTimezone)}</Text>
-        </View>
-
-        <View style={styles.mealContent}>
-          <Text style={styles.mealCalories}>
-            {Math.round(totalCalories)} ккал
-          </Text>
-          <Text style={styles.mealMacros}>
-            Б: {Math.round(totalProteins)}г • Ж: {Math.round(totalFats)}г • У:{' '}
-            {Math.round(totalCarbohydrates)}г
-          </Text>
-        </View>
-
-        <Text style={styles.mealArrow}>›</Text>
-      </TouchableOpacity>
-    );
-  };
-
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
+    <View style={[styles.emptyState, { backgroundColor: colors.background.paper, borderColor: colors.border.light }]}>
       <Text style={styles.emptyEmoji}>🍽️</Text>
-      <Text style={styles.emptyTitle}>Нет приемов пищи</Text>
-      <Text style={styles.emptySubtitle}>
+      <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Нет приемов пищи</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
         Добавьте свой первый прием пищи, чтобы начать отслеживание
       </Text>
     </View>
@@ -183,12 +128,17 @@ const MainScreen: React.FC = observer(() => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background.default }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={colors.background.default} />
+
       <Header
-        title="Расписание питания"
-        titleStyle={styles.headerTitle}
+        title="Расписание"
+        titleStyle={[styles.headerTitle, { color: colors.text.primary }]}
         rightComponent={
-          <TouchableOpacity onPress={handleCalendarPress}>
+          <TouchableOpacity
+            onPress={handleCalendarPress}
+            style={[styles.calendarButton, { backgroundColor: colors.background.light, borderColor: colors.border.light }]}
+          >
             <Text style={styles.calendarIcon}>📅</Text>
           </TouchableOpacity>
         }
@@ -207,117 +157,72 @@ const MainScreen: React.FC = observer(() => {
 
       <ScrollView
         style={styles.content}
+        contentContainerStyle={styles.scrollContent}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
         }
       >
-        {/* Date Selector */}
-        <View style={styles.dateSelector}>
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => handleDateChange('prev')}
-          >
-            <Text style={styles.dateButtonText}>‹</Text>
-          </TouchableOpacity>
+        {/* Date Strip */}
+        <DateStrip
+          selectedDate={mealStore.selectedDate}
+          onDateSelect={handleDateSelect}
+        />
 
-          <View style={styles.dateInfo}>
-            <Text style={styles.dateText}>
-              {formatDate(mealStore.selectedDate, 'dd MMMM yyyy')}
-            </Text>
-            <Text style={styles.dayText}>
-              {formatDate(mealStore.selectedDate, 'EEEE')}
-            </Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.dateButton}
-            onPress={() => handleDateChange('next')}
-          >
-            <Text style={styles.dateButtonText}>›</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Daily Stats */}
-        <View style={styles.statsContainer}>
-          <Text style={styles.statsTitle}>Дневная статистика</Text>
-
-          <View style={styles.statsGrid}>
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {Math.round(mealStore.dailyCalories)}
-              </Text>
-              <Text style={styles.statLabel}>ккал</Text>
-              <View style={styles.progressBar}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${calculateProgressPercentage(
-                        mealStore.dailyCalories,
-                        profileStore.profile?.dayLimitCal || 2000
-                      )}%`,
-                    },
-                  ]}
-                />
-              </View>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {Math.round(mealStore.dailyProteins)}
-              </Text>
-              <Text style={styles.statLabel}>белки</Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {Math.round(mealStore.dailyFats)}
-              </Text>
-              <Text style={styles.statLabel}>жиры</Text>
-            </View>
-
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>
-                {Math.round(mealStore.dailyCarbohydrates)}
-              </Text>
-              <Text style={styles.statLabel}>углеводы</Text>
-            </View>
-          </View>
-        </View>
+        {/* Daily Summary */}
+        <DailySummary
+          calories={mealStore.dailyCalories}
+          proteins={mealStore.dailyProteins}
+          fats={mealStore.dailyFats}
+          carbohydrates={mealStore.dailyCarbohydrates}
+          caloriesLimit={profileStore.profile?.dayLimitCal || 2000}
+        />
 
         {/* Meals List */}
         <View style={styles.mealsContainer}>
-          <Text style={styles.mealsTitle}>Приемы пищи</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.mealsTitle, { color: colors.text.primary }]}>Приемы пищи</Text>
+            <Text style={[styles.mealsCount, { color: colors.text.inverse, backgroundColor: colors.primary }]}>
+              {mealStore.mealsForSelectedDate.length}
+            </Text>
+          </View>
 
           {mealStore.mealsForSelectedDate.length === 0 ? (
             renderEmptyState()
           ) : (
-            <FlatList
-              data={mealStore.mealsForSelectedDate}
-              renderItem={renderMealCard}
-              keyExtractor={(item) => item.id.toString()}
-              scrollEnabled={false}
-            />
+            mealStore.mealsForSelectedDate.map((meal) => {
+              const elements = mealStore.mealElements[meal.id] || [];
+              const totalCalories = elements.reduce((sum, el) => sum + el.calories, 0);
+              const totalProteins = elements.reduce((sum, el) => sum + el.proteins, 0);
+              const totalFats = elements.reduce((sum, el) => sum + el.fats, 0);
+              const totalCarbohydrates = elements.reduce((sum, el) => sum + el.carbohydrates, 0);
+
+              return (
+                <MealCard
+                  key={meal.id}
+                  meal={meal}
+                  onPress={handleMealPress}
+                  userTimezone={userTimezone}
+                  totalCalories={totalCalories}
+                  totalProteins={totalProteins}
+                  totalFats={totalFats}
+                  totalCarbohydrates={totalCarbohydrates}
+                />
+              );
+            })
           )}
         </View>
       </ScrollView>
 
-      {/* Add Buttons */}
-      <View style={styles.addButtonContainer}>
-        <View style={styles.addButtonsRow}>
-          <Button
-            title="+ Добавить"
-            onPress={handleAddMeal}
-            style={[styles.addButton, styles.addButtonHalf]}
-            variant="outline"
-          />
-          <Button
-            title="📌 Из шаблона"
-            onPress={handleAddFromTemplate}
-            style={[styles.addButton, styles.addButtonHalf]}
-          />
-        </View>
-      </View>
+      {/* FAB */}
+      <FAB
+        onAddMeal={handleAddMeal}
+        onAddFromTemplate={handleAddFromTemplate}
+      />
 
       {/* Template Selector Dialog */}
       <MealTemplateSelectorDialog
@@ -332,200 +237,67 @@ const MainScreen: React.FC = observer(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.default,
   },
   content: {
     flex: 1,
   },
-  calendarIcon: {
-    fontSize: 24,
+  scrollContent: {
+    paddingBottom: 120, // Space for FAB
   },
   headerTitle: {
-    ...typography.h5,
-    fontSize: 16,
-  },
-  dateSelector: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    backgroundColor: colors.background.paper,
-    borderBottomWidth: 0,
-  },
-  dateButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-    ...shadows.md,
-  },
-  dateButtonText: {
-    ...typography.h3,
-    color: colors.white,
-    fontWeight: 'bold',
-  },
-  dateInfo: {
-    alignItems: 'center',
-  },
-  dateText: {
-    ...typography.h5,
-    color: colors.text.primary,
-    fontWeight: '600',
-  },
-  dayText: {
-    ...typography.body2,
-    color: colors.text.secondary,
-    textTransform: 'capitalize',
-  },
-  statsContainer: {
-    margin: spacing.md,
-    padding: spacing.md,
-    backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.xl,
-    borderWidth: 0,
-    ...shadows.lg,
-  },
-  statsTitle: {
-    ...typography.h5,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
-    textAlign: 'center',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-    flex: 1,
-  },
-  statValue: {
     ...typography.h4,
-    color: colors.primary,
     fontWeight: 'bold',
   },
-  statLabel: {
-    ...typography.caption,
-    color: colors.text.secondary,
-    marginTop: spacing.xs,
+  calendarButton: {
+    padding: spacing.xs,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
   },
-  progressBar: {
-    width: 60,
-    height: 6,
-    backgroundColor: colors.background.light,
-    borderRadius: borderRadius.sm,
-    marginTop: spacing.sm,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.sm,
+  calendarIcon: {
+    fontSize: 20,
   },
   mealsContainer: {
     paddingHorizontal: spacing.lg,
-    paddingBottom: 100, // Space for add button
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
   mealsTitle: {
     ...typography.h5,
-    color: colors.text.primary,
-    marginBottom: spacing.md,
-  },
-  mealCard: {
-    backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
-    borderWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...shadows.md,
-  },
-  mealIconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.light,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  mealIcon: {
-    fontSize: 24,
-  },
-  mealHeader: {
-    flex: 1,
-  },
-  mealType: {
-    ...typography.h5,
-    color: colors.text.primary,
-    marginBottom: spacing.xs,
-  },
-  mealTime: {
-    ...typography.body2,
-    color: colors.text.secondary,
-  },
-  mealContent: {
-    flex: 1,
-    alignItems: 'flex-end',
-  },
-  mealCalories: {
-    ...typography.h5,
-    color: colors.primary,
     fontWeight: '600',
-    marginBottom: spacing.xs,
   },
-  mealMacros: {
+  mealsCount: {
     ...typography.caption,
-    color: colors.text.secondary,
-  },
-  mealArrow: {
-    ...typography.h3,
-    color: colors.text.secondary,
-    marginLeft: spacing.sm,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+    fontWeight: 'bold',
+    overflow: 'hidden',
   },
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderStyle: 'dashed',
   },
   emptyEmoji: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
+    fontSize: 48,
+    marginBottom: spacing.md,
+    opacity: 0.8,
   },
   emptyTitle: {
-    ...typography.h4,
-    color: colors.text.primary,
-    marginBottom: spacing.sm,
+    ...typography.h5,
+    marginBottom: spacing.xs,
   },
   emptySubtitle: {
-    ...typography.body1,
-    color: colors.text.secondary,
+    ...typography.body2,
     textAlign: 'center',
-    marginBottom: spacing.xl,
-    lineHeight: 24,
-  },
-  addButtonContainer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.lg,
-    backgroundColor: colors.background.paper,
-    borderTopWidth: 0,
-    ...shadows.xl,
-  },
-  addButtonsRow: {
-    flexDirection: 'row',
-    gap: spacing.md,
-  },
-  addButton: {
-    flex: 1,
-  },
-  addButtonHalf: {
-    flex: 1,
+    paddingHorizontal: spacing.xl,
+    lineHeight: 20,
   },
 });
 

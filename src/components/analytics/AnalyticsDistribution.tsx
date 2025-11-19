@@ -1,8 +1,13 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { observer } from 'mobx-react-lite';
 import { PieChart, BarChart } from 'react-native-gifted-charts';
 import type { DistributionData } from '../../types/analytics.types';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 // Helper to format meal type to Russian
 const formatMealTypeLabel = (mealType: string): string => {
@@ -24,9 +29,12 @@ interface AnalyticsDistributionProps {
   data: DistributionData | null;
 }
 
-export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
+export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = observer(({
   data,
 }) => {
+  const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
+  
   const macro = data?.macroShare || { proteinPct: 0, fatPct: 0, carbsPct: 0 };
   const byMeal = data?.byMealType || [];
 
@@ -48,10 +56,10 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
   const hasMealData = mealDataWithValues.length > 0;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Распределение Б/Ж/У</Text>
+    <View style={dynamicStyles.container}>
+      <Text style={dynamicStyles.sectionTitle}>Распределение Б/Ж/У</Text>
       {hasMacroData ? (
-        <View style={styles.pieContainer}>
+        <View style={dynamicStyles.pieContainer}>
           <PieChart
             key={`pie-${pieData.map((p) => `${p.x}-${p.y}`).join('-')}`}
             donut
@@ -77,14 +85,14 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
               </Text>
             )}
           />
-          <View style={styles.legend}>
+          <View style={dynamicStyles.legend}>
             {pieData.map((p, idx) => {
               const pct = Math.round((p.y || 0) * 100);
               return (
-                <View key={idx} style={styles.legendItem}>
+                <View key={idx} style={dynamicStyles.legendItem}>
                   <View
                     style={[
-                      styles.legendColor,
+                      dynamicStyles.legendColor,
                       {
                         backgroundColor:
                           p.x === 'Белки'
@@ -95,7 +103,7 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
                       },
                     ]}
                   />
-                  <Text style={styles.legendText}>
+                  <Text style={dynamicStyles.legendText}>
                     {p.x}: {pct}%
                   </Text>
                 </View>
@@ -104,10 +112,10 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
           </View>
         </View>
       ) : (
-        <Text style={styles.emptyText}>Недостаточно данных</Text>
+        <Text style={dynamicStyles.emptyText}>Недостаточно данных</Text>
       )}
 
-      <Text style={[styles.sectionTitle, { marginTop: spacing.md }]}>
+      <Text style={[dynamicStyles.sectionTitle, { marginTop: spacing.md }]}>
         Вклад категорий приёмов
       </Text>
       {hasMealData ? (
@@ -128,12 +136,12 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = ({
           spacing={mealDataWithValues.length > 3 ? 20 : 40}
         />
       ) : (
-        <Text style={styles.emptyText}>Недостаточно данных</Text>
+        <Text style={dynamicStyles.emptyText}>Недостаточно данных</Text>
       )}
 
     </View>
   );
-};
+});
 
 function metricColor(metric: 'protein' | 'fat' | 'carbs') {
   switch (metric) {
@@ -146,7 +154,7 @@ function metricColor(metric: 'protein' | 'fat' | 'carbs') {
   }
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     padding: spacing.md,
   },

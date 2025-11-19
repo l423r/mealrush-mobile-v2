@@ -45,13 +45,13 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult> => {
   try {
     // Check if device has Google Play Services
     await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-    
+
     // Sign in
     const response = await GoogleSignin.signIn();
-    
+
     // Get tokens - structure changed in v10+
     const tokens = await GoogleSignin.getTokens();
-    
+
     if (!tokens.idToken) {
       throw new Error('No ID token received from Google');
     }
@@ -66,7 +66,7 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult> => {
     };
   } catch (error: any) {
     console.error('Google Sign In error:', error);
-    
+
     // Handle specific error codes
     if (error.code === 'SIGN_IN_CANCELLED') {
       throw new Error('Вход отменен пользователем');
@@ -75,7 +75,7 @@ export const signInWithGoogle = async (): Promise<GoogleAuthResult> => {
     } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
       throw new Error('Google Play Services недоступен');
     }
-    
+
     throw error;
   }
 };
@@ -123,11 +123,11 @@ export const signInWithApple = async (): Promise<AppleAuthResult> => {
     authorizationCode: credential.authorizationCode || '',
     user: credential.email
       ? {
-          email: credential.email,
-          name: credential.fullName
-            ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim()
-            : '',
-        }
+        email: credential.email,
+        name: credential.fullName
+          ? `${credential.fullName.givenName || ''} ${credential.fullName.familyName || ''}`.trim()
+          : '',
+      }
       : undefined,
   };
 };

@@ -1,7 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
 import { formatNumber } from '../../utils/formatting';
+import { useTheme } from '../../hooks/useTheme';
+import { observer } from 'mobx-react-lite';
 
 interface CompactSummaryProps {
   calories: number;
@@ -11,35 +13,36 @@ interface CompactSummaryProps {
   variant?: 'default' | 'large';
 }
 
-const CompactSummary: React.FC<CompactSummaryProps> = ({
+const CompactSummary: React.FC<CompactSummaryProps> = observer(({
   calories,
   proteins,
   fats,
   carbohydrates,
   variant = 'default',
 }) => {
+  const { colors } = useTheme();
   const isLarge = variant === 'large';
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.calories, isLarge && styles.caloriesLarge]}>
+      <Text style={[styles.calories, { color: colors.primary }, isLarge && styles.caloriesLarge]}>
         {formatNumber(calories, 0)} ккал
       </Text>
-      <Text style={styles.separator}>|</Text>
-      <Text style={[styles.macro, isLarge && styles.macroLarge]}>
+      <Text style={[styles.separator, { color: colors.text.disabled }]}>|</Text>
+      <Text style={[styles.macro, { color: colors.text.secondary }, isLarge && styles.macroLarge]}>
         Б: {formatNumber(proteins, 1)}г
       </Text>
-      <Text style={styles.separator}>|</Text>
-      <Text style={[styles.macro, isLarge && styles.macroLarge]}>
+      <Text style={[styles.separator, { color: colors.text.disabled }]}>|</Text>
+      <Text style={[styles.macro, { color: colors.text.secondary }, isLarge && styles.macroLarge]}>
         Ж: {formatNumber(fats, 1)}г
       </Text>
-      <Text style={styles.separator}>|</Text>
-      <Text style={[styles.macro, isLarge && styles.macroLarge]}>
+      <Text style={[styles.separator, { color: colors.text.disabled }]}>|</Text>
+      <Text style={[styles.macro, { color: colors.text.secondary }, isLarge && styles.macroLarge]}>
         У: {formatNumber(carbohydrates, 1)}г
       </Text>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -48,7 +51,6 @@ const styles = StyleSheet.create({
   },
   calories: {
     ...typography.body1,
-    color: colors.primary,
     fontWeight: '600',
     marginRight: spacing.xs,
   },
@@ -57,7 +59,6 @@ const styles = StyleSheet.create({
   },
   macro: {
     ...typography.body2,
-    color: colors.text.secondary,
     marginRight: spacing.xs,
   },
   macroLarge: {
@@ -66,7 +67,6 @@ const styles = StyleSheet.create({
   },
   separator: {
     ...typography.body2,
-    color: colors.text.disabled,
     marginRight: spacing.xs,
   },
 });

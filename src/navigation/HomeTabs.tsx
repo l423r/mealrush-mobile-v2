@@ -1,9 +1,11 @@
 import React from 'react';
 import { Text } from 'react-native';
+import { observer } from 'mobx-react-lite';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { HomeTabParamList } from '../types/navigation.types';
-import { colors, typography } from '../theme';
+import { typography } from '../theme';
+import { useTheme } from '../hooks/useTheme';
 import MainScreen from '../screens/main/MainScreen';
 import ProductsScreen from '../screens/main/ProductsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
@@ -12,8 +14,9 @@ import AnalyticsScreen from '../screens/main/AnalyticsScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
-const HomeTabs: React.FC = () => {
+const HomeTabs: React.FC = observer(() => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
   
   return (
     <Tab.Navigator
@@ -80,6 +83,6 @@ const HomeTabs: React.FC = () => {
       />
     </Tab.Navigator>
   );
-};
+});
 
 export default HomeTabs;

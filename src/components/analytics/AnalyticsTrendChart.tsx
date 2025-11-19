@@ -1,9 +1,14 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { observer } from 'mobx-react-lite';
 import { LineChart } from 'react-native-gifted-charts';
 import { formatDate } from '../../utils/formatting';
 import type { TrendMetric } from '../../types/analytics.types';
-import { colors, spacing, typography } from '../../theme';
+import { spacing, typography } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 export interface TrendSeriesPoint {
   x: string; // date label
@@ -23,11 +28,14 @@ const METRIC_LABEL: Record<TrendMetric, string> = {
   carbs: 'Углеводы',
 };
 
-export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
+export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = observer(({
   metric,
   onMetricChange,
   series,
 }) => {
+  const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
+  
   // Validate and prepare chart data
   const chartData = React.useMemo(() => {
     if (!series || series.length === 0) {
@@ -45,16 +53,16 @@ export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
   const canUseAreaChart = chartData.length > 1;
 
   return (
-    <View style={styles.container}>
-      <View style={styles.chipsRow}>
+    <View style={dynamicStyles.container}>
+      <View style={dynamicStyles.chipsRow}>
         {(Object.keys(METRIC_LABEL) as TrendMetric[]).map((m) => (
           <TouchableOpacity
             key={m}
-            style={[styles.chip, metric === m && styles.chipActive]}
+            style={[dynamicStyles.chip, metric === m && { backgroundColor: colors.primary }]}
             onPress={() => onMetricChange(m)}
           >
             <Text
-              style={[styles.chipText, metric === m && styles.chipTextActive]}
+              style={[dynamicStyles.chipText, metric === m && { color: colors.white }]}
             >
               {METRIC_LABEL[m]}
             </Text>
@@ -85,15 +93,15 @@ export const AnalyticsTrendChart: React.FC<AnalyticsTrendChartProps> = ({
           spacing={chartData.length > 7 ? 40 : 60}
         />
       ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>Недостаточно данных для отображения графика</Text>
+        <View style={dynamicStyles.emptyContainer}>
+          <Text style={dynamicStyles.emptyText}>Недостаточно данных для отображения графика</Text>
         </View>
       )}
     </View>
   );
-};
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     padding: spacing.md,
   },
@@ -108,15 +116,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     borderRadius: 16,
   },
-  chipActive: {
-    backgroundColor: colors.primary,
-  },
   chipText: {
     ...typography.body2,
     color: colors.text.secondary,
-  },
-  chipTextActive: {
-    color: colors.white,
   },
   emptyContainer: {
     height: 220,

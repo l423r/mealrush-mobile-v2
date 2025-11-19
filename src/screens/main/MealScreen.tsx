@@ -4,7 +4,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
@@ -14,19 +13,16 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
 import type { Meal } from '../../types/api.types';
 import { useStores } from '../../stores';
-import { colors, typography, spacing, borderRadius } from '../../theme';
+import { typography, spacing, borderRadius, shadows } from '../../theme';
 import {
   formatTimeInTimezone,
   formatMealType,
-  formatCalories,
-  formatWeight,
   formatDate,
 } from '../../utils/formatting';
 import Header from '../../components/common/Header';
-import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
-import NutrientRow from '../../components/common/NutrientRow';
 import CompactSummary from '../../components/common/CompactSummary';
+import MealElementItem from '../../components/main/MealElementItem';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 import MealSelectorDialog from '../../components/common/MealSelectorDialog';
 import MealActionsMenu from '../../components/common/MealActionsMenu';
@@ -34,8 +30,10 @@ import TemplateNameDialog from '../../components/common/TemplateNameDialog';
 import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { haptics } from '../../utils/haptics';
+import { useTheme } from '../../hooks/useTheme';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type MealScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -43,71 +41,12 @@ type MealScreenNavigationProp = NativeStackNavigationProp<
 >;
 type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
 
-const MealElementItem = React.memo(
-  ({
-    element,
-    onPress,
-    onDelete,
-  }: {
-    element: any;
-    onPress: (element: any) => void;
-    onDelete: (id: number) => void;
-  }) => {
-    return (
-      <TouchableOpacity
-        style={styles.elementCard}
-        onPress={() => onPress(element)}
-      >
-        {element.imageUrl ? (
-          <Image
-            source={{ uri: element.imageUrl }}
-            style={styles.elementImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.elementImagePlaceholder}>
-            <Text style={styles.elementImagePlaceholderIcon}>🍽️</Text>
-          </View>
-        )}
-
-        <View style={styles.elementInfo}>
-          <Text style={styles.elementName} numberOfLines={1}>
-            {element.name}
-          </Text>
-          <NutrientRow
-            proteins={element.proteins}
-            fats={element.fats}
-            carbohydrates={element.carbohydrates}
-            calories={element.calories}
-            showCaloriesFirst={false}
-            compact
-          />
-          <View style={styles.quantityCaloriesRow}>
-            <Text style={styles.quantityText}>
-              {formatWeight(parseFloat(element.quantity))}
-            </Text>
-            <Text style={styles.caloriesText}>
-              {formatCalories(element.calories)}
-            </Text>
-          </View>
-        </View>
-
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => onDelete(element.id)}
-        >
-          <Text style={styles.deleteButtonText}>🗑️</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
-    );
-  }
-);
-
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
   const { mealStore, uiStore, profileStore, mealTemplateStore } = useStores();
   const { alertState, showConfirm, hideAlert } = useAlert();
+  const { colors, isDark } = useTheme();
 
   const meal = route.params.meal;
   const elements = mealStore.mealElements[meal.id] || [];
@@ -121,13 +60,11 @@ const MealScreen: React.FC = observer(() => {
   const [showTemplateNameDialog, setShowTemplateNameDialog] = useState(false);
 
   useEffect(() => {
-    // Load meal elements if not already loaded
     if (!elements.length) {
       mealStore.loadMealElements(meal.id);
     }
   }, [elements.length, mealStore, meal.id]);
 
-  // Load meals for selected date when copy dialog opens
   useEffect(() => {
     if (showCopyDialog) {
       loadMealsForSelectedDate();
@@ -138,7 +75,6 @@ const MealScreen: React.FC = observer(() => {
     try {
       const originalDate = mealStore.selectedDate;
       await mealStore.loadMealsForDate(originalDate);
-      // Get meals for selected date
       const mealsList = mealStore.mealsForSelectedDate;
       setTodayMeals(mealsList);
     } catch (error) {
@@ -228,11 +164,9 @@ const MealScreen: React.FC = observer(() => {
 
   const handleTemplateNameConfirm = async (templateName: string) => {
     try {
-      // Создаем шаблон из приема пищи
       const template = await mealTemplateStore.createTemplate({
         mealId: meal.id,
       });
-      // Обновляем шаблон с именем
       await mealTemplateStore.updateTemplate(template.id, {
         name: templateName,
       });
@@ -282,7 +216,6 @@ const MealScreen: React.FC = observer(() => {
           imageUrl: element.imageUrl || undefined,
         });
       }
-      // Reload meal elements for target meal
       await mealStore.loadMealElements(targetMealId);
       if (showSuccessMessage) {
         haptics.success();
@@ -309,7 +242,6 @@ const MealScreen: React.FC = observer(() => {
 
   const handleCreateNewMeal = () => {
     haptics.light();
-    // Close meal selector dialog and show date/time picker
     setShowCopyDialog(false);
     setShowCopyDateTimeDialog(true);
   };
@@ -319,7 +251,6 @@ const MealScreen: React.FC = observer(() => {
     setShowCopyDateTimeDialog(false);
 
     try {
-      // Create new meal with same type and time, but for selected date/time
       const mealDateTime = new Date(meal.dateTime);
       dateTime.setHours(
         mealDateTime.getHours(),
@@ -334,16 +265,13 @@ const MealScreen: React.FC = observer(() => {
         name: meal.name,
       });
 
-      // Copy elements to new meal (don't show success message here, we'll show it after)
       await copyMealElements(newMeal.id, false);
 
-      // Reload meals for the date where meal was created
       const mealDate = new Date(dateTime);
       mealDate.setHours(0, 0, 0, 0);
       const originalDate = mealStore.selectedDate;
       await mealStore.loadMealsForDate(mealDate);
 
-      // Restore original selected date if different
       if (mealDate.getTime() !== originalDate.getTime()) {
         mealStore.setSelectedDate(originalDate);
         await mealStore.loadMealsForDate(originalDate);
@@ -351,8 +279,6 @@ const MealScreen: React.FC = observer(() => {
 
       haptics.success();
       uiStore.showSnackbar('Прием пищи создан и скопирован', 'success');
-
-      // Navigate to the created meal
       navigation.navigate('Meal', { meal: newMeal });
     } catch (error) {
       haptics.error();
@@ -369,9 +295,8 @@ const MealScreen: React.FC = observer(() => {
     const hasTypeChanged = newType !== meal.mealType;
 
     if (!newDateTime) {
-      // This shouldn't happen for meals, but handle it gracefully
       if (!hasTypeChanged) {
-        return; // No change
+        return;
       }
 
       try {
@@ -395,7 +320,7 @@ const MealScreen: React.FC = observer(() => {
       newDateTime.getMinutes() !== mealDate.getMinutes();
 
     if (!hasTypeChanged && !hasTimeChanged) {
-      return; // No change
+      return;
     }
 
     try {
@@ -416,7 +341,6 @@ const MealScreen: React.FC = observer(() => {
 
       haptics.success();
       uiStore.showSnackbar(message, 'success');
-      // Reload meal data
       await mealStore.loadMealsForDate(mealStore.selectedDate);
     } catch (error) {
       haptics.error();
@@ -440,17 +364,13 @@ const MealScreen: React.FC = observer(() => {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Text style={styles.emptyEmoji}>🍽️</Text>
-      <Text style={styles.emptyTitle}>Нет блюд</Text>
-      <Text style={styles.emptySubtitle}>Добавьте блюда в этот прием пищи</Text>
-      <Button
-        title="Добавить блюдо"
-        onPress={handleAddElement}
-        style={styles.emptyButton}
-      />
+      <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Нет блюд</Text>
+      <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
+        Добавьте блюда в этот прием пищи
+      </Text>
     </View>
   );
 
-  // Calculate totals
   const totalCalories = elements.reduce(
     (sum, element) => sum + element.calories,
     0
@@ -474,11 +394,11 @@ const MealScreen: React.FC = observer(() => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background.default }]}>
       <Header
         title={formatMealType(meal.mealType)}
         subtitle={
-          <Text style={styles.headerSubtitle}>
+          <Text style={[styles.headerSubtitle, { color: colors.text.secondary }]}>
             {formatTimeInTimezone(meal.dateTime, userTimezone)}
           </Text>
         }
@@ -514,8 +434,10 @@ const MealScreen: React.FC = observer(() => {
           keyExtractor={(item) => item.id.toString()}
           ListHeaderComponent={
             <>
-              {/* Summary */}
-              <View style={styles.summary}>
+              <View style={[styles.summary, {
+                backgroundColor: colors.background.paper,
+                borderColor: colors.border.light
+              }]}>
                 <CompactSummary
                   calories={totalCalories}
                   proteins={totalProteins}
@@ -525,9 +447,8 @@ const MealScreen: React.FC = observer(() => {
                 />
               </View>
 
-              {/* Elements Title */}
               <View style={styles.elementsTitleContainer}>
-                <Text style={styles.elementsTitle}>Блюда</Text>
+                <Text style={[styles.elementsTitle, { color: colors.text.primary }]}>Блюда</Text>
               </View>
             </>
           }
@@ -538,16 +459,24 @@ const MealScreen: React.FC = observer(() => {
         />
       </View>
 
-      {/* Add Button */}
-      <View style={styles.addButtonContainer}>
-        <Button
-          title="+ Добавить блюдо"
+      {/* Floating Action Button */}
+      <View style={styles.fabContainer}>
+        <TouchableOpacity
+          style={[styles.fab, shadows.lg]}
           onPress={handleAddElement}
-          style={styles.addButton}
-        />
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={isDark ? [colors.primary, colors.primaryDark] : [colors.primary, colors.primaryDark]}
+            style={styles.fabGradient}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Ionicons name="add" size={32} color={isDark ? colors.black : colors.white} />
+          </LinearGradient>
+        </TouchableOpacity>
       </View>
 
-      {/* Meal Type Edit Dialog */}
       <MealTypeEditDialog
         visible={showEditDialog}
         currentType={meal.mealType}
@@ -556,7 +485,6 @@ const MealScreen: React.FC = observer(() => {
         onCancel={() => setShowEditDialog(false)}
       />
 
-      {/* Copy Meal Dialog */}
       <MealSelectorDialog
         visible={showCopyDialog}
         meals={todayMeals}
@@ -568,14 +496,11 @@ const MealScreen: React.FC = observer(() => {
         onCreateNew={handleCreateNewMeal}
       />
 
-      {/* Copy DateTime Picker Dialog */}
       <DateTimePickerDialog
         visible={showCopyDateTimeDialog}
         defaultDate={(() => {
-          // Use selected date from mealStore, not current date
           const selectedDate = new Date(mealStore.selectedDate);
           const mealDateTime = new Date(meal.dateTime);
-          // Set time to original meal time, but keep the selected date
           selectedDate.setHours(
             mealDateTime.getHours(),
             mealDateTime.getMinutes(),
@@ -585,7 +510,6 @@ const MealScreen: React.FC = observer(() => {
           return selectedDate;
         })()}
         defaultTime={(() => {
-          // Use original meal time
           const mealDateTime = new Date(meal.dateTime);
           return mealDateTime;
         })()}
@@ -593,7 +517,6 @@ const MealScreen: React.FC = observer(() => {
         onCancel={() => setShowCopyDateTimeDialog(false)}
       />
 
-      {/* Actions Menu */}
       <MealActionsMenu
         visible={showActionsMenu}
         onClose={() => setShowActionsMenu(false)}
@@ -602,7 +525,6 @@ const MealScreen: React.FC = observer(() => {
         onDelete={handleDeleteMeal}
       />
 
-      {/* Template Name Dialog */}
       <TemplateNameDialog
         visible={showTemplateNameDialog}
         defaultName={getDefaultTemplateName()}
@@ -610,7 +532,6 @@ const MealScreen: React.FC = observer(() => {
         onCancel={() => setShowTemplateNameDialog(false)}
       />
 
-      {/* Alert Dialog */}
       <AlertDialog
         visible={alertState.visible}
         title={alertState.title}
@@ -630,13 +551,12 @@ const MealScreen: React.FC = observer(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.background.default,
   },
   content: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 100, // Space for add button
+    paddingBottom: 100,
   },
   headerActions: {
     flexDirection: 'row',
@@ -645,7 +565,6 @@ const styles = StyleSheet.create({
   },
   headerSubtitle: {
     ...typography.body2,
-    color: colors.text.secondary,
     fontSize: 12,
   },
   editButton: {
@@ -660,10 +579,8 @@ const styles = StyleSheet.create({
   summary: {
     margin: spacing.md,
     padding: spacing.md,
-    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
-    borderColor: colors.border.light,
   },
   elementsTitleContainer: {
     paddingHorizontal: spacing.lg,
@@ -671,70 +588,10 @@ const styles = StyleSheet.create({
   },
   elementsTitle: {
     ...typography.h5,
-    color: colors.text.primary,
     marginBottom: spacing.md,
   },
   footerSpacing: {
     height: spacing.md,
-  },
-  elementCard: {
-    backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    padding: spacing.sm,
-    marginHorizontal: spacing.lg,
-    marginBottom: spacing.sm,
-    borderWidth: 1,
-    borderColor: colors.border.light,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  elementImage: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    marginRight: spacing.sm,
-  },
-  elementImagePlaceholder: {
-    width: 40,
-    height: 40,
-    borderRadius: borderRadius.md,
-    backgroundColor: colors.background.default,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  elementImagePlaceholderIcon: {
-    fontSize: 20,
-  },
-  elementInfo: {
-    flex: 1,
-  },
-  elementName: {
-    ...typography.body1,
-    color: colors.text.primary,
-    fontWeight: '600',
-    marginBottom: spacing.xs / 2,
-  },
-  quantityCaloriesRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  quantityText: {
-    ...typography.body2,
-    color: colors.text.secondary,
-  },
-  caloriesText: {
-    ...typography.body1,
-    color: colors.primary,
-    fontWeight: '600',
-  },
-  deleteButton: {
-    padding: spacing.xs,
-  },
-  deleteButtonText: {
-    fontSize: 18,
   },
   emptyState: {
     alignItems: 'center',
@@ -746,31 +603,30 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     ...typography.h4,
-    color: colors.text.primary,
     marginBottom: spacing.sm,
   },
   emptySubtitle: {
     ...typography.body1,
-    color: colors.text.secondary,
     textAlign: 'center',
     marginBottom: spacing.xl,
     lineHeight: 24,
   },
-  emptyButton: {
-    minWidth: 200,
-  },
-  addButtonContainer: {
+  fabContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.lg,
-    backgroundColor: colors.background.paper,
-    borderTopWidth: 1,
-    borderTopColor: colors.border.light,
+    bottom: spacing.xl,
+    right: spacing.xl,
   },
-  addButton: {
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    overflow: 'hidden',
+  },
+  fabGradient: {
     width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
 

@@ -1,9 +1,14 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { observer } from 'mobx-react-lite';
 import type { AnalyticsPeriod, SummaryKpi } from '../../types/analytics.types';
-import { colors, spacing, typography, componentSpacing } from '../../theme';
+import { spacing, typography, componentSpacing } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 import { ru } from 'date-fns/locale';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 interface AnalyticsHeaderProps {
   period: AnalyticsPeriod;
@@ -30,16 +35,19 @@ function formatRangeLabel(key: AnalyticsPeriod): string {
   return `${key.from} — ${key.to}`;
 }
 
-export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
+export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
   period,
   onChangePeriod,
   kpi,
   targetCalories,
   collapsed = false,
 }) => {
+  const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
+  
   const containerStyle = useMemo(
-    () => [styles.container, collapsed && styles.containerCollapsed],
-    [collapsed]
+    () => [dynamicStyles.container, collapsed && dynamicStyles.containerCollapsed],
+    [collapsed, dynamicStyles]
   );
 
   // Calculate macro percentages
@@ -71,20 +79,20 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
 
   return (
     <View style={containerStyle}>
-      <View style={styles.segment}>
+      <View style={dynamicStyles.segment}>
         {(['day', 'week', 'month'] as AnalyticsPeriod[]).map((p) => (
           <TouchableOpacity
             key={typeof p === 'string' ? p : `${(p as any).from}-${(p as any).to}`}
             style={[
-              styles.segmentItem,
-              isActive(period, p) && styles.segmentItemActive,
+              dynamicStyles.segmentItem,
+              isActive(period, p) && { backgroundColor: colors.primary, borderWidth: 0 },
             ]}
             onPress={() => onChangePeriod(p)}
           >
             <Text
               style={[
-                styles.segmentText,
-                isActive(period, p) && styles.segmentTextActive,
+                dynamicStyles.segmentText,
+                isActive(period, p) && { color: colors.white },
               ]}
             >
               {p === 'day' ? 'День' : p === 'week' ? 'Неделя' : 'Месяц'}
@@ -93,27 +101,27 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
         ))}
       </View>
 
-      <Text style={styles.rangeCaption}>{formatRangeLabel(period)}</Text>
+      <Text style={dynamicStyles.rangeCaption}>{formatRangeLabel(period)}</Text>
 
       {/* Progress to Goal Section */}
       {targetCalories && progressPercentage !== null && (
-        <View style={styles.progressSection}>
-          <Text style={styles.progressTitle}>Прогресс к цели</Text>
-          <View style={styles.progressInfo}>
-            <Text style={styles.progressText}>
+        <View style={dynamicStyles.progressSection}>
+          <Text style={dynamicStyles.progressTitle}>Прогресс к цели</Text>
+          <View style={dynamicStyles.progressInfo}>
+            <Text style={dynamicStyles.progressText}>
               {formatNumber(kpi?.averageDailyCalories)} / {formatNumber(targetCalories)} ккал
             </Text>
-            <Text style={styles.progressPercentage}>{progressPercentage}%</Text>
+            <Text style={dynamicStyles.progressPercentage}>{progressPercentage}%</Text>
           </View>
-          <View style={styles.progressBarBg}>
+          <View style={dynamicStyles.progressBarBg}>
             <View
               style={[
-                styles.progressBarFg,
+                dynamicStyles.progressBarFg,
                 { width: `${Math.min(progressPercentage, 100)}%` },
               ]}
             />
           </View>
-          <Text style={styles.progressStatus}>
+          <Text style={dynamicStyles.progressStatus}>
             {progressPercentage < 90
               ? 'Ниже цели'
               : progressPercentage <= 110
@@ -124,15 +132,17 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       )}
 
       {/* Macro Nutrients Section */}
-      <View style={styles.macroSection}>
-        <Text style={styles.sectionTitle}>Макронутриенты (среднесуточные)</Text>
-        <View style={styles.macroGrid}>
+      <View style={dynamicStyles.macroSection}>
+        <Text style={dynamicStyles.sectionTitle}>Макронутриенты (среднесуточные)</Text>
+        <View style={dynamicStyles.macroGrid}>
           <MacroCard
             label="Белки"
             value={kpi?.protein}
             unit="г"
             calories={macroPercentages.proteinKcal}
             percentage={macroPercentages.protein}
+            colors={colors}
+            styles={dynamicStyles}
           />
           <MacroCard
             label="Жиры"
@@ -140,6 +150,8 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             unit="г"
             calories={macroPercentages.fatKcal}
             percentage={macroPercentages.fat}
+            colors={colors}
+            styles={dynamicStyles}
           />
           <MacroCard
             label="Углеводы"
@@ -147,25 +159,27 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
             unit="г"
             calories={macroPercentages.carbsKcal}
             percentage={macroPercentages.carbs}
+            colors={colors}
+            styles={dynamicStyles}
           />
         </View>
       </View>
 
       {/* Activity Section */}
       {(kpi?.mealsCount !== undefined || kpi?.daysCount !== undefined) && (
-        <View style={styles.activitySection}>
-          <Text style={styles.sectionTitle}>Активность за период</Text>
-          <View style={styles.activityRow}>
+        <View style={dynamicStyles.activitySection}>
+          <Text style={dynamicStyles.sectionTitle}>Активность за период</Text>
+          <View style={dynamicStyles.activityRow}>
             {kpi?.mealsCount !== undefined && (
-              <View style={styles.activityItem}>
-                <Text style={styles.activityValue}>{formatNumber(kpi.mealsCount)}</Text>
-                <Text style={styles.activityLabel}>Приёмов пищи</Text>
+              <View style={dynamicStyles.activityItem}>
+                <Text style={dynamicStyles.activityValue}>{formatNumber(kpi.mealsCount)}</Text>
+                <Text style={dynamicStyles.activityLabel}>Приёмов пищи</Text>
               </View>
             )}
             {kpi?.daysCount !== undefined && (
-              <View style={styles.activityItem}>
-                <Text style={styles.activityValue}>{formatNumber(kpi.daysCount)}</Text>
-                <Text style={styles.activityLabel}>Дней отслеживания</Text>
+              <View style={dynamicStyles.activityItem}>
+                <Text style={dynamicStyles.activityValue}>{formatNumber(kpi.daysCount)}</Text>
+                <Text style={dynamicStyles.activityLabel}>Дней отслеживания</Text>
               </View>
             )}
           </View>
@@ -173,7 +187,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = ({
       )}
     </View>
   );
-};
+});
 
 function isActive(current: AnalyticsPeriod, key: AnalyticsPeriod) {
   if (typeof current === 'string' && typeof key === 'string')
@@ -189,7 +203,9 @@ const MacroCard: React.FC<{
   unit: string;
   calories: number;
   percentage: number;
-}> = ({ label, value, unit, calories, percentage }) => (
+  colors: ColorsType;
+  styles: ReturnType<typeof createStyles>;
+}> = ({ label, value, unit, calories, percentage, colors, styles }) => (
   <View style={styles.macroCard}>
     <Text style={styles.macroLabel}>{label}</Text>
     <Text style={styles.macroValue}>
@@ -207,7 +223,7 @@ function formatNumber(n?: number): string {
   return new Intl.NumberFormat('ru-RU').format(Math.round(n));
 }
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     paddingHorizontal: componentSpacing.screenHorizontal,
     paddingTop: componentSpacing.sectionSpacing,
@@ -233,16 +249,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border.light,
   },
-  segmentItemActive: {
-    backgroundColor: colors.primary,
-    borderWidth: 0,
-  },
   segmentText: {
     ...typography.button,
     color: colors.text.secondary,
-  },
-  segmentTextActive: {
-    color: colors.white,
   },
   rangeCaption: {
     ...typography.caption,

@@ -1,7 +1,12 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
+import { observer } from 'mobx-react-lite';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '../../theme';
+import { typography, spacing } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 interface QuickActionCardProps {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -10,30 +15,33 @@ interface QuickActionCardProps {
   testID?: string;
 }
 
-const QuickActionCard: React.FC<QuickActionCardProps> = ({
+const QuickActionCard: React.FC<QuickActionCardProps> = observer(({
   icon,
   label,
   onPress,
   testID,
 }) => {
+  const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
+  
   return (
     <TouchableOpacity
-      style={styles.container}
+      style={dynamicStyles.container}
       onPress={onPress}
       activeOpacity={0.7}
       testID={testID}
       accessibilityLabel={testID}
       accessible={!!testID}
     >
-      <View style={styles.iconCircle}>
+      <View style={dynamicStyles.iconCircle}>
         <MaterialIcons name={icon} size={24} color={colors.primary} />
       </View>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={dynamicStyles.label}>{label}</Text>
     </TouchableOpacity>
   );
-};
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     alignItems: 'center',
     width: 70,

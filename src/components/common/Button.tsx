@@ -1,18 +1,21 @@
-import React from 'react';
-import type { ViewStyle, TextStyle } from 'react-native';
+import type { ViewStyle, TextStyle, StyleProp } from 'react-native';
 import {
   TouchableOpacity,
   Text,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { observer } from 'mobx-react-lite';
 import {
-  colors,
   typography,
   spacing,
   borderRadius,
   shadows,
 } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 interface ButtonProps {
   title: string;
@@ -21,12 +24,12 @@ interface ButtonProps {
   size?: 'small' | 'medium' | 'large';
   disabled?: boolean;
   loading?: boolean;
-  style?: ViewStyle;
-  textStyle?: TextStyle;
+  style?: StyleProp<ViewStyle>;
+  textStyle?: StyleProp<TextStyle>;
   testID?: string;
 }
 
-const Button: React.FC<ButtonProps> = ({
+const Button: React.FC<ButtonProps> = observer(({
   title,
   onPress,
   variant = 'primary',
@@ -37,19 +40,22 @@ const Button: React.FC<ButtonProps> = ({
   textStyle,
   testID,
 }) => {
+  const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
+  
   const buttonStyle = [
-    styles.button,
-    styles[`${variant}Button`],
-    styles[`${size}Button`],
-    disabled && styles.disabledButton,
+    dynamicStyles.button,
+    dynamicStyles[`${variant}Button`],
+    dynamicStyles[`${size}Button`],
+    disabled && dynamicStyles.disabledButton,
     style,
   ];
 
   const textStyleCombined = [
-    styles.text,
-    styles[`${variant}Text`],
-    styles[`${size}Text`],
-    disabled && styles.disabledText,
+    dynamicStyles.text,
+    dynamicStyles[`${variant}Text`],
+    dynamicStyles[`${size}Text`],
+    disabled && dynamicStyles.disabledText,
     textStyle,
   ];
 
@@ -75,9 +81,9 @@ const Button: React.FC<ButtonProps> = ({
       )}
     </TouchableOpacity>
   );
-};
+});
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   button: {
     borderRadius: borderRadius.lg,
     alignItems: 'center',

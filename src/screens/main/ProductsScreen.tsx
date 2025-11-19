@@ -17,13 +17,16 @@ import type { MainStackParamList } from '../../types/navigation.types';
 import type { ProductResponse } from '../../types/api.types';
 import { useStores } from '../../stores';
 import {
-  colors,
   typography,
   spacing,
   borderRadius,
   shadows,
 } from '../../theme';
+import { useTheme } from '../../hooks/useTheme';
+import type { lightColors, darkColors } from '../../theme/colors';
 import { formatCalories, formatWeight } from '../../utils/formatting';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
@@ -41,6 +44,8 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const { productStore, recommendationsStore, mealStore, uiStore } = useStores();
+  const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
 
   const [activeTab, setActiveTab] = useState<
     'my' | 'favorites' | 'search' | 'reco'
@@ -213,49 +218,49 @@ const ProductsScreen: React.FC = observer(() => {
     
     return (
       <TouchableOpacity
-        style={styles.productCard}
+        style={dynamicStyles.productCard}
         onPress={() => handleProductPress(product)}
         activeOpacity={0.7}
       >
         {product.imageUrl ? (
           <Image
             source={{ uri: product.imageUrl }}
-            style={styles.productImage}
+            style={dynamicStyles.productImage}
             resizeMode="cover"
           />
         ) : (
-          <View style={styles.productImagePlaceholder}>
-            <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+          <View style={dynamicStyles.productImagePlaceholder}>
+            <Text style={dynamicStyles.productImagePlaceholderIcon}>🍽️</Text>
           </View>
         )}
 
-        <View style={styles.productInfo}>
-          <Text style={styles.productName} numberOfLines={2}>
+        <View style={dynamicStyles.productInfo}>
+          <Text style={dynamicStyles.productName} numberOfLines={2}>
             {product.name}
           </Text>
-          <Text style={styles.productMacros}>
+          <Text style={dynamicStyles.productMacros}>
             Б: {product.proteins}г • Ж: {product.fats}г • У:{' '}
             {product.carbohydrates}г
           </Text>
-          <Text style={styles.productCalories}>
+          <Text style={dynamicStyles.productCalories}>
             {formatCalories(product.calories)} на{' '}
             {formatWeight(Number.parseFloat(product.quantity))}
           </Text>
           {product.source && (
-            <Text style={styles.productSource}>Источник: {product.source}</Text>
+            <Text style={dynamicStyles.productSource}>Источник: {product.source}</Text>
           )}
         </View>
 
-        <View style={styles.productActions}>
+        <View style={dynamicStyles.productActions}>
           <TouchableOpacity
-            style={styles.favoriteButton}
+            style={dynamicStyles.favoriteButton}
             onPress={(e) => {
               e.stopPropagation();
               handleFavoriteToggle(product);
             }}
           >
             <Text
-              style={[styles.favoriteIcon, isFavorite && styles.favoriteActive]}
+              style={[dynamicStyles.favoriteIcon, isFavorite && { color: colors.warning }]}
             >
               {isFavorite ? '⭐' : '☆'}
             </Text>
@@ -263,16 +268,16 @@ const ProductsScreen: React.FC = observer(() => {
 
           {showAddButton ? (
             <TouchableOpacity
-              style={styles.addButtonSmall}
+              style={[dynamicStyles.addButtonSmall, { backgroundColor: colors.primary }]}
               onPress={(e) => {
                 e.stopPropagation();
                 handleAddProductToMeal(product);
               }}
             >
-              <Text style={styles.addButtonSmallIcon}>+</Text>
+              <Text style={[dynamicStyles.addButtonSmallIcon, { color: colors.background.paper }]}>+</Text>
             </TouchableOpacity>
           ) : (
-            <Text style={styles.productArrow}>›</Text>
+            <Text style={dynamicStyles.productArrow}>›</Text>
           )}
         </View>
       </TouchableOpacity>
@@ -282,10 +287,10 @@ const ProductsScreen: React.FC = observer(() => {
   const renderEmptyState = () => {
     if (activeTab === 'favorites') {
       return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>⭐</Text>
-          <Text style={styles.emptyTitle}>Нет избранных продуктов</Text>
-          <Text style={styles.emptySubtitle}>
+        <View style={dynamicStyles.emptyState}>
+          <Text style={dynamicStyles.emptyEmoji}>⭐</Text>
+          <Text style={dynamicStyles.emptyTitle}>Нет избранных продуктов</Text>
+          <Text style={dynamicStyles.emptySubtitle}>
             Добавьте продукты в избранное для быстрого доступа
           </Text>
         </View>
@@ -294,10 +299,10 @@ const ProductsScreen: React.FC = observer(() => {
 
     if (activeTab === 'search') {
       return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🔍</Text>
-          <Text style={styles.emptyTitle}>Поиск продуктов</Text>
-          <Text style={styles.emptySubtitle}>
+        <View style={dynamicStyles.emptyState}>
+          <Text style={dynamicStyles.emptyEmoji}>🔍</Text>
+          <Text style={dynamicStyles.emptyTitle}>Поиск продуктов</Text>
+          <Text style={dynamicStyles.emptySubtitle}>
             Введите название продукта для поиска
           </Text>
         </View>
@@ -305,10 +310,10 @@ const ProductsScreen: React.FC = observer(() => {
     }
 
     return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyEmoji}>🥗</Text>
-        <Text style={styles.emptyTitle}>Нет продуктов</Text>
-        <Text style={styles.emptySubtitle}>Создайте свой первый продукт</Text>
+      <View style={dynamicStyles.emptyState}>
+        <Text style={dynamicStyles.emptyEmoji}>🥗</Text>
+        <Text style={dynamicStyles.emptyTitle}>Нет продуктов</Text>
+        <Text style={dynamicStyles.emptySubtitle}>Создайте свой первый продукт</Text>
       </View>
     );
   };
@@ -333,7 +338,7 @@ const ProductsScreen: React.FC = observer(() => {
       my: '📝',
       reco: '✨',
     };
-    return <Text style={styles.tabIcon}>{icons[tab]}</Text>;
+    return <Text style={dynamicStyles.tabIcon}>{icons[tab]}</Text>;
   };
 
   if (productStore.loading && !refreshing) {
@@ -341,63 +346,63 @@ const ProductsScreen: React.FC = observer(() => {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={dynamicStyles.container}>
       <Header title="База продуктов" />
 
-      <View style={styles.content}>
+      <View style={dynamicStyles.content}>
         {/* Tabs */}
-        <View style={styles.tabs}>
+        <View style={dynamicStyles.tabs}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'search' && styles.activeTab]}
+            style={[dynamicStyles.tab, activeTab === 'search' && { borderBottomColor: colors.primary }]}
             onPress={() => handleTabChange('search')}
           >
             {renderTabIcon('search')}
             <Text
               style={[
-                styles.tabText,
-                activeTab === 'search' && styles.activeTabText,
+                dynamicStyles.tabText,
+                activeTab === 'search' && { color: colors.primary, fontWeight: '700' },
               ]}
             >
               Поиск
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'favorites' && styles.activeTab]}
+            style={[dynamicStyles.tab, activeTab === 'favorites' && { borderBottomColor: colors.primary }]}
             onPress={() => handleTabChange('favorites')}
           >
             {renderTabIcon('favorites')}
             <Text
               style={[
-                styles.tabText,
-                activeTab === 'favorites' && styles.activeTabText,
+                dynamicStyles.tabText,
+                activeTab === 'favorites' && { color: colors.primary, fontWeight: '700' },
               ]}
             >
               Избранное
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'my' && styles.activeTab]}
+            style={[dynamicStyles.tab, activeTab === 'my' && { borderBottomColor: colors.primary }]}
             onPress={() => handleTabChange('my')}
           >
             {renderTabIcon('my')}
             <Text
               style={[
-                styles.tabText,
-                activeTab === 'my' && styles.activeTabText,
+                dynamicStyles.tabText,
+                activeTab === 'my' && { color: colors.primary, fontWeight: '700' },
               ]}
             >
               Мои
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'reco' && styles.activeTab]}
+            style={[dynamicStyles.tab, activeTab === 'reco' && { borderBottomColor: colors.primary }]}
             onPress={() => handleTabChange('reco')}
           >
             {renderTabIcon('reco')}
             <Text
               style={[
-                styles.tabText,
-                activeTab === 'reco' && styles.activeTabText,
+                dynamicStyles.tabText,
+                activeTab === 'reco' && { color: colors.primary, fontWeight: '700' },
               ]}
             >
               Советы
@@ -407,10 +412,11 @@ const ProductsScreen: React.FC = observer(() => {
 
         {/* Search Input (only for search tab) */}
         {activeTab === 'search' && (
-          <View style={styles.searchContainer}>
+          <View style={dynamicStyles.searchContainer}>
             <TextInput
-              style={styles.searchInput}
+              style={[dynamicStyles.searchInput, { color: colors.text.primary }]}
               placeholder="Поиск продуктов..."
+              placeholderTextColor={colors.text.secondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
@@ -425,7 +431,7 @@ const ProductsScreen: React.FC = observer(() => {
             renderItem={renderProductItem}
             keyExtractor={(item) => item.id.toString()}
             ListEmptyComponent={renderEmptyState}
-            contentContainerStyle={styles.listContainer}
+            contentContainerStyle={dynamicStyles.listContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -438,8 +444,8 @@ const ProductsScreen: React.FC = observer(() => {
           />
         ) : (
           <ScrollView
-            style={styles.recoScrollView}
-            contentContainerStyle={styles.recoContainer}
+            style={dynamicStyles.recoScrollView}
+            contentContainerStyle={dynamicStyles.recoContainer}
             showsVerticalScrollIndicator={false}
             refreshControl={
               <RefreshControl
@@ -481,8 +487,8 @@ const ProductsScreen: React.FC = observer(() => {
             {recommendationsStore.loading.mealPicks ? (
               <Loading message="Загрузка подборок..." />
             ) : recommendationsStore.mealPicks.length === 0 ? (
-              <View style={styles.emptySection}>
-                <Text style={styles.emptySectionText}>Нет подборок</Text>
+              <View style={dynamicStyles.emptySection}>
+                <Text style={dynamicStyles.emptySectionText}>Нет подборок</Text>
               </View>
             ) : (
               recommendationsStore.mealPicks.map((product) => (
@@ -506,8 +512,8 @@ const ProductsScreen: React.FC = observer(() => {
             {recommendationsStore.loading.products ? (
               <Loading message="Загрузка рекомендаций..." />
             ) : recommendationsStore.allProducts.length === 0 ? (
-              <View style={styles.emptySection}>
-                <Text style={styles.emptySectionText}>
+              <View style={dynamicStyles.emptySection}>
+                <Text style={dynamicStyles.emptySectionText}>
                   Нет рекомендаций. Добавьте больше приемов пищи для
                   персонализации.
                 </Text>
@@ -549,18 +555,18 @@ const ProductsScreen: React.FC = observer(() => {
               </>
             )}
 
-            <View style={styles.bottomSpacer} />
+            <View style={dynamicStyles.bottomSpacer} />
           </ScrollView>
         )}
       </View>
 
       {/* Add Button - показываем только на вкладке "Мои продукты" */}
       {activeTab === 'my' && (
-        <View style={styles.addButtonContainer}>
+        <View style={dynamicStyles.addButtonContainer}>
           <Button
             title="+ Создать продукт"
             onPress={handleAddProduct}
-            style={styles.addButton}
+            style={dynamicStyles.addButton}
           />
         </View>
       )}
@@ -589,7 +595,7 @@ const ProductsScreen: React.FC = observer(() => {
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.default,
@@ -624,9 +630,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 3,
     borderBottomColor: 'transparent',
   },
-  activeTab: {
-    borderBottomColor: colors.primary,
-  },
   tabIcon: {
     fontSize: 20,
     marginBottom: 4,
@@ -636,10 +639,6 @@ const styles = StyleSheet.create({
     color: colors.text.secondary,
     fontWeight: '500',
     textAlign: 'center',
-  },
-  activeTabText: {
-    color: colors.primary,
-    fontWeight: '700',
   },
   listContainer: {
     padding: spacing.lg,
@@ -708,9 +707,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: colors.text.secondary,
   },
-  favoriteActive: {
-    color: colors.warning,
-  },
   productArrow: {
     ...typography.h3,
     color: colors.text.secondary,
@@ -719,14 +715,12 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
     ...shadows.md,
   },
   addButtonSmallIcon: {
     fontSize: 24,
-    color: colors.background.paper,
     fontWeight: '600',
   },
   emptyState: {
