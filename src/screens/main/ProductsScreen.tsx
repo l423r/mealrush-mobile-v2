@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -151,62 +151,101 @@ const ProductsScreen: React.FC = observer(() => {
   >('products');
   const [showMealSelector, setShowMealSelector] = useState(false);
   const [selectedProductForAdd, setSelectedProductForAdd] = useState<ProductResponse | null>(null);
+  
+  // Track initial mount and loaded tabs to prevent duplicate requests
+  const isInitialMount = useRef(true);
+  const loadedTabs = useRef<Set<'my' | 'favorites' | 'search' | 'reco'>>(new Set());
+  const previousTab = useRef<'my' | 'favorites' | 'search' | 'reco'>(activeTab);
 
-  // Initial load on mount
+  // Load favorites only once on mount to enable favorite toggle functionality
   useEffect(() => {
-    console.log(
-      `🚀 [ProductsScreen] Mount/Initial load - activeTab: ${activeTab}`
-    );
-    // Load favorites on mount to enable favorite toggle functionality
+    console.log('🚀 [ProductsScreen] Mount - Loading favorites');
     productStore.getFavorites();
-    // Don't load data on mount for search tab, only for my and favorites
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only on mount
+
+  // Handle tab changes and load data when needed
+  useEffect(() => {
+    // Skip on initial mount - handleTabChange will handle initial load
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      previousTab.current = activeTab;
+      // Load initial tab data if needed
+      if (activeTab === 'my' || activeTab === 'favorites') {
+        loadData(activeTab);
+      } else if (activeTab === 'reco') {
+        loadRecommendations();
+      }
+      return;
+    }
+
+    // Skip if tab hasn't actually changed
+    if (previousTab.current === activeTab) {
+      return;
+    }
+
+    console.log(`🔄 [ProductsScreen] Tab changed from ${previousTab.current} to ${activeTab}`);
+    previousTab.current = activeTab;
+
+    // Load data for the new tab if needed
     if (activeTab === 'my' || activeTab === 'favorites') {
       loadData(activeTab);
     } else if (activeTab === 'reco') {
       loadRecommendations();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, productStore, recommendationsStore]); // include stores
+  }, [activeTab]); // Only depend on activeTab
 
-  const loadData = async (tab?: 'my' | 'favorites' | 'search' | 'reco') => {
+  const loadData = async (tab?: 'my' | 'favorites' | 'search' | 'reco', force: boolean = false) => {
     const targetTab = tab || activeTab;
-    console.log(`📦 [ProductsScreen] loadData() called for tab: ${targetTab}`);
+    console.log(`📦 [ProductsScreen] loadData() called for tab: ${targetTab}, force: ${force}`);
+    
+    // Check if data is already loaded (unless forced refresh)
+    if (!force && loadedTabs.current.has(targetTab)) {
+      console.log(`⏭️ [ProductsScreen] Data already loaded for tab: ${targetTab}, skipping`);
+      return;
+    }
+
     try {
       if (targetTab === 'my') {
         console.log('📦 [ProductsScreen] Loading my products (GET /product)');
         await productStore.getAll();
+        loadedTabs.current.add('my');
       } else if (targetTab === 'favorites') {
         console.log('⭐ [ProductsScreen] Loading favorites (GET /favorite)');
         await productStore.getFavorites();
+        loadedTabs.current.add('favorites');
       } else if (targetTab === 'search') {
         console.log(
           '🔍 [ProductsScreen] Search tab - will be handled by searchQuery effect'
         );
         // Search will be handled by searchQuery effect
+        loadedTabs.current.add('search');
       } else if (targetTab === 'reco') {
         await loadRecommendations();
+        loadedTabs.current.add('reco');
       }
     } catch (error) {
       console.error('❌ [ProductsScreen] Error loading products:', error);
+      // Remove from loaded tabs on error so it can be retried
+      loadedTabs.current.delete(targetTab);
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await loadData();
+    // Force reload by clearing the loaded tab and passing force=true
+    loadedTabs.current.delete(activeTab);
+    await loadData(activeTab, true);
     setRefreshing(false);
   };
 
   const handleTabChange = (tab: 'my' | 'favorites' | 'search' | 'reco') => {
-    console.log(`🔄 [ProductsScreen] Tab changed from ${activeTab} to ${tab}`);
-    setActiveTab(tab);
+    // Only update the tab state - useEffect will handle loading data
     if (tab === 'search') {
       setSearchQuery('');
-    } else if (tab === 'my' || tab === 'favorites') {
-      loadData(tab); // Load data only for my and favorites tabs
-    } else if (tab === 'reco') {
-      loadRecommendations();
     }
+    setActiveTab(tab);
   };
 
   // Handle search when searchQuery changes
@@ -289,6 +328,7 @@ const ProductsScreen: React.FC = observer(() => {
       } else {
         await productStore.addToFavorites(product.id);
       }
+      // Note: favorites list is updated in store, no need to reload
     } catch {
       uiStore.showSnackbar('Не удалось обновить избранное', 'error');
     }

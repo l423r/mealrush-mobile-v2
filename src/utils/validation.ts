@@ -106,6 +106,11 @@ export const productSchema = yup.object().shape({
     .max(1000, 'Калории не могут быть более 1000 ккал на 100 г')
     .required('Калории обязательны'),
   quantity: yup.string().required('Количество обязательно'),
+  portionQuantity: yup
+    .number()
+    .min(1, 'Количество порции должно быть не менее 1 г')
+    .max(10000, 'Количество порции должно быть не более 10000 г')
+    .optional(),
 });
 
 // Meal element validation schemas
