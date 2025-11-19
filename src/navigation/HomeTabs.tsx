@@ -1,8 +1,8 @@
 import React from 'react';
-import { Text } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import type { HomeTabParamList } from '../types/navigation.types';
 import { typography } from '../theme';
 import { useTheme } from '../hooks/useTheme';
@@ -46,8 +46,12 @@ const HomeTabs: React.FC = observer(() => {
         component={MainScreen}
         options={{
           tabBarLabel: 'Приемы пищи',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>🍽️</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'fast-food' : 'fast-food-outline'} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -56,8 +60,12 @@ const HomeTabs: React.FC = observer(() => {
         component={ProductsScreen}
         options={{
           tabBarLabel: 'Продукты',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>🥗</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'nutrition' : 'nutrition-outline'} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -66,8 +74,12 @@ const HomeTabs: React.FC = observer(() => {
         component={AnalyticsScreen}
         options={{
           tabBarLabel: 'Аналитика',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>📊</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'stats-chart' : 'stats-chart-outline'} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />
@@ -76,8 +88,12 @@ const HomeTabs: React.FC = observer(() => {
         component={ProfileScreen}
         options={{
           tabBarLabel: 'Профиль',
-          tabBarIcon: ({ color, size }) => (
-            <Text style={{ color, fontSize: size }}>👤</Text>
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons 
+              name={focused ? 'person' : 'person-outline'} 
+              size={size} 
+              color={color} 
+            />
           ),
         }}
       />

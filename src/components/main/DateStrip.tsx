@@ -4,9 +4,9 @@ import {
     Text,
     StyleSheet,
     TouchableOpacity,
-    FlatList,
     Dimensions,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '../../hooks/useTheme';
 import { typography, spacing, borderRadius } from '../../theme';
 import { formatDate } from '../../utils/formatting';
@@ -23,7 +23,7 @@ const DAYS_TO_SHOW = 14; // 2 weeks total (1 week back, 1 week forward)
 
 const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect }) => {
     const { colors } = useTheme();
-    const flatListRef = useRef<FlatList>(null);
+    const flatListRef = useRef<FlashList<Date>>(null);
 
     // Generate dates
     const dates = React.useMemo(() => {
@@ -93,19 +93,15 @@ const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect }) => 
 
     return (
         <View style={styles.container}>
-            <FlatList
+            <FlashList
                 ref={flatListRef}
                 data={dates}
                 renderItem={renderItem}
                 keyExtractor={(item) => item.toISOString()}
+                estimatedItemSize={50}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.contentContainer}
-                getItemLayout={(data, index) => ({
-                    length: 50, // Approximate width + margin
-                    offset: 50 * index,
-                    index,
-                })}
             />
         </View>
     );

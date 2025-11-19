@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import type { WeightEntry } from '../../types/api.types';
 import { formatDateTime, formatWeightKg, formatWeightChange } from '../../utils/formatting';
 import { formatWeightTrend } from '../../utils/calculations';
@@ -95,10 +95,11 @@ const WeightHistory: React.FC<WeightHistoryProps> = ({
     <View style={styles.container}>
       <Text style={styles.title}>История взвешиваний</Text>
 
-      <FlatList
+      <FlashList
         data={entries}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderEntry}
+        estimatedItemSize={100}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}
         refreshControl={

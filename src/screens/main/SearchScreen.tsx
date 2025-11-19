@@ -3,11 +3,11 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   TextInput,
   ScrollView,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -544,10 +544,11 @@ const SearchScreen: React.FC = observer(() => {
             return <Loading message="Поиск продуктов..." />;
           }
           return (
-            <FlatList
+            <FlashList
               data={getData()}
               renderItem={renderProductItem}
               keyExtractor={(item) => item.id.toString()}
+              estimatedItemSize={110}
               ListEmptyComponent={renderEmptyState}
               contentContainerStyle={styles.listContainer}
               showsVerticalScrollIndicator={false}

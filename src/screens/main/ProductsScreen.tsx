@@ -3,13 +3,13 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   RefreshControl,
   Image,
   TextInput,
   ScrollView,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,6 +27,99 @@ import type { lightColors, darkColors } from '../../theme/colors';
 import { formatCalories, formatWeight } from '../../utils/formatting';
 
 type ColorsType = typeof lightColors | typeof darkColors;
+
+// Product Item Component - отдельный компонент для реактивности
+interface ProductItemProps {
+  product: any;
+  activeTab: 'my' | 'favorites' | 'search' | 'reco';
+  onPress: (product: any) => void;
+  onFavoriteToggle: (product: any) => void;
+  onAddToMeal: (product: any) => void;
+  colors: ColorsType;
+  styles: ReturnType<typeof createStyles>;
+}
+
+const ProductItem: React.FC<ProductItemProps> = observer(({
+  product,
+  activeTab,
+  onPress,
+  onFavoriteToggle,
+  onAddToMeal,
+  colors,
+  styles,
+}) => {
+  const { productStore } = useStores();
+  const showAddButton = activeTab === 'favorites' || activeTab === 'my';
+  const isFavorite = productStore.favorites.some((f) => f.id === product.id);
+  
+  return (
+    <TouchableOpacity
+      style={styles.productCard}
+      onPress={() => onPress(product)}
+      activeOpacity={0.7}
+    >
+      {product.imageUrl ? (
+        <Image
+          source={{ uri: product.imageUrl }}
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={styles.productImagePlaceholder}>
+          <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+        </View>
+      )}
+
+      <View style={styles.productInfo}>
+        <Text style={styles.productName} numberOfLines={2}>
+          {product.name}
+        </Text>
+        <Text style={styles.productMacros}>
+          Б: {product.proteins}г • Ж: {product.fats}г • У:{' '}
+          {product.carbohydrates}г
+        </Text>
+        <Text style={styles.productCalories}>
+          {formatCalories(product.calories)} на{' '}
+          {formatWeight(Number.parseFloat(product.quantity))}
+        </Text>
+        {product.source && (
+          <Text style={styles.productSource}>Источник: {product.source}</Text>
+        )}
+      </View>
+
+      <View style={styles.productActions}>
+        <TouchableOpacity
+          style={styles.favoriteButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            onFavoriteToggle(product);
+          }}
+        >
+          <Text
+            style={[styles.favoriteIcon, isFavorite && { color: colors.warning }]}
+          >
+            {isFavorite ? '⭐' : '☆'}
+          </Text>
+        </TouchableOpacity>
+
+        {showAddButton ? (
+          <TouchableOpacity
+            style={[styles.addButtonSmall, { backgroundColor: colors.primary }]}
+            onPress={(e) => {
+              e.stopPropagation();
+              onAddToMeal(product);
+            }}
+          >
+            <Text style={[styles.addButtonSmallIcon, { color: colors.background.paper }]}>+</Text>
+          </TouchableOpacity>
+        ) : (
+          <Text style={styles.productArrow}>›</Text>
+        )}
+      </View>
+    </TouchableOpacity>
+  );
+});
+
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Loading from '../../components/common/Loading';
@@ -213,74 +306,16 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const renderProductItem = ({ item: product }: { item: any }) => {
-    const showAddButton = activeTab === 'favorites' || activeTab === 'my';
-    const isFavorite = productStore.favorites.some((f) => f.id === product.id);
-    
     return (
-      <TouchableOpacity
-        style={dynamicStyles.productCard}
-        onPress={() => handleProductPress(product)}
-        activeOpacity={0.7}
-      >
-        {product.imageUrl ? (
-          <Image
-            source={{ uri: product.imageUrl }}
-            style={dynamicStyles.productImage}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={dynamicStyles.productImagePlaceholder}>
-            <Text style={dynamicStyles.productImagePlaceholderIcon}>🍽️</Text>
-          </View>
-        )}
-
-        <View style={dynamicStyles.productInfo}>
-          <Text style={dynamicStyles.productName} numberOfLines={2}>
-            {product.name}
-          </Text>
-          <Text style={dynamicStyles.productMacros}>
-            Б: {product.proteins}г • Ж: {product.fats}г • У:{' '}
-            {product.carbohydrates}г
-          </Text>
-          <Text style={dynamicStyles.productCalories}>
-            {formatCalories(product.calories)} на{' '}
-            {formatWeight(Number.parseFloat(product.quantity))}
-          </Text>
-          {product.source && (
-            <Text style={dynamicStyles.productSource}>Источник: {product.source}</Text>
-          )}
-        </View>
-
-        <View style={dynamicStyles.productActions}>
-          <TouchableOpacity
-            style={dynamicStyles.favoriteButton}
-            onPress={(e) => {
-              e.stopPropagation();
-              handleFavoriteToggle(product);
-            }}
-          >
-            <Text
-              style={[dynamicStyles.favoriteIcon, isFavorite && { color: colors.warning }]}
-            >
-              {isFavorite ? '⭐' : '☆'}
-            </Text>
-          </TouchableOpacity>
-
-          {showAddButton ? (
-            <TouchableOpacity
-              style={[dynamicStyles.addButtonSmall, { backgroundColor: colors.primary }]}
-              onPress={(e) => {
-                e.stopPropagation();
-                handleAddProductToMeal(product);
-              }}
-            >
-              <Text style={[dynamicStyles.addButtonSmallIcon, { color: colors.background.paper }]}>+</Text>
-            </TouchableOpacity>
-          ) : (
-            <Text style={dynamicStyles.productArrow}>›</Text>
-          )}
-        </View>
-      </TouchableOpacity>
+      <ProductItem
+        product={product}
+        activeTab={activeTab}
+        onPress={handleProductPress}
+        onFavoriteToggle={handleFavoriteToggle}
+        onAddToMeal={handleAddProductToMeal}
+        colors={colors}
+        styles={dynamicStyles}
+      />
     );
   };
 
@@ -426,10 +461,12 @@ const ProductsScreen: React.FC = observer(() => {
 
         {/* Products List or Recommendations */}
         {activeTab !== 'reco' ? (
-          <FlatList
+          <FlashList
             data={getData()}
             renderItem={renderProductItem}
             keyExtractor={(item) => item.id.toString()}
+            estimatedItemSize={110}
+            extraData={productStore.favorites.length}
             ListEmptyComponent={renderEmptyState}
             contentContainerStyle={dynamicStyles.listContainer}
             showsVerticalScrollIndicator={false}

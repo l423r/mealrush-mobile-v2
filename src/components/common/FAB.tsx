@@ -9,6 +9,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../hooks/useTheme';
 import { typography, spacing, shadows, borderRadius } from '../../theme';
 import { triggerHaptic } from '../../utils/haptics';
@@ -83,7 +84,7 @@ const FAB: React.FC<FABProps> = ({ onAddMeal, onAddFromTemplate }) => {
                             onAddFromTemplate();
                         }}
                     >
-                        <Text style={styles.actionIcon}>📌</Text>
+                        <Ionicons name="layers" size={20} color={colors.primary} />
                     </TouchableOpacity>
                 </Animated.View>
 
@@ -109,7 +110,7 @@ const FAB: React.FC<FABProps> = ({ onAddMeal, onAddFromTemplate }) => {
                             onAddMeal();
                         }}
                     >
-                        <Text style={styles.actionIcon}>🍽️</Text>
+                        <Ionicons name="add-circle" size={20} color={colors.primary} />
                     </TouchableOpacity>
                 </Animated.View>
             </View>
@@ -207,9 +208,6 @@ const styles = StyleSheet.create({
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 3,
-    },
-    actionIcon: {
-        fontSize: 20,
     },
 });
 

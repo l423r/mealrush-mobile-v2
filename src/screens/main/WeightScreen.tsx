@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   StyleSheet,
-  FlatList,
   RefreshControl,
   TouchableOpacity,
   Text,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -181,10 +181,11 @@ const WeightScreen: React.FC = observer(() => {
         }
       />
 
-      <FlatList
+      <FlashList
         data={weightStore.history}
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
+        estimatedItemSize={100}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmpty}
         ListFooterComponent={renderFooter}

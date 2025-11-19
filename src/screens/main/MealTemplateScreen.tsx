@@ -3,10 +3,10 @@ import {
   View,
   Text,
   StyleSheet,
-  FlatList,
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -231,12 +231,13 @@ const MealTemplateScreen: React.FC = observer(() => {
         }
       />
 
-      <FlatList
+      <FlashList
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
         data={elements}
         renderItem={renderElement}
         keyExtractor={(item) => item.id.toString()}
+        estimatedItemSize={80}
         ListHeaderComponent={
           <>
             {/* Summary */}
