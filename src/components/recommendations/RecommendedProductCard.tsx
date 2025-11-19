@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import type { ProductResponse } from '../../types/api.types';
 
@@ -16,18 +17,18 @@ const RecommendedProductCard: React.FC<RecommendedProductCardProps> = ({
   onAddToMeal,
   showAddButton = false,
 }) => {
-  const getCategoryIcon = (categoryId?: string) => {
-    const icons: Record<string, string> = {
-      dairy: '🥛',
-      meat: '🥩',
-      vegetables: '🥗',
-      fruits: '🍎',
-      grains: '🌾',
-      seafood: '🐟',
-      snacks: '🍪',
-      beverages: '☕',
+  const getCategoryIcon = (categoryId?: string): keyof typeof Ionicons.glyphMap => {
+    const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+      dairy: 'water-outline',
+      meat: 'restaurant-outline',
+      vegetables: 'leaf-outline',
+      fruits: 'nutrition-outline',
+      grains: 'basket-outline',
+      seafood: 'water-outline',
+      snacks: 'fast-food-outline',
+      beverages: 'cafe-outline',
     };
-    return icons[categoryId || ''] || '🍽️';
+    return icons[categoryId || ''] || 'restaurant-outline';
   };
 
   return (
@@ -37,9 +38,11 @@ const RecommendedProductCard: React.FC<RecommendedProductCardProps> = ({
       activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
-        <Text style={styles.icon}>
-          {getCategoryIcon(product.productCategoryId)}
-        </Text>
+        <Ionicons
+          name={getCategoryIcon(product.productCategoryId)}
+          size={24}
+          color={colors.text.primary}
+        />
       </View>
 
       <View style={styles.content}>
@@ -99,9 +102,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: spacing.md,
-  },
-  icon: {
-    fontSize: 28,
   },
   content: {
     flex: 1,

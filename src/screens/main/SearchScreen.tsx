@@ -8,6 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -333,13 +334,13 @@ const SearchScreen: React.FC = observer(() => {
             resizeMode="cover"
             placeholder={
               <View style={styles.productImagePlaceholder}>
-                <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+                <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
               </View>
             }
           />
         ) : (
           <View style={styles.productImagePlaceholder}>
-            <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+            <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
           </View>
         )}
 
@@ -361,11 +362,11 @@ const SearchScreen: React.FC = observer(() => {
           style={styles.favoriteButton}
           onPress={() => handleFavoriteToggle(product)}
         >
-          <Text
-            style={[styles.favoriteIcon, isFavorite && styles.favoriteActive]}
-          >
-            {isFavorite ? '⭐' : '☆'}
-          </Text>
+          <Ionicons
+            name={isFavorite ? 'star' : 'star-outline'}
+            size={24}
+            color={isFavorite ? colors.warning : colors.text.secondary}
+          />
         </TouchableOpacity>
       </TouchableOpacity>
     );
@@ -375,7 +376,7 @@ const SearchScreen: React.FC = observer(() => {
     if (activeTab === 'favorites') {
       return (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>⭐</Text>
+          <Ionicons name="star-outline" size={64} color={colors.text.secondary} />
           <Text style={styles.emptyTitle}>Нет избранных продуктов</Text>
           <Text style={styles.emptySubtitle}>
             Добавьте продукты в избранное для быстрого доступа
@@ -387,7 +388,7 @@ const SearchScreen: React.FC = observer(() => {
     if (activeTab === 'my') {
       return (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🥗</Text>
+          <Ionicons name="leaf-outline" size={64} color={colors.text.secondary} />
           <Text style={styles.emptyTitle}>Нет продуктов</Text>
           <Text style={styles.emptySubtitle}>Создайте свой первый продукт</Text>
         </View>
@@ -397,7 +398,7 @@ const SearchScreen: React.FC = observer(() => {
     if (searchQuery.length < 2) {
       return (
         <View style={styles.emptyState}>
-          <Text style={styles.emptyEmoji}>🔍</Text>
+          <Ionicons name="search-outline" size={64} color={colors.text.secondary} />
           <Text style={styles.emptyTitle}>Поиск продуктов</Text>
           <Text style={styles.emptySubtitle}>
             Введите название продукта для поиска
@@ -408,7 +409,7 @@ const SearchScreen: React.FC = observer(() => {
 
     return (
       <View style={styles.emptyState}>
-        <Text style={styles.emptyEmoji}>😔</Text>
+        <Ionicons name="sad-outline" size={64} color={colors.text.secondary} />
         <Text style={styles.emptyTitle}>Продукт не найден</Text>
         <Text style={styles.emptySubtitle}>
           Попробуйте другой запрос или создайте новый продукт
@@ -505,22 +506,22 @@ const SearchScreen: React.FC = observer(() => {
           contentContainerStyle={styles.quickActionsContent}
         >
           <QuickActionCard
-            icon="qr-code-scanner"
+            icon="qr-code-outline"
             label="Сканер"
             onPress={handleScannerPress}
           />
           <QuickActionCard
-            icon="photo-camera"
+            icon="camera-outline"
             label="Фото"
             onPress={handlePhotoAnalysisPress}
           />
           <QuickActionCard
-            icon="text-fields"
+            icon="text-outline"
             label="Текст"
             onPress={handleTextAnalysisPress}
           />
           <QuickActionCard
-            icon="mic"
+            icon="mic-outline"
             label="Голос"
             onPress={handleAudioAnalysisPress}
           />
@@ -686,9 +687,6 @@ const getStyles = (colors: ReturnType<typeof import('../../theme/colors').getThe
     justifyContent: 'center',
     alignItems: 'center',
   },
-  productImagePlaceholderIcon: {
-    fontSize: 30,
-  },
   productInfo: {
     flex: 1,
   },
@@ -710,20 +708,9 @@ const getStyles = (colors: ReturnType<typeof import('../../theme/colors').getThe
   favoriteButton: {
     padding: spacing.sm,
   },
-  favoriteIcon: {
-    fontSize: 24,
-    color: colors.text.secondary,
-  },
-  favoriteActive: {
-    color: colors.warning,
-  },
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
   },
   emptyTitle: {
     ...typography.h4,

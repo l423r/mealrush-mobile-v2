@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
   typography,
@@ -63,10 +63,15 @@ const MealActionsMenu: React.FC<MealActionsMenuProps> = ({
                   onPress={handleSaveAsTemplate}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.actionIcon}>📌</Text>
+                  <Ionicons
+                    name="bookmark-outline"
+                    size={20}
+                    color={colors.text.primary}
+                    style={styles.actionIcon}
+                  />
                   <Text style={styles.actionText}>Сохранить как шаблон</Text>
-                  <MaterialIcons
-                    name="chevron-right"
+                  <Ionicons
+                    name="chevron-forward"
                     size={20}
                     color={colors.text.hint}
                   />
@@ -77,10 +82,15 @@ const MealActionsMenu: React.FC<MealActionsMenuProps> = ({
                   onPress={handleCopy}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.actionIcon}>📋</Text>
+                  <Ionicons
+                    name="copy-outline"
+                    size={20}
+                    color={colors.text.primary}
+                    style={styles.actionIcon}
+                  />
                   <Text style={styles.actionText}>Скопировать</Text>
-                  <MaterialIcons
-                    name="chevron-right"
+                  <Ionicons
+                    name="chevron-forward"
                     size={20}
                     color={colors.text.hint}
                   />
@@ -91,12 +101,17 @@ const MealActionsMenu: React.FC<MealActionsMenuProps> = ({
                   onPress={handleDelete}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.actionIcon}>🗑️</Text>
+                  <Ionicons
+                    name="trash-outline"
+                    size={20}
+                    color={colors.error}
+                    style={styles.actionIcon}
+                  />
                   <Text style={[styles.actionText, styles.deleteText]}>
                     Удалить
                   </Text>
-                  <MaterialIcons
-                    name="chevron-right"
+                  <Ionicons
+                    name="chevron-forward"
                     size={20}
                     color={colors.text.hint}
                   />
@@ -147,7 +162,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border.light,
   },
   actionIcon: {
-    fontSize: 20,
     marginRight: spacing.sm,
   },
   actionText: {

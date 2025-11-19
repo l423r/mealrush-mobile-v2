@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { colors as defaultColors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatWeight, formatCalories } from '../../utils/formatting';
@@ -36,7 +37,7 @@ const MealElementItem: React.FC<MealElementItemProps> = observer(({
                 />
             ) : (
                 <View style={[styles.imagePlaceholder, { backgroundColor: colors.background.default }]}>
-                    <Text style={styles.imagePlaceholderIcon}>🍽️</Text>
+                    <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
                 </View>
             )}
 
@@ -69,7 +70,7 @@ const MealElementItem: React.FC<MealElementItemProps> = observer(({
                 onPress={() => onDelete(element.id)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-                <Text style={styles.deleteIcon}>🗑️</Text>
+                <Ionicons name="trash-outline" size={20} color={colors.error} />
             </TouchableOpacity>
         </TouchableOpacity>
     );
@@ -100,9 +101,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginRight: spacing.md,
     },
-    imagePlaceholderIcon: {
-        fontSize: 24,
-    },
     info: {
         flex: 1,
         justifyContent: 'center',
@@ -129,9 +127,6 @@ const styles = StyleSheet.create({
     deleteButton: {
         padding: spacing.sm,
         opacity: 0.7,
-    },
-    deleteIcon: {
-        fontSize: 18,
     },
 });
 

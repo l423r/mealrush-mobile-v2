@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '../../theme';
 
 interface SectionHeaderProps {
   title: string;
-  icon?: string;
+  icon?: string; // Ionicons name
   actionText?: string;
   onActionPress?: () => void;
   count?: number;
@@ -22,7 +23,14 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
   return (
     <View style={styles.container}>
       <View style={styles.leftSection}>
-        {icon && <Text style={styles.icon}>{icon}</Text>}
+        {icon && (
+          <Ionicons
+            name={icon as any}
+            size={24}
+            color={colors.text.primary}
+            style={styles.icon}
+          />
+        )}
         <Text style={styles.title}>{title}</Text>
         {onInfoPress && (
           <TouchableOpacity
@@ -30,7 +38,12 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({
             style={styles.infoButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Text style={styles.infoIcon}>ⓘ</Text>
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.text.secondary}
+              style={styles.infoIcon}
+            />
           </TouchableOpacity>
         )}
         {count !== undefined && count > 0 && (
@@ -61,7 +74,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   icon: {
-    fontSize: 24,
     marginRight: spacing.sm,
   },
   title: {
@@ -99,8 +111,6 @@ const styles = StyleSheet.create({
     marginLeft: spacing.xs,
   },
   infoIcon: {
-    fontSize: 16,
-    color: colors.text.secondary,
     opacity: 0.7,
   },
 });

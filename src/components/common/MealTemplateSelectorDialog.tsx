@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -59,15 +59,15 @@ const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = ob
     return labels[mealType] || mealType;
   };
 
-  const getMealTypeIcon = (mealType: string): string => {
-    const icons: Record<string, string> = {
-      BREAKFAST: '🌅',
-      LUNCH: '🌞',
-      DINNER: '🌙',
-      SUPPER: '☕',
-      LATE_SUPPER: '🌃',
+  const getMealTypeIcon = (mealType: string): keyof typeof Ionicons.glyphMap => {
+    const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+      BREAKFAST: 'sunny-outline',
+      LUNCH: 'partly-sunny-outline',
+      DINNER: 'moon-outline',
+      SUPPER: 'cafe-outline',
+      LATE_SUPPER: 'moon',
     };
-    return icons[mealType] || '🍽️';
+    return icons[mealType] || 'restaurant-outline';
   };
 
   const handleTemplatePress = async (templateId: number) => {
@@ -87,7 +87,7 @@ const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = ob
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyEmoji}>📌</Text>
+      <Ionicons name="bookmark-outline" size={64} color={colors.text.secondary} />
       <Text style={styles.emptyTitle}>Нет шаблонов</Text>
       <Text style={styles.emptySubtitle}>
         Сохраните прием пищи как шаблон для быстрого использования
@@ -142,9 +142,11 @@ const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = ob
                         activeOpacity={0.7}
                       >
                         <View style={styles.templateIconContainer}>
-                          <Text style={styles.templateIcon}>
-                            {getMealTypeIcon(template.mealType)}
-                          </Text>
+                          <Ionicons
+                            name={getMealTypeIcon(template.mealType)}
+                            size={20}
+                            color={colors.text.primary}
+                          />
                         </View>
                         <View style={styles.templateInfo}>
                           <Text style={styles.templateName}>
@@ -157,8 +159,8 @@ const MealTemplateSelectorDialog: React.FC<MealTemplateSelectorDialogProps> = ob
                             )}
                           </Text>
                         </View>
-                        <MaterialIcons
-                          name="chevron-right"
+                        <Ionicons
+                          name="chevron-forward"
                           size={20}
                           color={colors.text.hint}
                         />
@@ -241,9 +243,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.sm,
   },
-  templateIcon: {
-    fontSize: 20,
-  },
   templateInfo: {
     flex: 1,
   },
@@ -273,10 +272,6 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
   },
   emptyTitle: {
     ...typography.h5,

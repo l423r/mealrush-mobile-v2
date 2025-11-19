@@ -1,7 +1,7 @@
 import React from 'react';
 import { TouchableOpacity, Text, View, StyleSheet } from 'react-native';
 import { observer } from 'mobx-react-lite';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { typography, spacing } from '../../theme';
 import { useTheme } from '../../hooks/useTheme';
 import type { lightColors, darkColors } from '../../theme/colors';
@@ -9,7 +9,7 @@ import type { lightColors, darkColors } from '../../theme/colors';
 type ColorsType = typeof lightColors | typeof darkColors;
 
 interface QuickActionCardProps {
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon: keyof typeof Ionicons.glyphMap;
   label: string;
   onPress: () => void;
   testID?: string;
@@ -34,7 +34,7 @@ const QuickActionCard: React.FC<QuickActionCardProps> = observer(({
       accessible={!!testID}
     >
       <View style={dynamicStyles.iconCircle}>
-        <MaterialIcons name={icon} size={24} color={colors.primary} />
+        <Ionicons name={icon} size={24} color={colors.primary} />
       </View>
       <Text style={dynamicStyles.label}>{label}</Text>
     </TouchableOpacity>

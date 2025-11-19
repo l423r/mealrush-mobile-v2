@@ -6,7 +6,7 @@ import {
   Animated,
   TouchableOpacity,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import {
   colors,
   typography,
@@ -70,17 +70,17 @@ const Snackbar: React.FC = observer(() => {
     return null;
   }
 
-  const getIconName = () => {
+  const getIconName = (): keyof typeof Ionicons.glyphMap => {
     switch (uiStore.snackbar.type) {
       case 'success':
-        return 'check-circle';
+        return 'checkmark-circle';
       case 'error':
-        return 'error';
+        return 'alert-circle';
       case 'warning':
         return 'warning';
       case 'info':
       default:
-        return 'info';
+        return 'information-circle';
     }
   };
 
@@ -111,7 +111,7 @@ const Snackbar: React.FC = observer(() => {
       <View
         style={[styles.snackbar, { backgroundColor: getBackgroundColor() }]}
       >
-        <MaterialIcons
+        <Ionicons
           name={getIconName()}
           size={24}
           color={colors.white}
@@ -121,7 +121,7 @@ const Snackbar: React.FC = observer(() => {
           {uiStore.snackbar.message}
         </Text>
         <TouchableOpacity onPress={hideSnackbar} style={styles.closeButton}>
-          <MaterialIcons name="close" size={20} color={colors.white} />
+          <Ionicons name="close" size={20} color={colors.white} />
         </TouchableOpacity>
       </View>
     </Animated.View>

@@ -363,7 +363,7 @@ const MealScreen: React.FC = observer(() => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyEmoji}>🍽️</Text>
+      <Ionicons name="restaurant-outline" size={64} color={colors.text.secondary} />
       <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Нет блюд</Text>
       <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
         Добавьте блюда в этот прием пищи
@@ -410,14 +410,14 @@ const MealScreen: React.FC = observer(() => {
               onPress={handleEditMealType}
               style={styles.editButton}
             >
-              <Text style={styles.editIcon}>✏️</Text>
+              <Ionicons name="create-outline" size={20} color={colors.text.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setShowActionsMenu(true)}
               style={styles.menuButton}
             >
-              <MaterialIcons
-                name="more-vert"
+              <Ionicons
+                name="ellipsis-vertical"
                 size={24}
                 color={colors.text.primary}
               />
@@ -570,9 +570,6 @@ const styles = StyleSheet.create({
   editButton: {
     padding: spacing.xs,
   },
-  editIcon: {
-    fontSize: 20,
-  },
   menuButton: {
     padding: spacing.xs,
   },
@@ -596,10 +593,6 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
   },
   emptyTitle: {
     ...typography.h4,

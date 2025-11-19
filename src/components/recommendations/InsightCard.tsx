@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import type { InsightResponse } from '../../types/api.types';
 
@@ -14,21 +15,21 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
         return {
           backgroundColor: colors.error + '10',
           borderColor: colors.error,
-          icon: '🔴',
+          icon: 'alert-circle' as keyof typeof Ionicons.glyphMap,
           textColor: colors.error,
         };
       case 'WARNING':
         return {
           backgroundColor: colors.warning + '10',
           borderColor: colors.warning,
-          icon: '⚠️',
+          icon: 'warning' as keyof typeof Ionicons.glyphMap,
           textColor: colors.warning,
         };
       default:
         return {
           backgroundColor: colors.info + '10',
           borderColor: colors.info,
-          icon: '💡',
+          icon: 'bulb' as keyof typeof Ionicons.glyphMap,
           textColor: colors.info,
         };
     }
@@ -47,7 +48,12 @@ const InsightCard: React.FC<InsightCardProps> = ({ insight }) => {
       ]}
     >
       <View style={styles.header}>
-        <Text style={styles.icon}>{style.icon}</Text>
+        <Ionicons
+          name={style.icon}
+          size={24}
+          color={style.textColor}
+          style={styles.icon}
+        />
         <View style={styles.content}>
           <Text style={[styles.title, { color: style.textColor }]}>
             {insight.title}
@@ -73,7 +79,6 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   icon: {
-    fontSize: 24,
     marginRight: spacing.sm,
   },
   content: {

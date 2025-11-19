@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatTimeInTimezone, formatMealType } from '../../utils/formatting';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -27,13 +28,13 @@ const MealCard: React.FC<MealCardProps> = observer(({
 }) => {
     const { colors } = useTheme();
 
-    const getMealIcon = (type: string) => {
+    const getMealIcon = (type: string): keyof typeof Ionicons.glyphMap => {
         switch (type) {
-            case 'BREAKFAST': return '🌅';
-            case 'LUNCH': return '🌞';
-            case 'DINNER': return '🌙';
-            case 'SUPPER': return '☕';
-            default: return '🍽️';
+            case 'BREAKFAST': return 'sunny-outline';
+            case 'LUNCH': return 'partly-sunny-outline';
+            case 'DINNER': return 'moon-outline';
+            case 'SUPPER': return 'cafe-outline';
+            default: return 'restaurant-outline';
         }
     };
 
@@ -56,7 +57,11 @@ const MealCard: React.FC<MealCardProps> = observer(({
             >
                 <View style={styles.header}>
                     <View style={[styles.iconContainer, { backgroundColor: colors.background.elevated, borderColor: colors.border.light }]}>
-                        <Text style={styles.icon}>{getMealIcon(meal.mealType)}</Text>
+                        <Ionicons
+                            name={getMealIcon(meal.mealType)}
+                            size={24}
+                            color={colors.text.primary}
+                        />
                     </View>
                     <View style={styles.titleContainer}>
                         <Text style={[styles.title, { color: colors.text.primary }]}>{formatMealType(meal.mealType)}</Text>
@@ -117,9 +122,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginRight: spacing.md,
         borderWidth: 1,
-    },
-    icon: {
-        fontSize: 20,
     },
     titleContainer: {
         flex: 1,

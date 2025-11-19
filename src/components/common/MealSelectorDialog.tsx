@@ -8,7 +8,7 @@ import {
   TouchableWithoutFeedback,
   ScrollView,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import {
   colors,
@@ -46,15 +46,15 @@ const MealSelectorDialog: React.FC<MealSelectorDialogProps> = observer(({
     return labels[mealType] || mealType;
   };
 
-  const getMealTypeIcon = (mealType: string): string => {
-    const icons: Record<string, string> = {
-      BREAKFAST: '🌅',
-      LUNCH: '🌞',
-      DINNER: '🌙',
-      SUPPER: '☕',
-      LATE_SUPPER: '🌃',
+  const getMealTypeIcon = (mealType: string): keyof typeof Ionicons.glyphMap => {
+    const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+      BREAKFAST: 'sunny-outline',
+      LUNCH: 'partly-sunny-outline',
+      DINNER: 'moon-outline',
+      SUPPER: 'cafe-outline',
+      LATE_SUPPER: 'moon',
     };
-    return icons[mealType] || '🍽️';
+    return icons[mealType] || 'restaurant-outline';
   };
 
   const handleMealPress = (mealId: number) => {
@@ -99,9 +99,11 @@ const MealSelectorDialog: React.FC<MealSelectorDialogProps> = observer(({
                         activeOpacity={0.7}
                       >
                         <View style={styles.mealIconContainer}>
-                          <Text style={styles.mealIcon}>
-                            {getMealTypeIcon(meal.mealType)}
-                          </Text>
+                          <Ionicons
+                            name={getMealTypeIcon(meal.mealType)}
+                            size={20}
+                            color={colors.text.primary}
+                          />
                         </View>
                         <View style={styles.mealInfo}>
                           <Text style={styles.mealName}>
@@ -111,8 +113,8 @@ const MealSelectorDialog: React.FC<MealSelectorDialogProps> = observer(({
                             {formatTime(meal.dateTime)}
                           </Text>
                         </View>
-                        <MaterialIcons
-                          name="chevron-right"
+                        <Ionicons
+                          name="chevron-forward"
                           size={20}
                           color={colors.text.hint}
                         />
@@ -126,7 +128,7 @@ const MealSelectorDialog: React.FC<MealSelectorDialogProps> = observer(({
                   onPress={handleCreatePress}
                   activeOpacity={0.7}
                 >
-                  <MaterialIcons
+                  <Ionicons
                     name="add-circle-outline"
                     size={20}
                     color={colors.primary}

@@ -8,6 +8,7 @@ import {
   RefreshControl,
   StatusBar,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -115,7 +116,7 @@ const MainScreen: React.FC = observer(() => {
 
   const renderEmptyState = () => (
     <View style={[styles.emptyState, { backgroundColor: colors.background.paper, borderColor: colors.border.light }]}>
-      <Text style={styles.emptyEmoji}>🍽️</Text>
+      <Ionicons name="restaurant-outline" size={64} color={colors.text.secondary} />
       <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Нет приемов пищи</Text>
       <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
         Добавьте свой первый прием пищи, чтобы начать отслеживание
@@ -139,7 +140,7 @@ const MainScreen: React.FC = observer(() => {
             onPress={handleCalendarPress}
             style={[styles.calendarButton, { backgroundColor: colors.background.light, borderColor: colors.border.light }]}
           >
-            <Text style={styles.calendarIcon}>📅</Text>
+            <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
           </TouchableOpacity>
         }
       />
@@ -283,11 +284,6 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
-  },
-  emptyEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
-    opacity: 0.8,
   },
   emptyTitle: {
     ...typography.h5,

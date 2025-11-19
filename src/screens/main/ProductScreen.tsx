@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -280,7 +281,7 @@ const ProductScreen: React.FC = observer(() => {
         rightComponent={
           isEditing && product ? (
             <TouchableOpacity onPress={handleDelete}>
-              <Text style={styles.deleteIcon}>🗑️</Text>
+              <Ionicons name="trash-outline" size={24} color={colors.error} />
             </TouchableOpacity>
           ) : undefined
         }
@@ -298,7 +299,7 @@ const ProductScreen: React.FC = observer(() => {
               <Image source={{ uri: imageUri }} style={styles.image} />
             ) : (
               <View style={styles.imagePlaceholder}>
-                <Text style={styles.imagePlaceholderText}>📷</Text>
+                <Ionicons name="camera-outline" size={32} color={colors.text.secondary} />
                 <Text style={styles.imagePlaceholderLabel}>Добавить фото</Text>
               </View>
             )}
@@ -529,9 +530,9 @@ const ProductScreen: React.FC = observer(() => {
                     containerStyle={styles.macroInput}
                     rightIcon={
                       isCalculating ? (
-                        <Text style={styles.calculatingIcon}>⏳</Text>
+                        <Ionicons name="time-outline" size={16} color={colors.text.secondary} />
                       ) : (
-                        <Text style={styles.autoIcon}>⚡</Text>
+                        <Ionicons name="flash-outline" size={16} color={colors.primary} />
                       )
                     }
                   />
@@ -582,9 +583,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  deleteIcon: {
-    fontSize: 24,
-  },
   imageSection: {
     padding: spacing.lg,
     backgroundColor: colors.background.paper,
@@ -616,7 +614,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   imagePlaceholderText: {
-    fontSize: 32,
     marginBottom: spacing.sm,
   },
   imagePlaceholderLabel: {
@@ -675,12 +672,6 @@ const styles = StyleSheet.create({
   macroInput: {
     flex: 1,
     minWidth: 140,
-  },
-  calculatingIcon: {
-    fontSize: 16,
-  },
-  autoIcon: {
-    fontSize: 16,
   },
   footer: {
     padding: spacing.lg,

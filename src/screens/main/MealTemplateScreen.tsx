@@ -29,7 +29,7 @@ import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
 import MealActionsMenu from '../../components/common/MealActionsMenu';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
-import { MaterialIcons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 
 type MealTemplateScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -197,7 +197,7 @@ const MealTemplateScreen: React.FC = observer(() => {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyEmoji}>🍽️</Text>
+      <Ionicons name="restaurant-outline" size={64} color={colors.text.secondary} />
       <Text style={styles.emptyTitle}>Нет блюд в шаблоне</Text>
       <Text style={styles.emptySubtitle}>
         Добавьте блюда, чтобы использовать этот шаблон
@@ -219,13 +219,13 @@ const MealTemplateScreen: React.FC = observer(() => {
         rightComponent={
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={handleEditMealType} style={styles.editButton}>
-              <Text style={styles.editIcon}>✏️</Text>
+              <Ionicons name="create-outline" size={20} color={colors.text.primary} />
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => setShowActionsMenu(true)}
               style={styles.menuButton}
             >
-              <MaterialIcons name="more-vert" size={24} color={colors.text.primary} />
+              <Ionicons name="ellipsis-vertical" size={24} color={colors.text.primary} />
             </TouchableOpacity>
           </View>
         }
@@ -352,9 +352,6 @@ const styles = StyleSheet.create({
   editButton: {
     padding: spacing.xs,
   },
-  editIcon: {
-    fontSize: 20,
-  },
   menuButton: {
     padding: spacing.xs,
   },
@@ -431,10 +428,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
     paddingHorizontal: spacing.xl,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
   },
   emptyTitle: {
     ...typography.h4,

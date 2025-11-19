@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -67,7 +68,7 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
         />
       ) : (
         <View style={styles.productImagePlaceholder}>
-          <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
+          <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
         </View>
       )}
 
@@ -96,11 +97,11 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
             onFavoriteToggle(product);
           }}
         >
-          <Text
-            style={[styles.favoriteIcon, isFavorite && { color: colors.warning }]}
-          >
-            {isFavorite ? '⭐' : '☆'}
-          </Text>
+          <Ionicons
+            name={isFavorite ? 'star' : 'star-outline'}
+            size={24}
+            color={isFavorite ? colors.warning : colors.text.secondary}
+          />
         </TouchableOpacity>
 
         {showAddButton ? (
@@ -377,7 +378,7 @@ const ProductsScreen: React.FC = observer(() => {
     if (activeTab === 'favorites') {
       return (
         <View style={dynamicStyles.emptyState}>
-          <Text style={dynamicStyles.emptyEmoji}>⭐</Text>
+          <Ionicons name="star-outline" size={64} color={colors.text.secondary} />
           <Text style={dynamicStyles.emptyTitle}>Нет избранных продуктов</Text>
           <Text style={dynamicStyles.emptySubtitle}>
             Добавьте продукты в избранное для быстрого доступа
@@ -389,7 +390,7 @@ const ProductsScreen: React.FC = observer(() => {
     if (activeTab === 'search') {
       return (
         <View style={dynamicStyles.emptyState}>
-          <Text style={dynamicStyles.emptyEmoji}>🔍</Text>
+          <Ionicons name="search-outline" size={64} color={colors.text.secondary} />
           <Text style={dynamicStyles.emptyTitle}>Поиск продуктов</Text>
           <Text style={dynamicStyles.emptySubtitle}>
             Введите название продукта для поиска
@@ -400,7 +401,7 @@ const ProductsScreen: React.FC = observer(() => {
 
     return (
       <View style={dynamicStyles.emptyState}>
-        <Text style={dynamicStyles.emptyEmoji}>🥗</Text>
+        <Ionicons name="leaf-outline" size={64} color={colors.text.secondary} />
         <Text style={dynamicStyles.emptyTitle}>Нет продуктов</Text>
         <Text style={dynamicStyles.emptySubtitle}>Создайте свой первый продукт</Text>
       </View>
@@ -421,13 +422,20 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const renderTabIcon = (tab: 'search' | 'favorites' | 'my' | 'reco') => {
-    const icons = {
-      search: '🔍',
-      favorites: '⭐',
-      my: '📝',
-      reco: '✨',
-    };
-    return <Text style={dynamicStyles.tabIcon}>{icons[tab]}</Text>;
+    const iconMap = {
+      search: 'search-outline',
+      favorites: 'star-outline',
+      my: 'create-outline',
+      reco: 'sparkles-outline',
+    } as const;
+    const iconName = iconMap[tab];
+    return (
+      <Ionicons
+        name={iconName}
+        size={20}
+        color={activeTab === tab ? colors.primary : colors.text.secondary}
+      />
+    );
   };
 
   // Show full loading screen only for initial load when list is empty
@@ -554,7 +562,7 @@ const ProductsScreen: React.FC = observer(() => {
               <>
                 <SectionHeader
                   title="Важные уведомления"
-                  icon="⚡"
+                  icon="flash-outline"
                   count={
                     recommendationsStore.criticalInsights.length +
                     recommendationsStore.warningInsights.length
@@ -572,7 +580,7 @@ const ProductsScreen: React.FC = observer(() => {
             {/* Подборки для приёма */}
             <SectionHeader
               title="Подборки для приёма"
-              icon="🎯"
+              icon="target-outline"
               actionText="Обновить"
               onActionPress={() => recommendationsStore.loadMealPicks(5, true)}
               onInfoPress={() => showInfo('mealPicks')}
@@ -599,7 +607,7 @@ const ProductsScreen: React.FC = observer(() => {
             {/* Рекомендованные продукты */}
             <SectionHeader
               title="Рекомендованные продукты"
-              icon="✨"
+              icon="sparkles-outline"
               onInfoPress={() => showInfo('products')}
               count={recommendationsStore.allProducts.length}
             />
@@ -639,7 +647,7 @@ const ProductsScreen: React.FC = observer(() => {
               <>
                 <SectionHeader
                   title="Полезные советы"
-                  icon="💡"
+                  icon="bulb-outline"
                   onInfoPress={() => showInfo('insights')}
                   count={recommendationsStore.infoInsights.length}
                 />
@@ -763,9 +771,6 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     justifyContent: 'center',
     marginRight: spacing.md,
   },
-  productImagePlaceholderIcon: {
-    fontSize: 24,
-  },
   productInfo: {
     flex: 1,
   },
@@ -797,10 +802,6 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
   favoriteButton: {
     padding: spacing.sm,
   },
-  favoriteIcon: {
-    fontSize: 24,
-    color: colors.text.secondary,
-  },
   productArrow: {
     ...typography.h3,
     color: colors.text.secondary,
@@ -820,10 +821,6 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
-  },
-  emptyEmoji: {
-    fontSize: 64,
-    marginBottom: spacing.lg,
   },
   emptyTitle: {
     ...typography.h4,
