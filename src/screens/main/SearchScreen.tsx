@@ -449,6 +449,7 @@ const SearchScreen: React.FC = observer(() => {
           <TextInput
             style={styles.searchInput}
             placeholder="Поиск продуктов..."
+            placeholderTextColor={colors.text.secondary}
             value={searchQuery}
             onChangeText={handleSearchChange}
             autoFocus
@@ -619,6 +620,7 @@ const getStyles = (colors: ReturnType<typeof import('../../theme/colors').getThe
   },
   searchInput: {
     ...typography.body1,
+    color: colors.text.primary,
     backgroundColor: colors.background.light,
     borderRadius: borderRadius.lg,
     paddingHorizontal: spacing.md,
