@@ -8,6 +8,12 @@ import {
   RefreshControl,
   StatusBar,
 } from 'react-native';
+import { runOnJS } from 'react-native-reanimated';
+import {
+  GestureDetector,
+  Gesture,
+  Directions,
+} from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import { useNavigation } from '@react-navigation/native';
@@ -123,6 +129,32 @@ const MainScreen: React.FC = observer(() => {
     setShowDatePicker(true);
   };
 
+  const onSwipeLeft = () => {
+    const nextDate = new Date(mealStore.selectedDate);
+    nextDate.setDate(nextDate.getDate() + 1);
+    handleDateSelect(nextDate);
+  };
+
+  const onSwipeRight = () => {
+    const prevDate = new Date(mealStore.selectedDate);
+    prevDate.setDate(prevDate.getDate() - 1);
+    handleDateSelect(prevDate);
+  };
+
+  const flingLeft = Gesture.Fling()
+    .direction(Directions.LEFT)
+    .onEnd(() => {
+      runOnJS(onSwipeLeft)();
+    });
+
+  const flingRight = Gesture.Fling()
+    .direction(Directions.RIGHT)
+    .onEnd(() => {
+      runOnJS(onSwipeRight)();
+    });
+
+  const composedGestures = Gesture.Simultaneous(flingLeft, flingRight);
+
   const renderEmptyState = () => (
     <View style={[styles.emptyState, { backgroundColor: colors.background.paper, borderColor: colors.border.light }]}>
       <Ionicons name="restaurant-outline" size={64} color={colors.text.secondary} />
@@ -165,69 +197,71 @@ const MainScreen: React.FC = observer(() => {
         maximumDate={new Date()}
       />
 
-      <ScrollView
-        style={styles.content}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-            colors={[colors.primary]}
+      <GestureDetector gesture={composedGestures}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+              colors={[colors.primary]}
+            />
+          }
+        >
+          {/* Date Strip */}
+          <DateStrip
+            selectedDate={mealStore.selectedDate}
+            onDateSelect={handleDateSelect}
+            caloriesData={mealStore.caloriesByDate}
           />
-        }
-      >
-        {/* Date Strip */}
-        <DateStrip
-          selectedDate={mealStore.selectedDate}
-          onDateSelect={handleDateSelect}
-          caloriesData={mealStore.caloriesByDate}
-        />
 
-        {/* Daily Summary */}
-        <DailySummary
-          calories={mealStore.dailyCalories}
-          proteins={mealStore.dailyProteins}
-          fats={mealStore.dailyFats}
-          carbohydrates={mealStore.dailyCarbohydrates}
-          caloriesLimit={profileStore.profile?.dayLimitCal || 2000}
-        />
+          {/* Daily Summary */}
+          <DailySummary
+            calories={mealStore.dailyCalories}
+            proteins={mealStore.dailyProteins}
+            fats={mealStore.dailyFats}
+            carbohydrates={mealStore.dailyCarbohydrates}
+            caloriesLimit={profileStore.profile?.dayLimitCal || 2000}
+          />
 
-        {/* Meals List */}
-        <View style={styles.mealsContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={[styles.mealsTitle, { color: colors.text.primary }]}>Приемы пищи</Text>
-            <Text style={[styles.mealsCount, { color: colors.text.inverse, backgroundColor: colors.primary }]}>
-              {mealStore.mealsForSelectedDate.length}
-            </Text>
+          {/* Meals List */}
+          <View style={styles.mealsContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={[styles.mealsTitle, { color: colors.text.primary }]}>Приемы пищи</Text>
+              <Text style={[styles.mealsCount, { color: colors.text.inverse, backgroundColor: colors.primary }]}>
+                {mealStore.mealsForSelectedDate.length}
+              </Text>
+            </View>
+
+            {mealStore.mealsForSelectedDate.length === 0 ? (
+              renderEmptyState()
+            ) : (
+              mealStore.mealsForSelectedDate.map((meal) => {
+                const elements = mealStore.mealElements[meal.id] || [];
+                const totalCalories = elements.reduce((sum, el) => sum + el.calories, 0);
+                const totalProteins = elements.reduce((sum, el) => sum + el.proteins, 0);
+                const totalFats = elements.reduce((sum, el) => sum + el.fats, 0);
+                const totalCarbohydrates = elements.reduce((sum, el) => sum + el.carbohydrates, 0);
+
+                return (
+                  <MealCard
+                    key={meal.id}
+                    meal={meal}
+                    onPress={handleMealPress}
+                    userTimezone={userTimezone}
+                    totalCalories={totalCalories}
+                    totalProteins={totalProteins}
+                    totalFats={totalFats}
+                    totalCarbohydrates={totalCarbohydrates}
+                  />
+                );
+              })
+            )}
           </View>
-
-          {mealStore.mealsForSelectedDate.length === 0 ? (
-            renderEmptyState()
-          ) : (
-            mealStore.mealsForSelectedDate.map((meal) => {
-              const elements = mealStore.mealElements[meal.id] || [];
-              const totalCalories = elements.reduce((sum, el) => sum + el.calories, 0);
-              const totalProteins = elements.reduce((sum, el) => sum + el.proteins, 0);
-              const totalFats = elements.reduce((sum, el) => sum + el.fats, 0);
-              const totalCarbohydrates = elements.reduce((sum, el) => sum + el.carbohydrates, 0);
-
-              return (
-                <MealCard
-                  key={meal.id}
-                  meal={meal}
-                  onPress={handleMealPress}
-                  userTimezone={userTimezone}
-                  totalCalories={totalCalories}
-                  totalProteins={totalProteins}
-                  totalFats={totalFats}
-                  totalCarbohydrates={totalCarbohydrates}
-                />
-              );
-            })
-          )}
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </GestureDetector>
 
       {/* FAB */}
       <FAB
