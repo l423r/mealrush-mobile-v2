@@ -15,7 +15,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import * as ImagePicker from 'expo-image-picker';
 import type { MainStackParamList } from '../../types/navigation.types';
-import type { Product } from '../../types/api.types';
+import type { Product, MealTemplate } from '../../types/api.types';
 import { useStores } from '../../stores';
 import {
   typography,
@@ -51,13 +51,13 @@ type SearchScreenRouteProp = RouteProp<MainStackParamList, 'Search'>;
 const SearchScreen: React.FC = observer(() => {
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const route = useRoute<SearchScreenRouteProp>();
-  const { productStore, mealStore, uiStore } = useStores();
+  const { productStore, mealStore, uiStore, mealTemplateStore } = useStores();
   const { colors } = useTheme();
   const { alertState, showError, hideAlert } = useAlert();
   const imageSource = useImageSource();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'my'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'favorites' | 'my' | 'templates'>('all');
   const [isSearching, setIsSearching] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
@@ -77,7 +77,11 @@ const SearchScreen: React.FC = observer(() => {
     if (activeTab === 'my') {
       productStore.getAll();
     }
-  }, [activeTab, productStore]);
+    // Load templates when switching to 'templates' tab
+    if (activeTab === 'templates') {
+      mealTemplateStore.loadTemplates(0, 50);
+    }
+  }, [activeTab, productStore, mealTemplateStore]);
 
   useEffect(() => {
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
@@ -308,7 +312,19 @@ const SearchScreen: React.FC = observer(() => {
     }
   };
 
+  const handleTemplatePress = async (template: MealTemplate) => {
+    navigation.navigate('MealTemplate', { template });
+  };
+
   const handleLoadMore = () => {
+    if (
+      activeTab === 'templates' &&
+      !mealTemplateStore.loading
+      // Add pagination check for templates if needed
+    ) {
+      // mealTemplateStore.loadTemplates(page + 1);
+    }
+
     if (
       activeTab === 'all' &&
       productStore.pagination.hasMore &&
@@ -319,7 +335,68 @@ const SearchScreen: React.FC = observer(() => {
     }
   };
 
-  const renderProductItem = ({ item: product }: { item: Product }) => {
+  const renderProductItem = ({ item }: { item: Product | MealTemplate }) => {
+    // Check if item is a MealTemplate
+    if ('mealType' in item) {
+      const template = item as MealTemplate;
+
+      const getMealTypeLabel = (mealType: string): string => {
+        const labels: Record<string, string> = {
+          BREAKFAST: 'Завтрак',
+          LUNCH: 'Обед',
+          DINNER: 'Ужин',
+          SUPPER: 'Перекус',
+          LATE_SUPPER: 'Поздний перекус',
+        };
+        return labels[mealType] || mealType;
+      };
+
+      const getMealTypeIcon = (mealType: string): keyof typeof Ionicons.glyphMap => {
+        const icons: Record<string, keyof typeof Ionicons.glyphMap> = {
+          BREAKFAST: 'sunny-outline',
+          LUNCH: 'partly-sunny-outline',
+          DINNER: 'moon-outline',
+          SUPPER: 'cafe-outline',
+          LATE_SUPPER: 'moon',
+        };
+        return icons[mealType] || 'restaurant-outline';
+      };
+
+      return (
+        <TouchableOpacity
+          style={styles.productCard}
+          onPress={() => handleTemplatePress(template)}
+        >
+          <View style={[styles.productImagePlaceholder, { backgroundColor: colors.background.light }]}>
+            <Ionicons
+              name={getMealTypeIcon(template.mealType)}
+              size={24}
+              color={colors.text.primary}
+            />
+          </View>
+
+          <View style={styles.productInfo}>
+            <Text style={styles.productName} numberOfLines={1}>
+              {template.name || getMealTypeLabel(template.mealType)}
+            </Text>
+            <Text style={styles.productMacros}>
+              {getMealTypeLabel(template.mealType)}
+              {template.elements && template.elements.length > 0 && (
+                <> • {template.elements.length} блюд</>
+              )}
+            </Text>
+          </View>
+
+          <Ionicons
+            name="chevron-forward"
+            size={24}
+            color={colors.text.hint}
+          />
+        </TouchableOpacity>
+      );
+    }
+
+    const product = item as Product;
     const isFavorite = productStore.favorites.some((f) => f.id === product.id);
 
     return (
@@ -395,6 +472,18 @@ const SearchScreen: React.FC = observer(() => {
       );
     }
 
+    if (activeTab === 'templates') {
+      return (
+        <View style={styles.emptyState}>
+          <Ionicons name="bookmark-outline" size={64} color={colors.text.secondary} />
+          <Text style={styles.emptyTitle}>Нет шаблонов</Text>
+          <Text style={styles.emptySubtitle}>
+            Сохраните прием пищи как шаблон для быстрого использования
+          </Text>
+        </View>
+      );
+    }
+
     if (searchQuery.length < 2) {
       return (
         <View style={styles.emptyState}>
@@ -430,6 +519,9 @@ const SearchScreen: React.FC = observer(() => {
     }
     if (activeTab === 'my') {
       return productStore.myProducts;
+    }
+    if (activeTab === 'templates') {
+      return mealTemplateStore.templates;
     }
     return productStore.products;
   };
@@ -495,6 +587,19 @@ const SearchScreen: React.FC = observer(() => {
               ]}
             >
               Мои
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === 'templates' && styles.activeTab]}
+            onPress={() => setActiveTab('templates')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'templates' && styles.activeTabText,
+              ]}
+            >
+              Шаблоны
             </Text>
           </TouchableOpacity>
         </View>
