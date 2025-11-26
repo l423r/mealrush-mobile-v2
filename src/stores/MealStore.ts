@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 import { mealService } from '../api/services/meal.service';
+import { nutritionService } from '../api/services/nutrition.service';
 import type RootStore from './RootStore';
 import type {
   Meal,
@@ -19,6 +20,7 @@ class MealStore {
   meals: Meal[] = [];
   selectedDate: Date = new Date();
   mealElements: { [mealId: number]: MealElement[] } = {};
+  caloriesByDate: Record<string, number> = {};
   loading: boolean = false;
   error: string | null = null;
   analyzingPhoto: boolean = false;
@@ -124,6 +126,30 @@ class MealStore {
       },
       'Ошибка загрузки приемов пищи'
     );
+  }
+
+  async loadCaloriesForRange(startDate: Date, endDate: Date) {
+    try {
+      const startDateStr = formatDateForAPI(startDate);
+      const endDateStr = formatDateForAPI(endDate);
+
+      const response = await nutritionService.getTrend({
+        startDate: startDateStr,
+        endDate: endDateStr,
+        metric: 'CALORIES',
+      });
+
+      runInAction(() => {
+        const caloriesMap: Record<string, number> = {};
+        response.dailyValues.forEach((point) => {
+          caloriesMap[point.date] = Math.round(point.value);
+        });
+        // Merge with existing data to avoid clearing other dates if we load partial ranges
+        this.caloriesByDate = { ...this.caloriesByDate, ...caloriesMap };
+      });
+    } catch (error) {
+      console.error('Error loading calories for range:', error);
+    }
   }
 
   async loadMealElements(mealId: number) {

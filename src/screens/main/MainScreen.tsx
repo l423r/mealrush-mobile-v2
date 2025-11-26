@@ -49,6 +49,15 @@ const MainScreen: React.FC = observer(() => {
   const loadData = React.useCallback(async () => {
     try {
       await mealStore.loadMealsForDate(mealStore.selectedDate);
+
+      // Load calories for the date strip range (7 days back, 7 days forward)
+      const today = new Date();
+      const startDate = new Date(today);
+      startDate.setDate(today.getDate() - 7);
+      const endDate = new Date(today);
+      endDate.setDate(today.getDate() + 7);
+
+      await mealStore.loadCaloriesForRange(startDate, endDate);
     } catch (error) {
       console.error('Error loading meals:', error);
     }
@@ -172,6 +181,7 @@ const MainScreen: React.FC = observer(() => {
         <DateStrip
           selectedDate={mealStore.selectedDate}
           onDateSelect={handleDateSelect}
+          caloriesData={mealStore.caloriesByDate}
         />
 
         {/* Daily Summary */}

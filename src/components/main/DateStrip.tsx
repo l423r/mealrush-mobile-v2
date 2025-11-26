@@ -9,19 +9,20 @@ import {
 import { FlashList } from '@shopify/flash-list';
 import { useTheme } from '../../hooks/useTheme';
 import { typography, spacing, borderRadius } from '../../theme';
-import { formatDate } from '../../utils/formatting';
+import { formatDate, formatDateForAPI } from '../../utils/formatting';
 import { triggerHaptic } from '../../utils/haptics';
 
 interface DateStripProps {
     selectedDate: Date;
     onDateSelect: (date: Date) => void;
+    caloriesData?: Record<string, number>;
 }
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width / 7; // Show roughly 7 days
 const DAYS_TO_SHOW = 14; // 2 weeks total (1 week back, 1 week forward)
 
-const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect }) => {
+const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect, caloriesData = {} }) => {
     const { colors } = useTheme();
     const flatListRef = useRef<FlashList<Date>>(null);
 
@@ -58,6 +59,9 @@ const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect }) => 
     const renderItem = ({ item }: { item: Date }) => {
         const isSelected = item.toDateString() === selectedDate.toDateString();
         const isToday = item.toDateString() === new Date().toDateString();
+        const dateStr = formatDateForAPI(item);
+        const calories = caloriesData[dateStr];
+        const hasCalories = calories !== undefined && calories > 0;
 
         return (
             <TouchableOpacity
@@ -87,6 +91,16 @@ const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect }) => 
                 >
                     {item.getDate()}
                 </Text>
+                {hasCalories && (
+                    <Text
+                        style={[
+                            styles.caloriesText,
+                            { color: isSelected ? colors.text.inverse : colors.text.secondary },
+                        ]}
+                    >
+                        {calories}
+                    </Text>
+                )}
             </TouchableOpacity>
         );
     };
@@ -109,7 +123,7 @@ const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect }) => 
 
 const styles = StyleSheet.create({
     container: {
-        height: 70,
+        height: 80, // Increased height to accommodate calories
         marginBottom: spacing.sm,
     },
     contentContainer: {
@@ -117,8 +131,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     dateItem: {
-        width: 44,
-        height: 60,
+        width: 48, // Slightly wider
+        height: 70, // Taller
         borderRadius: borderRadius.lg,
         alignItems: 'center',
         justifyContent: 'center',
@@ -129,11 +143,17 @@ const styles = StyleSheet.create({
         ...typography.caption,
         fontSize: 10,
         textTransform: 'uppercase',
-        marginBottom: 4,
+        marginBottom: 2,
     },
     dayNumber: {
         ...typography.h5,
         fontWeight: 'bold',
+        marginBottom: 2,
+    },
+    caloriesText: {
+        ...typography.caption,
+        fontSize: 9,
+        fontWeight: '500',
     },
 });
 
