@@ -14,6 +14,7 @@ import type { AnalyticsPeriod, TrendMetric } from '../../types/analytics.types';
 import { spacing, componentSpacing, typography } from '../../theme';
 import AnalyticsTrendChart from '../../components/analytics/AnalyticsTrendChart';
 import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribution';
+import AnalyticsTopProducts from '../../components/analytics/AnalyticsTopProducts';
 import Header from '../../components/common/Header';
 import { useStores } from '../../stores';
 import { useTheme } from '../../hooks/useTheme';
@@ -21,7 +22,7 @@ import type { lightColors, darkColors } from '../../theme/colors';
 
 type ColorsType = typeof lightColors | typeof darkColors;
 
-type TabKey = 'trend' | 'distributions';
+type TabKey = 'trend' | 'distributions' | 'products';
 
 const AnalyticsScreen: React.FC = observer(() => {
   const { profileStore } = useStores();
@@ -82,6 +83,13 @@ const AnalyticsScreen: React.FC = observer(() => {
           colors={colors}
           styles={dynamicStyles}
         />
+        <TabButton
+          label="Продукты"
+          active={activeTab === 'products'}
+          onPress={() => setActiveTab('products')}
+          colors={colors}
+          styles={dynamicStyles}
+        />
       </View>
 
       <View style={dynamicStyles.section}>
@@ -98,12 +106,18 @@ const AnalyticsScreen: React.FC = observer(() => {
               series={store.getTrendSeries(metric)}
             />
           )
-        ) : store.distribution == null ? (
-          <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
+        ) : activeTab === 'distributions' ? (
+          store.distribution == null ? (
+            <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
+          ) : (
+            <AnalyticsDistribution
+              key={`distribution-${periodKey}`}
+              data={store.distribution}
+            />
+          )
         ) : (
-          <AnalyticsDistribution
-            key={`distribution-${periodKey}`}
-            data={store.distribution}
+          <AnalyticsTopProducts
+            data={store.topProducts}
           />
         )}
       </View>

@@ -67,12 +67,6 @@ async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
   );
 
   const results = await Promise.all(requests);
-  if (__DEV__) {
-    console.log('[AnalyticsTrend] range:', { startDate, endDate });
-    results.forEach((r) =>
-      console.log(`[AnalyticsTrend] response ${r.field}:`, r.data)
-    );
-  }
 
   // Merge by date
   const byDate: Record<string, TrendPoint> = {};
@@ -95,95 +89,70 @@ async function fetchTrend(period: AnalyticsPeriod): Promise<TrendPoint[]> {
   return Object.values(byDate).sort((a, b) => a.date.localeCompare(b.date));
 }
 
-async function fetchStatistics(period: AnalyticsPeriod): Promise<SummaryKpi> {
-  const { startDate, endDate } = resolveRange(period);
-  const { data } = await apiClient.get<any>(ApiRoutes.Nutrition.Statistics, {
-    params: { startDate, endDate },
-  });
-  if (__DEV__) {
-    console.log('[AnalyticsStatistics] range:', { startDate, endDate });
-    console.log('[AnalyticsStatistics] response:', data);
-  }
-  // Map backend statistics payload to SummaryKpi used by UI
-  const totalCalories = (data?.averageCalories || 0) * (data?.totalDays || 0);
-  const mapped: SummaryKpi = {
-    totalCalories,
-    averageDailyCalories: data?.averageCalories || 0,
-    protein: data?.averageProteins || 0,
-    fat: data?.averageFats || 0,
-    carbs: data?.averageCarbohydrates || 0,
-    mealsCount: data?.totalMeals || 0,
-    daysCount: data?.totalDays || 0,
-  };
-  return mapped;
-}
-
-async function fetchDistribution(
-  period: AnalyticsPeriod
-): Promise<DistributionData> {
-  // Some backends return macro share and by-meal in one call (STATISTICS),
-  // others expose a dedicated endpoint. We'll try STATISTICS first.
-  const { startDate, endDate } = resolveRange(period);
-  const { data } = await apiClient.get<any>(ApiRoutes.Nutrition.Statistics, {
-    params: { startDate, endDate },
-  });
-  if (__DEV__) {
-    console.log('[AnalyticsDistribution] range:', { startDate, endDate });
-    console.log('[AnalyticsDistribution] response:', data);
-  }
-
-  // Attempt to map common shapes; if not provided, derive macro share
-  // from average grams using kcal factors (P=4, C=4, F=9)
-  let macro: MacroShare | undefined = data?.macroShare;
-  if (!macro) {
-    const avgP: number = data?.averageProteins ?? 0;
-    const avgF: number = data?.averageFats ?? 0;
-    const avgC: number = data?.averageCarbohydrates ?? 0;
-    const kcalFromP = avgP * 4;
-    const kcalFromF = avgF * 9;
-    const kcalFromC = avgC * 4;
-    const total = kcalFromP + kcalFromF + kcalFromC;
-    macro = total > 0
-      ? {
-        proteinPct: kcalFromP / total,
-        fatPct: kcalFromF / total,
-        carbsPct: kcalFromC / total,
-      }
-      : { proteinPct: 0, fatPct: 0, carbsPct: 0 };
-  }
-
-  const byMealType = data?.byMealType || [];
-  return { macroShare: macro, byMealType };
-}
-
-async function fetchTopProducts(
-  period: AnalyticsPeriod
-): Promise<TopProductItem[]> {
-  // If there is a specific recommendations endpoint, use it; otherwise return empty.
-  try {
-    const { data } = await apiClient.get<TopProductItem[]>(ApiRoutes.Recommendations.Products, {
-      params: { page: 0, size: 10 },
-    });
-    if (__DEV__) {
-      console.log('[AnalyticsTopProducts] params:', { page: 0, size: 10 });
-      console.log('[AnalyticsTopProducts] response:', data);
-    }
-    return data;
-  } catch {
-    return [];
-  }
-}
-
 export const analyticsService = {
   async getAggregates(
     period: AnalyticsPeriod
   ): Promise<AnalyticsAggregatePayload> {
-    const [summary, trend, distribution, topProducts] = await Promise.all([
-      fetchStatistics(period),
+    const { startDate, endDate } = resolveRange(period);
+
+    // Fetch Statistics (contains summary, distribution, and top products) and Trend in parallel
+    const [statsResponse, trend] = await Promise.all([
+      apiClient.get<any>(ApiRoutes.Nutrition.Statistics, {
+        params: { startDate, endDate },
+      }),
       fetchTrend(period),
-      fetchDistribution(period),
-      fetchTopProducts(period),
     ]);
+
+    const data = statsResponse.data;
+
+    if (__DEV__) {
+      console.log('[Analytics] Statistics response:', data);
+    }
+
+    // 1. Map Summary
+    const totalCalories = (data?.averageCalories || 0) * (data?.totalDays || 0);
+    const summary: SummaryKpi = {
+      totalCalories,
+      averageDailyCalories: data?.averageCalories || 0,
+      protein: data?.averageProteins || 0,
+      fat: data?.averageFats || 0,
+      carbs: data?.averageCarbohydrates || 0,
+      mealsCount: data?.totalMeals || 0,
+      daysCount: data?.totalDays || 0,
+    };
+
+    // 2. Map Distribution
+    let macro: MacroShare | undefined = data?.macroShare;
+    if (!macro) {
+      const avgP: number = data?.averageProteins ?? 0;
+      const avgF: number = data?.averageFats ?? 0;
+      const avgC: number = data?.averageCarbohydrates ?? 0;
+      const kcalFromP = avgP * 4;
+      const kcalFromF = avgF * 9;
+      const kcalFromC = avgC * 4;
+      const total = kcalFromP + kcalFromF + kcalFromC;
+      macro = total > 0
+        ? {
+          proteinPct: kcalFromP / total,
+          fatPct: kcalFromF / total,
+          carbsPct: kcalFromC / total,
+        }
+        : { proteinPct: 0, fatPct: 0, carbsPct: 0 };
+    }
+    const distribution: DistributionData = {
+      macroShare: macro,
+      byMealType: data?.byMealType || []
+    };
+
+    // 3. Map Top Products
+    // API returns: { productId: number, productName: string, usageCount: number }
+    const rawTopProducts = data?.topProducts || [];
+    const topProducts: TopProductItem[] = rawTopProducts.map((item: any) => ({
+      id: String(item.productId),
+      name: item.productName,
+      calories: 0, // API doesn't return calories for top products list yet
+      usageCount: item.usageCount,
+    }));
 
     return {
       summary,

@@ -46,6 +46,7 @@ export interface TopProductItem {
   id: string;
   name: string;
   calories: number; // contribution in kcal over the period
+  usageCount: number;
   macroTag?: 'protein' | 'fat' | 'carbs' | 'mixed';
 }
 
