@@ -44,7 +44,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
 }) => {
   const { colors } = useTheme();
   const dynamicStyles = createStyles(colors);
-  
+
   const containerStyle = useMemo(
     () => [dynamicStyles.container, collapsed && dynamicStyles.containerCollapsed],
     [collapsed, dynamicStyles]
@@ -58,7 +58,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
     const proteinKcal = (kpi.protein || 0) * 4;
     const fatKcal = (kpi.fat || 0) * 9;
     const carbsKcal = (kpi.carbs || 0) * 4;
-    
+
     return {
       protein: Math.round((proteinKcal / kpi.averageDailyCalories) * 100),
       fat: Math.round((fatKcal / kpi.averageDailyCalories) * 100),
@@ -70,11 +70,15 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
   }, [kpi]);
 
   // Calculate progress percentage
-  const progressPercentage = useMemo(() => {
+  const { progressPercentage, isOverLimit } = useMemo(() => {
     if (!targetCalories || !kpi?.averageDailyCalories || targetCalories === 0) {
-      return null;
+      return { progressPercentage: null, isOverLimit: false };
     }
-    return Math.min(Math.round((kpi.averageDailyCalories / targetCalories) * 100), 100);
+    const raw = Math.round((kpi.averageDailyCalories / targetCalories) * 100);
+    return {
+      progressPercentage: raw,
+      isOverLimit: raw > 100,
+    };
   }, [kpi?.averageDailyCalories, targetCalories]);
 
   return (
@@ -111,22 +115,27 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
             <Text style={dynamicStyles.progressText}>
               {formatNumber(kpi?.averageDailyCalories)} / {formatNumber(targetCalories)} ккал
             </Text>
-            <Text style={dynamicStyles.progressPercentage}>{progressPercentage}%</Text>
+            <Text style={[dynamicStyles.progressPercentage, isOverLimit && { color: colors.error }]}>
+              {progressPercentage}%
+            </Text>
           </View>
           <View style={dynamicStyles.progressBarBg}>
             <View
               style={[
                 dynamicStyles.progressBarFg,
-                { width: `${Math.min(progressPercentage, 100)}%` },
+                {
+                  width: `${Math.min(progressPercentage, 100)}%`,
+                  backgroundColor: isOverLimit ? colors.error : colors.primary
+                },
               ]}
             />
           </View>
-          <Text style={dynamicStyles.progressStatus}>
-            {progressPercentage < 90
-              ? 'Ниже цели'
-              : progressPercentage <= 110
-                ? 'На правильном пути'
-                : 'Превышение цели'}
+          <Text style={[dynamicStyles.progressStatus, isOverLimit && { color: colors.error }]}>
+            {isOverLimit
+              ? 'Превышение лимита'
+              : progressPercentage < 90
+                ? 'Ниже цели'
+                : 'На правильном пути'}
           </Text>
         </View>
       )}

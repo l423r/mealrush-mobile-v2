@@ -29,6 +29,7 @@ const DailySummary: React.FC<DailySummaryProps> = observer(({
 }) => {
     const { colors } = useTheme();
     const progress = calculateProgressPercentage(calories, caloriesLimit);
+    const isOverLimit = progress > 100;
     const strokeDashoffset = CIRCUMFERENCE - (CIRCUMFERENCE * Math.min(progress, 100)) / 100;
 
     return (
@@ -57,7 +58,7 @@ const DailySummary: React.FC<DailySummaryProps> = observer(({
                                 cx={RING_SIZE / 2}
                                 cy={RING_SIZE / 2}
                                 r={RADIUS}
-                                stroke={colors.primary}
+                                stroke={isOverLimit ? colors.error : colors.primary}
                                 strokeWidth={STROKE_WIDTH}
                                 fill="transparent"
                                 strokeDasharray={CIRCUMFERENCE}
