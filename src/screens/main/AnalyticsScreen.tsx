@@ -15,6 +15,8 @@ import { spacing, componentSpacing, typography } from '../../theme';
 import AnalyticsTrendChart from '../../components/analytics/AnalyticsTrendChart';
 import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribution';
 import AnalyticsTopProducts from '../../components/analytics/AnalyticsTopProducts';
+import AnalyticsWeightChart from '../../components/analytics/AnalyticsWeightChart';
+import AnalyticsGoalCalendar from '../../components/analytics/AnalyticsGoalCalendar';
 import Header from '../../components/common/Header';
 import { useStores } from '../../stores';
 import { useTheme } from '../../hooks/useTheme';
@@ -25,18 +27,41 @@ type ColorsType = typeof lightColors | typeof darkColors;
 type TabKey = 'trend' | 'distributions' | 'products';
 
 const AnalyticsScreen: React.FC = observer(() => {
-  const { profileStore } = useStores();
+  const { profileStore, weightStore } = useStores();
   const { colors } = useTheme();
   const store = useMemo(() => new AnalyticsStore(), []);
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [metric, setMetric] = useState<TrendMetric>('calories');
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     store.fetchAllForPeriod();
   }, [store, store.period]);
 
+  // Load weight history when entering screen
+  useEffect(() => {
+    const loadWeight = async () => {
+      try {
+        await weightStore.fetchHistory(0, 50); // Fetch enough history
+      } catch (e) {
+        console.error('Failed to load weight history', e);
+      }
+    };
+    loadWeight();
+  }, [weightStore]);
+
   const onRefresh = async () => {
-    await store.fetchAllForPeriod(true);
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        store.fetchAllForPeriod(true),
+        weightStore.fetchHistory(0, 50, true),
+      ]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const onChangePeriod = (next: AnalyticsPeriod) => {
@@ -53,50 +78,15 @@ const AnalyticsScreen: React.FC = observer(() => {
 
   const dynamicStyles = createStyles(colors);
 
-  return (
-    <ScrollView
-      style={dynamicStyles.container}
-      refreshControl={
-        <RefreshControl refreshing={store.loading} onRefresh={onRefresh} />
-      }
-    >
-      <Header title="Сводка" />
-      <AnalyticsHeader
-        period={store.period}
-        onChangePeriod={onChangePeriod}
-        kpi={store.summaryKpi}
-        targetCalories={profileStore.profile?.dayLimitCal}
-      />
+  const renderContent = () => {
+    if (store.loading && !refreshing) {
+      return <Text style={dynamicStyles.placeholder}>Загрузка данных...</Text>;
+    }
 
-      <View style={dynamicStyles.tabbar}>
-        <TabButton
-          label="Тренд"
-          active={activeTab === 'trend'}
-          onPress={() => setActiveTab('trend')}
-          colors={colors}
-          styles={dynamicStyles}
-        />
-        <TabButton
-          label="Распределения"
-          active={activeTab === 'distributions'}
-          onPress={() => setActiveTab('distributions')}
-          colors={colors}
-          styles={dynamicStyles}
-        />
-        <TabButton
-          label="Продукты"
-          active={activeTab === 'products'}
-          onPress={() => setActiveTab('products')}
-          colors={colors}
-          styles={dynamicStyles}
-        />
-      </View>
-
-      <View style={dynamicStyles.section}>
-        {store.loading ? (
-          <Text style={dynamicStyles.placeholder}>Загрузка данных...</Text>
-        ) : activeTab === 'trend' ? (
-          !store.trend || store.trend.length === 0 ? (
+    if (activeTab === 'trend') {
+      return (
+        <>
+          {!store.trend || store.trend.length === 0 ? (
             <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
           ) : (
             <AnalyticsTrendChart
@@ -105,23 +95,79 @@ const AnalyticsScreen: React.FC = observer(() => {
               onMetricChange={setMetric}
               series={store.getTrendSeries(metric)}
             />
-          )
-        ) : activeTab === 'distributions' ? (
-          store.distribution == null ? (
-            <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
-          ) : (
-            <AnalyticsDistribution
-              key={`distribution-${periodKey}`}
-              data={store.distribution}
-            />
-          )
-        ) : (
-          <AnalyticsTopProducts
-            data={store.topProducts}
+          )}
+          <AnalyticsWeightChart history={weightStore.history} />
+          <AnalyticsGoalCalendar
+            trendData={store.trend}
+            targetCalories={profileStore.profile?.dayLimitCal || 2000}
           />
-        )}
-      </View>
-    </ScrollView>
+        </>
+      );
+    }
+
+    if (activeTab === 'distributions') {
+      return store.distribution == null ? (
+        <Text style={dynamicStyles.placeholder}>Недостаточно данных за период</Text>
+      ) : (
+        <AnalyticsDistribution
+          key={`distribution-${periodKey}`}
+          data={store.distribution}
+        />
+      );
+    }
+
+    if (activeTab === 'products') {
+      return <AnalyticsTopProducts data={store.topProducts} />;
+    }
+
+    return null;
+  };
+
+  return (
+    <View style={dynamicStyles.container}>
+      <ScrollView
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        <Header title="Сводка" />
+        <AnalyticsHeader
+          period={store.period}
+          onChangePeriod={onChangePeriod}
+          kpi={store.summaryKpi}
+          targetCalories={profileStore.profile?.dayLimitCal}
+        />
+
+        <View style={dynamicStyles.tabbar}>
+          <TabButton
+            label="Тренд"
+            active={activeTab === 'trend'}
+            onPress={() => setActiveTab('trend')}
+            colors={colors}
+            styles={dynamicStyles}
+          />
+          <TabButton
+            label="Распределения"
+            active={activeTab === 'distributions'}
+            onPress={() => setActiveTab('distributions')}
+            colors={colors}
+            styles={dynamicStyles}
+          />
+          <TabButton
+            label="Продукты"
+            active={activeTab === 'products'}
+            onPress={() => setActiveTab('products')}
+            colors={colors}
+            styles={dynamicStyles}
+          />
+        </View>
+
+        <View style={dynamicStyles.section}>
+          {renderContent()}
+        </View>
+      </ScrollView>
+    </View>
   );
 });
 
@@ -171,6 +217,8 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
   placeholder: {
     ...typography.body1,
     color: colors.text.secondary,
+    textAlign: 'center',
+    padding: spacing.xl,
   },
 });
 
