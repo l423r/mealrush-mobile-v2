@@ -13,6 +13,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { colors, typography, spacing, borderRadius, shadows } from '../../theme';
 import { formatTime } from '../../utils/formatting';
 import Button from './Button';
+import TimePickerModal from './TimePickerModal';
 
 interface MealTypeEditDialogProps {
   visible: boolean;
@@ -86,7 +87,7 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
   return (
     <>
       <Modal
-        visible={visible && !(Platform.OS === 'android' && showTimePicker)}
+        visible={visible && !(Platform.OS === 'android' && showTimePicker) && !showTimePicker}
         transparent
         animationType="fade"
         onRequestClose={onCancel}
@@ -100,14 +101,14 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
               >
                 <View style={styles.dialogContainer}>
                   <View style={styles.dialog}>
-                <Text style={styles.title}>
-                  {canEditTime ? 'Редактировать прием пищи' : 'Изменить тип приема пищи'}
-                </Text>
-                <Text style={styles.subtitle}>
-                  {canEditTime
-                    ? 'Измените тип и время приема пищи'
-                    : 'Выберите новый тип'}
-                </Text>
+                    <Text style={styles.title}>
+                      {canEditTime ? 'Редактировать прием пищи' : 'Изменить тип приема пищи'}
+                    </Text>
+                    <Text style={styles.subtitle}>
+                      {canEditTime
+                        ? 'Измените тип и время приема пищи'
+                        : 'Выберите новый тип'}
+                    </Text>
 
                     {/* Meal Type Selection */}
                     <View style={styles.section}>
@@ -119,7 +120,7 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
                             style={[
                               styles.mealOption,
                               selectedType === type.value &&
-                                styles.mealOptionActive,
+                              styles.mealOptionActive,
                             ]}
                             onPress={() => setSelectedType(type.value)}
                             activeOpacity={0.7}
@@ -131,7 +132,7 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
                               style={[
                                 styles.mealLabel,
                                 selectedType === type.value &&
-                                  styles.mealLabelActive,
+                                styles.mealLabelActive,
                               ]}
                             >
                               {type.label}
@@ -157,18 +158,6 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
                             <Text style={styles.timePickerIcon}>🕐</Text>
                           </TouchableOpacity>
                         </View>
-
-                        {Platform.OS === 'ios' && showTimePicker && (
-                          <View style={styles.iosPickerContainer}>
-                            <DateTimePicker
-                              value={selectedTime}
-                              mode="time"
-                              is24Hour={true}
-                              display="spinner"
-                              onChange={handleTimeChange}
-                            />
-                          </View>
-                        )}
                       </>
                     )}
 
@@ -194,16 +183,16 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Android Time Picker */}
-      {Platform.OS === 'android' && showTimePicker && (
-        <DateTimePicker
-          value={selectedTime}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={handleTimeChange}
-        />
-      )}
+      {/* Custom Time Picker Modal */}
+      <TimePickerModal
+        visible={showTimePicker}
+        initialTime={selectedTime}
+        onClose={() => setShowTimePicker(false)}
+        onConfirm={(time) => {
+          setSelectedTime(time);
+          setShowTimePicker(false);
+        }}
+      />
     </>
   );
 };

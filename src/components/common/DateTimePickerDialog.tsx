@@ -20,6 +20,7 @@ import {
 import { formatDate, formatTime } from '../../utils/formatting';
 import Button from './Button';
 import CalendarModal from './CalendarModal';
+import TimePickerModal from './TimePickerModal';
 
 interface DateTimePickerDialogProps {
   visible: boolean;
@@ -89,7 +90,7 @@ const DateTimePickerDialog: React.FC<DateTimePickerDialogProps> = ({
   return (
     <>
       <Modal
-        visible={visible && !showDatePicker}
+        visible={visible && !showDatePicker && !showTimePicker}
         transparent
         animationType="fade"
         onRequestClose={onCancel}
@@ -138,18 +139,6 @@ const DateTimePickerDialog: React.FC<DateTimePickerDialogProps> = ({
                       </TouchableOpacity>
                     </View>
 
-                    {Platform.OS === 'ios' && showTimePicker && (
-                      <View style={styles.iosPickerContainer}>
-                        <DateTimePicker
-                          value={selectedTime}
-                          mode="time"
-                          is24Hour={true}
-                          display="spinner"
-                          onChange={handleTimeChange}
-                        />
-                      </View>
-                    )}
-
                     {/* Buttons */}
                     <View style={styles.buttonsContainer}>
                       <Button
@@ -172,17 +161,6 @@ const DateTimePickerDialog: React.FC<DateTimePickerDialogProps> = ({
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* Android Time Picker */}
-      {Platform.OS === 'android' && showTimePicker && (
-        <DateTimePicker
-          value={selectedTime}
-          mode="time"
-          is24Hour={true}
-          display="default"
-          onChange={handleTimeChange}
-        />
-      )}
-
       {/* Calendar Modal for Date Selection */}
       <CalendarModal
         visible={showDatePicker}
@@ -190,6 +168,17 @@ const DateTimePickerDialog: React.FC<DateTimePickerDialogProps> = ({
         onClose={() => setShowDatePicker(false)}
         onDateSelect={handleDateSelect}
         maximumDate={undefined}
+      />
+
+      {/* Custom Time Picker Modal */}
+      <TimePickerModal
+        visible={showTimePicker}
+        initialTime={selectedTime}
+        onClose={() => setShowTimePicker(false)}
+        onConfirm={(time) => {
+          setSelectedTime(time);
+          setShowTimePicker(false);
+        }}
       />
     </>
   );

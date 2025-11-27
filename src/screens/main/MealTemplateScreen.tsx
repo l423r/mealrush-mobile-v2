@@ -190,7 +190,7 @@ const MealTemplateScreen: React.FC = observer(() => {
           handleDeleteElement(element.id);
         }}
       >
-        <MaterialIcons name="delete-outline" size={20} color={colors.error} />
+        <Ionicons name="trash-outline" size={20} color={colors.error} />
       </TouchableOpacity>
     </TouchableOpacity>
   );
@@ -305,8 +305,8 @@ const MealTemplateScreen: React.FC = observer(() => {
       <MealActionsMenu
         visible={showActionsMenu}
         onClose={() => setShowActionsMenu(false)}
-        onSaveAsTemplate={() => {}} // Not applicable for templates
-        onCopy={() => {}} // Not applicable for templates
+        onSaveAsTemplate={() => { }} // Not applicable for templates
+        onCopy={() => { }} // Not applicable for templates
         onDelete={handleDeleteTemplate}
       />
 
