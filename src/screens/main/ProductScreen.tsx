@@ -6,6 +6,8 @@ import {
   ScrollView,
   TouchableOpacity,
   Image,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
@@ -49,7 +51,7 @@ const ProductScreen: React.FC = observer(() => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [inputMode, setInputMode] = useState<'per100g' | 'perPortion'>('per100g');
-  
+
   // String states for decimal input
   const [proteinsStr, setProteinsStr] = useState<string>('');
   const [fatsStr, setFatsStr] = useState<string>('');
@@ -109,7 +111,7 @@ const ProductScreen: React.FC = observer(() => {
         watchedFats,
         watchedCarbohydrates
       );
-      
+
       // Only update if the calculated value is different from current to avoid infinite loops
       if (Math.abs(calculatedCalories - (watchedCalories || 0)) > 0.1) {
         setIsCalculating(true);
@@ -287,270 +289,276 @@ const ProductScreen: React.FC = observer(() => {
         }
       />
 
-      <ScrollView style={styles.content}>
-        {/* Image Section */}
-        <View style={styles.imageSection}>
-          <Text style={styles.sectionTitle}>Фото продукта</Text>
-          <TouchableOpacity
-            style={styles.imageContainer}
-            onPress={handleImageSource}
-          >
-            {imageUri ? (
-              <Image source={{ uri: imageUri }} style={styles.image} />
-            ) : (
-              <View style={styles.imagePlaceholder}>
-                <Ionicons name="camera-outline" size={32} color={colors.text.secondary} />
-                <Text style={styles.imagePlaceholderLabel}>Добавить фото</Text>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+      >
+        <ScrollView style={styles.content}>
+          {/* Image Section */}
+          <View style={styles.imageSection}>
+            <Text style={styles.sectionTitle}>Фото продукта</Text>
+            <TouchableOpacity
+              style={styles.imageContainer}
+              onPress={handleImageSource}
+            >
+              {imageUri ? (
+                <Image source={{ uri: imageUri }} style={styles.image} />
+              ) : (
+                <View style={styles.imagePlaceholder}>
+                  <Ionicons name="camera-outline" size={32} color={colors.text.secondary} />
+                  <Text style={styles.imagePlaceholderLabel}>Добавить фото</Text>
+                </View>
+              )}
+            </TouchableOpacity>
+          </View>
 
-        {/* Form */}
-        <View style={styles.form}>
-          <Controller
-            control={control}
-            name="name"
-            render={({ field: { onChange, onBlur, value } }) => (
-              <Input
-                label="Название продукта"
-                placeholder="Введите название"
-                value={value}
-                onChangeText={onChange}
-                onBlur={onBlur}
-                error={errors.name?.message}
-              />
-            )}
-          />
+          {/* Form */}
+          <View style={styles.form}>
+            <Controller
+              control={control}
+              name="name"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  label="Название продукта"
+                  placeholder="Введите название"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  error={errors.name?.message}
+                />
+              )}
+            />
 
-          <View style={styles.macrosContainer}>
-            <View style={styles.modeSelectorContainer}>
-              <Text style={styles.sectionTitle}>
-                {inputMode === 'per100g' ? 'Пищевая ценность на 100г' : 'Пищевая ценность на порцию'}
-              </Text>
-              
-              {/* Mode Toggle */}
-              <View style={styles.modeToggle}>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    inputMode === 'per100g' && styles.modeButtonActive,
-                  ]}
-                  onPress={() => setInputMode('per100g')}
-                >
-                  <Text
+            <View style={styles.macrosContainer}>
+              <View style={styles.modeSelectorContainer}>
+                <Text style={styles.sectionTitle}>
+                  {inputMode === 'per100g' ? 'Пищевая ценность на 100г' : 'Пищевая ценность на порцию'}
+                </Text>
+
+                {/* Mode Toggle */}
+                <View style={styles.modeToggle}>
+                  <TouchableOpacity
                     style={[
-                      styles.modeButtonText,
-                      inputMode === 'per100g' && styles.modeButtonTextActive,
+                      styles.modeButton,
+                      inputMode === 'per100g' && styles.modeButtonActive,
                     ]}
+                    onPress={() => setInputMode('per100g')}
                   >
-                    На 100г
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.modeButton,
-                    inputMode === 'perPortion' && styles.modeButtonActive,
-                  ]}
-                  onPress={() => setInputMode('perPortion')}
-                >
-                  <Text
+                    <Text
+                      style={[
+                        styles.modeButtonText,
+                        inputMode === 'per100g' && styles.modeButtonTextActive,
+                      ]}
+                    >
+                      На 100г
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
                     style={[
-                      styles.modeButtonText,
-                      inputMode === 'perPortion' && styles.modeButtonTextActive,
+                      styles.modeButton,
+                      inputMode === 'perPortion' && styles.modeButtonActive,
                     ]}
+                    onPress={() => setInputMode('perPortion')}
                   >
-                    На порцию
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.modeButtonText,
+                        inputMode === 'perPortion' && styles.modeButtonTextActive,
+                      ]}
+                    >
+                      На порцию
+                    </Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
 
-            {/* Portion Quantity Input (only for perPortion mode) */}
-            {inputMode === 'perPortion' && (
-              <Controller
-                control={control}
-                name="portionQuantity"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Количество порции (г)"
-                    placeholder="100"
-                    value={value?.toString() || '100'}
-                    onChangeText={(text) => {
-                      const num = Number.parseFloat(text);
-                      onChange(Number.isNaN(num) ? 100 : num);
-                    }}
-                    onBlur={onBlur}
-                    error={errors.portionQuantity?.message}
-                    keyboardType="decimal-pad"
-                    containerStyle={styles.portionInput}
-                  />
-                )}
-              />
-            )}
-
-            {inputMode === 'perPortion' && (
-              <Text style={styles.hintText}>
-                Введите КБЖУ для указанной порции. При сохранении значения будут пересчитаны на 100г.
-              </Text>
-            )}
-
-            <View style={styles.macrosRow}>
-              <Controller
-                control={control}
-                name="proteins"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Белки (г)"
-                    placeholder="0"
-                    value={proteinsStr}
-                    onChangeText={(text) => {
-                      // Allow only digits and one decimal point
-                      if (/^\d*\.?\d*$/.test(text) || text === '') {
-                        setProteinsStr(text);
+              {/* Portion Quantity Input (only for perPortion mode) */}
+              {inputMode === 'perPortion' && (
+                <Controller
+                  control={control}
+                  name="portionQuantity"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Количество порции (г)"
+                      placeholder="100"
+                      value={value?.toString() || '100'}
+                      onChangeText={(text) => {
                         const num = Number.parseFloat(text);
-                        onChange(Number.isNaN(num) ? 0 : num);
-                      }
-                    }}
-                    onBlur={() => {
-                      // Ensure valid number on blur
-                      const num = Number.parseFloat(proteinsStr);
-                      if (Number.isNaN(num) || proteinsStr === '') {
-                        setProteinsStr('0');
-                        onChange(0);
-                      } else {
-                        setProteinsStr(num.toString());
-                        onChange(num);
-                      }
-                      onBlur();
-                    }}
-                    error={errors.proteins?.message}
-                    keyboardType="decimal-pad"
-                    containerStyle={styles.macroInput}
-                  />
-                )}
-              />
+                        onChange(Number.isNaN(num) ? 100 : num);
+                      }}
+                      onBlur={onBlur}
+                      error={errors.portionQuantity?.message}
+                      keyboardType="decimal-pad"
+                      containerStyle={styles.portionInput}
+                    />
+                  )}
+                />
+              )}
 
-              <Controller
-                control={control}
-                name="fats"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Жиры (г)"
-                    placeholder="0"
-                    value={fatsStr}
-                    onChangeText={(text) => {
-                      if (/^\d*\.?\d*$/.test(text) || text === '') {
-                        setFatsStr(text);
-                        const num = Number.parseFloat(text);
-                        onChange(Number.isNaN(num) ? 0 : num);
-                      }
-                    }}
-                    onBlur={() => {
-                      const num = Number.parseFloat(fatsStr);
-                      if (Number.isNaN(num) || fatsStr === '') {
-                        setFatsStr('0');
-                        onChange(0);
-                      } else {
-                        setFatsStr(num.toString());
-                        onChange(num);
-                      }
-                      onBlur();
-                    }}
-                    error={errors.fats?.message}
-                    keyboardType="decimal-pad"
-                    containerStyle={styles.macroInput}
-                  />
-                )}
-              />
-            </View>
+              {inputMode === 'perPortion' && (
+                <Text style={styles.hintText}>
+                  Введите КБЖУ для указанной порции. При сохранении значения будут пересчитаны на 100г.
+                </Text>
+              )}
 
-            <View style={styles.macrosRow}>
-              <Controller
-                control={control}
-                name="carbohydrates"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Углеводы (г)"
-                    placeholder="0"
-                    value={carbohydratesStr}
-                    onChangeText={(text) => {
-                      if (/^\d*\.?\d*$/.test(text) || text === '') {
-                        setCarbohydratesStr(text);
-                        const num = Number.parseFloat(text);
-                        onChange(Number.isNaN(num) ? 0 : num);
-                      }
-                    }}
-                    onBlur={() => {
-                      const num = Number.parseFloat(carbohydratesStr);
-                      if (Number.isNaN(num) || carbohydratesStr === '') {
-                        setCarbohydratesStr('0');
-                        onChange(0);
-                      } else {
-                        setCarbohydratesStr(num.toString());
-                        onChange(num);
-                      }
-                      onBlur();
-                    }}
-                    error={errors.carbohydrates?.message}
-                    keyboardType="decimal-pad"
-                    containerStyle={styles.macroInput}
-                  />
-                )}
-              />
+              <View style={styles.macrosRow}>
+                <Controller
+                  control={control}
+                  name="proteins"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Белки (г)"
+                      placeholder="0"
+                      value={proteinsStr}
+                      onChangeText={(text) => {
+                        // Allow only digits and one decimal point
+                        if (/^\d*\.?\d*$/.test(text) || text === '') {
+                          setProteinsStr(text);
+                          const num = Number.parseFloat(text);
+                          onChange(Number.isNaN(num) ? 0 : num);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Ensure valid number on blur
+                        const num = Number.parseFloat(proteinsStr);
+                        if (Number.isNaN(num) || proteinsStr === '') {
+                          setProteinsStr('0');
+                          onChange(0);
+                        } else {
+                          setProteinsStr(num.toString());
+                          onChange(num);
+                        }
+                        onBlur();
+                      }}
+                      error={errors.proteins?.message}
+                      keyboardType="decimal-pad"
+                      containerStyle={styles.macroInput}
+                    />
+                  )}
+                />
 
-              <Controller
-                control={control}
-                name="calories"
-                render={({ field: { onChange, onBlur, value } }) => (
-                  <Input
-                    label="Калории (ккал)"
-                    placeholder="0"
-                    value={caloriesStr}
-                    onChangeText={(text) => {
-                      if (/^\d*\.?\d*$/.test(text) || text === '') {
-                        setCaloriesStr(text);
-                        const num = Number.parseFloat(text);
-                        onChange(Number.isNaN(num) ? 0 : num);
+                <Controller
+                  control={control}
+                  name="fats"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Жиры (г)"
+                      placeholder="0"
+                      value={fatsStr}
+                      onChangeText={(text) => {
+                        if (/^\d*\.?\d*$/.test(text) || text === '') {
+                          setFatsStr(text);
+                          const num = Number.parseFloat(text);
+                          onChange(Number.isNaN(num) ? 0 : num);
+                        }
+                      }}
+                      onBlur={() => {
+                        const num = Number.parseFloat(fatsStr);
+                        if (Number.isNaN(num) || fatsStr === '') {
+                          setFatsStr('0');
+                          onChange(0);
+                        } else {
+                          setFatsStr(num.toString());
+                          onChange(num);
+                        }
+                        onBlur();
+                      }}
+                      error={errors.fats?.message}
+                      keyboardType="decimal-pad"
+                      containerStyle={styles.macroInput}
+                    />
+                  )}
+                />
+              </View>
+
+              <View style={styles.macrosRow}>
+                <Controller
+                  control={control}
+                  name="carbohydrates"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Углеводы (г)"
+                      placeholder="0"
+                      value={carbohydratesStr}
+                      onChangeText={(text) => {
+                        if (/^\d*\.?\d*$/.test(text) || text === '') {
+                          setCarbohydratesStr(text);
+                          const num = Number.parseFloat(text);
+                          onChange(Number.isNaN(num) ? 0 : num);
+                        }
+                      }}
+                      onBlur={() => {
+                        const num = Number.parseFloat(carbohydratesStr);
+                        if (Number.isNaN(num) || carbohydratesStr === '') {
+                          setCarbohydratesStr('0');
+                          onChange(0);
+                        } else {
+                          setCarbohydratesStr(num.toString());
+                          onChange(num);
+                        }
+                        onBlur();
+                      }}
+                      error={errors.carbohydrates?.message}
+                      keyboardType="decimal-pad"
+                      containerStyle={styles.macroInput}
+                    />
+                  )}
+                />
+
+                <Controller
+                  control={control}
+                  name="calories"
+                  render={({ field: { onChange, onBlur, value } }) => (
+                    <Input
+                      label="Калории (ккал)"
+                      placeholder="0"
+                      value={caloriesStr}
+                      onChangeText={(text) => {
+                        if (/^\d*\.?\d*$/.test(text) || text === '') {
+                          setCaloriesStr(text);
+                          const num = Number.parseFloat(text);
+                          onChange(Number.isNaN(num) ? 0 : num);
+                        }
+                      }}
+                      onBlur={() => {
+                        const num = Number.parseFloat(caloriesStr);
+                        if (Number.isNaN(num) || caloriesStr === '') {
+                          setCaloriesStr('0');
+                          onChange(0);
+                        } else {
+                          setCaloriesStr(num.toString());
+                          onChange(num);
+                        }
+                        onBlur();
+                      }}
+                      error={errors.calories?.message}
+                      keyboardType="decimal-pad"
+                      containerStyle={styles.macroInput}
+                      rightIcon={
+                        isCalculating ? (
+                          <Ionicons name="time-outline" size={16} color={colors.text.secondary} />
+                        ) : (
+                          <Ionicons name="flash-outline" size={16} color={colors.primary} />
+                        )
                       }
-                    }}
-                    onBlur={() => {
-                      const num = Number.parseFloat(caloriesStr);
-                      if (Number.isNaN(num) || caloriesStr === '') {
-                        setCaloriesStr('0');
-                        onChange(0);
-                      } else {
-                        setCaloriesStr(num.toString());
-                        onChange(num);
-                      }
-                      onBlur();
-                    }}
-                    error={errors.calories?.message}
-                    keyboardType="decimal-pad"
-                    containerStyle={styles.macroInput}
-                    rightIcon={
-                      isCalculating ? (
-                        <Ionicons name="time-outline" size={16} color={colors.text.secondary} />
-                      ) : (
-                        <Ionicons name="flash-outline" size={16} color={colors.primary} />
-                      )
-                    }
-                  />
-                )}
-              />
+                    />
+                  )}
+                />
+              </View>
             </View>
           </View>
-        </View>
-      </ScrollView>
+        </ScrollView>
 
-      <View style={styles.footer}>
-        <Button
-          title={isEditing ? 'Сохранить изменения' : 'Создать продукт'}
-          onPress={handleSubmit(onSubmit)}
-          disabled={!isValid || productStore.loading}
-          loading={productStore.loading}
-        />
-      </View>
+        <View style={styles.footer}>
+          <Button
+            title={isEditing ? 'Сохранить изменения' : 'Создать продукт'}
+            onPress={handleSubmit(onSubmit)}
+            disabled={!isValid || productStore.loading}
+            loading={productStore.loading}
+          />
+        </View>
+      </KeyboardAvoidingView>
 
       <ImageSourceDialog
         visible={imageSource.visible}
@@ -653,7 +661,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   modeButtonTextActive: {
-    color: colors.white,
+    color: colors.text.inverse,
     fontWeight: '600',
   },
   portionInput: {
