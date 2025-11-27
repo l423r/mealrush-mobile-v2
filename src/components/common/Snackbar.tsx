@@ -84,7 +84,7 @@ const Snackbar: React.FC = observer(() => {
     }
   };
 
-  const getBackgroundColor = () => {
+  const getStatusColor = () => {
     switch (uiStore.snackbar.type) {
       case 'success':
         return colors.success;
@@ -98,6 +98,8 @@ const Snackbar: React.FC = observer(() => {
     }
   };
 
+  const statusColor = getStatusColor();
+
   return (
     <Animated.View
       style={[
@@ -109,19 +111,25 @@ const Snackbar: React.FC = observer(() => {
       ]}
     >
       <View
-        style={[styles.snackbar, { backgroundColor: getBackgroundColor() }]}
+        style={[
+          styles.snackbar,
+          {
+            backgroundColor: colors.background.paper,
+            borderColor: statusColor,
+          },
+        ]}
       >
         <Ionicons
           name={getIconName()}
           size={24}
-          color={colors.white}
+          color={statusColor}
           style={styles.icon}
         />
         <Text style={styles.message} numberOfLines={2}>
           {uiStore.snackbar.message}
         </Text>
         <TouchableOpacity onPress={hideSnackbar} style={styles.closeButton}>
-          <Ionicons name="close" size={20} color={colors.white} />
+          <Ionicons name="close" size={20} color={colors.text.secondary} />
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -144,13 +152,14 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     ...shadows.md,
     elevation: 8,
+    borderWidth: 1,
   },
   icon: {
     marginRight: spacing.sm,
   },
   message: {
     ...typography.body1,
-    color: colors.white,
+    color: colors.text.primary,
     flex: 1,
     fontWeight: '500',
   },

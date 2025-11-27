@@ -412,15 +412,19 @@ const ProductScreen: React.FC = observer(() => {
                       placeholder="0"
                       value={proteinsStr}
                       onChangeText={(text) => {
-                        // Allow only digits and one decimal point
-                        if (/^\d*\.?\d*$/.test(text) || text === '') {
-                          setProteinsStr(text);
-                          const num = Number.parseFloat(text);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          let newText = text;
+                          // If text starts with 0 and has more digits and no decimal point immediately after 0
+                          // e.g. "05" -> "5", but "0." -> "0."
+                          if (newText.length > 1 && newText.startsWith('0') && newText[1] !== '.') {
+                            newText = newText.substring(1);
+                          }
+                          setProteinsStr(newText);
+                          const num = Number.parseFloat(newText);
                           onChange(Number.isNaN(num) ? 0 : num);
                         }
                       }}
                       onBlur={() => {
-                        // Ensure valid number on blur
                         const num = Number.parseFloat(proteinsStr);
                         if (Number.isNaN(num) || proteinsStr === '') {
                           setProteinsStr('0');
@@ -447,9 +451,13 @@ const ProductScreen: React.FC = observer(() => {
                       placeholder="0"
                       value={fatsStr}
                       onChangeText={(text) => {
-                        if (/^\d*\.?\d*$/.test(text) || text === '') {
-                          setFatsStr(text);
-                          const num = Number.parseFloat(text);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          let newText = text;
+                          if (newText.length > 1 && newText.startsWith('0') && newText[1] !== '.') {
+                            newText = newText.substring(1);
+                          }
+                          setFatsStr(newText);
+                          const num = Number.parseFloat(newText);
                           onChange(Number.isNaN(num) ? 0 : num);
                         }
                       }}
@@ -482,9 +490,13 @@ const ProductScreen: React.FC = observer(() => {
                       placeholder="0"
                       value={carbohydratesStr}
                       onChangeText={(text) => {
-                        if (/^\d*\.?\d*$/.test(text) || text === '') {
-                          setCarbohydratesStr(text);
-                          const num = Number.parseFloat(text);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          let newText = text;
+                          if (newText.length > 1 && newText.startsWith('0') && newText[1] !== '.') {
+                            newText = newText.substring(1);
+                          }
+                          setCarbohydratesStr(newText);
+                          const num = Number.parseFloat(newText);
                           onChange(Number.isNaN(num) ? 0 : num);
                         }
                       }}
@@ -515,9 +527,13 @@ const ProductScreen: React.FC = observer(() => {
                       placeholder="0"
                       value={caloriesStr}
                       onChangeText={(text) => {
-                        if (/^\d*\.?\d*$/.test(text) || text === '') {
-                          setCaloriesStr(text);
-                          const num = Number.parseFloat(text);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          let newText = text;
+                          if (newText.length > 1 && newText.startsWith('0') && newText[1] !== '.') {
+                            newText = newText.substring(1);
+                          }
+                          setCaloriesStr(newText);
+                          const num = Number.parseFloat(newText);
                           onChange(Number.isNaN(num) ? 0 : num);
                         }
                       }}
