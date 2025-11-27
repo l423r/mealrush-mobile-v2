@@ -42,7 +42,7 @@ const Button: React.FC<ButtonProps> = observer(({
 }) => {
   const { colors } = useTheme();
   const dynamicStyles = createStyles(colors);
-  
+
   const buttonStyle = [
     dynamicStyles.button,
     dynamicStyles[`${variant}Button`],
@@ -71,7 +71,7 @@ const Button: React.FC<ButtonProps> = observer(({
     >
       {loading ? (
         <ActivityIndicator
-          color={variant === 'primary' ? colors.white : colors.primary}
+          color={variant === 'primary' ? colors.text.inverse : colors.primary}
           size="small"
         />
       ) : (
@@ -138,7 +138,7 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     textAlign: 'center',
   },
   primaryText: {
-    color: colors.white,
+    color: colors.text.inverse,
   },
   secondaryText: {
     color: colors.white,
