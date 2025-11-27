@@ -17,6 +17,7 @@ import AnalyticsDistribution from '../../components/analytics/AnalyticsDistribut
 import AnalyticsTopProducts from '../../components/analytics/AnalyticsTopProducts';
 import AnalyticsWeightChart from '../../components/analytics/AnalyticsWeightChart';
 import AnalyticsGoalCalendar from '../../components/analytics/AnalyticsGoalCalendar';
+import AnalyticsInsights from '../../components/analytics/AnalyticsInsights';
 import Header from '../../components/common/Header';
 import { useStores } from '../../stores';
 import { useTheme } from '../../hooks/useTheme';
@@ -138,6 +139,8 @@ const AnalyticsScreen: React.FC = observer(() => {
           kpi={store.summaryKpi}
           targetCalories={profileStore.profile?.dayLimitCal}
         />
+
+        <AnalyticsInsights insights={store.insights} />
 
         <View style={dynamicStyles.tabbar}>
           <TabButton

@@ -61,3 +61,12 @@ export interface AnalyticsAggregatePayload {
 export interface AnalyticsServiceFacade {
   getAggregates(period: AnalyticsPeriod): Promise<AnalyticsAggregatePayload>;
 }
+
+export type InsightType = 'success' | 'warning' | 'info';
+
+export interface AnalyticsInsight {
+  id: string;
+  type: InsightType;
+  title: string;
+  message: string;
+}
