@@ -181,9 +181,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.gray[100],
+    backgroundColor: colors.background.light,
     alignItems: 'center',
     marginTop: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   cancelText: {
     ...typography.button,
