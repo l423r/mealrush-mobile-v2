@@ -1,4 +1,6 @@
 import { makeAutoObservable, runInAction } from 'mobx';
+import { makePersistable } from 'mobx-persist-store';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { productService } from '../api/services/product.service';
 import type RootStore from './RootStore';
 import type {
@@ -27,16 +29,24 @@ class ProductStore {
     totalPages: number;
     hasMore: boolean;
   } = {
-    page: 0,
-    size: 20,
-    totalElements: 0,
-    totalPages: 0,
-    hasMore: false,
-  };
+      page: 0,
+      size: 20,
+      totalElements: 0,
+      totalPages: 0,
+      hasMore: false,
+    };
+
+  searchHistory: string[] = []; // History of search queries
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeAutoObservable(this);
+
+    makePersistable(this, {
+      name: 'ProductStore',
+      properties: ['searchHistory'],
+      storage: AsyncStorage,
+    });
   }
 
   // Actions
@@ -68,6 +78,11 @@ class ProductStore {
       console.log(
         `✅ [ProductStore] searchProducts() success - Found ${response.data.content.length} products`
       );
+
+      // Add to history on successful search (only for first page to avoid duplicates on scroll)
+      if (page === 0) {
+        this.addToHistory(query);
+      }
 
       runInAction(() => {
         if (page === 0) {
@@ -106,13 +121,13 @@ class ProductStore {
     }
   }
 
-  async getAll(page: number = 0) {
-    console.log('🔵 [ProductStore] getAll() called - Loading user products');
+  async getAll(page: number = 0, query?: string) {
+    console.log(`🔵 [ProductStore] getAll() called - Loading user products, query: "${query}"`);
     this.loading = true;
     this.error = null;
 
     try {
-      const response = await productService.getAll(page, this.pagination.size);
+      const response = await productService.getAll(page, this.pagination.size, query);
       console.log(
         `✅ [ProductStore] getAll() success - Loaded ${response.data.content.length} products`
       );
@@ -277,13 +292,13 @@ class ProductStore {
     }
   }
 
-  async getFavorites() {
-    console.log('⭐ [ProductStore] getFavorites() called - Loading favorites');
+  async getFavorites(page: number = 0, query?: string) {
+    console.log(`⭐ [ProductStore] getFavorites() called - Loading favorites, query: "${query}"`);
     this.loading = true;
     this.error = null;
 
     try {
-      const response = await productService.getFavorites();
+      const response = await productService.getFavorites(page, this.pagination.size, query);
       console.log(
         `✅ [ProductStore] getFavorites() success - Loaded ${response.data.content.length} favorites`
       );
@@ -380,6 +395,45 @@ class ProductStore {
       totalPages: 0,
       hasMore: false,
     };
+  }
+  addToHistory(query: string) {
+    const trimmedQuery = query.trim();
+    if (!trimmedQuery || trimmedQuery.length < 2) return;
+
+    const lastQuery = this.searchHistory[0];
+
+    // Smart History Logic
+    if (lastQuery) {
+      const lowerQuery = trimmedQuery.toLowerCase();
+      const lowerLast = lastQuery.toLowerCase();
+
+      // 1. If typing forward (e.g. "App" -> "Apple"), replace the last entry
+      if (lowerQuery.startsWith(lowerLast)) {
+        this.searchHistory[0] = trimmedQuery;
+        return;
+      }
+
+      // 2. If backspacing (e.g. "Apple" -> "App"), do nothing (keep the longer version)
+      if (lowerLast.startsWith(lowerQuery)) {
+        return;
+      }
+    }
+
+    // 3. Standard add (remove duplicates, add to top)
+    const newHistory = this.searchHistory.filter(
+      (item) => item.toLowerCase() !== trimmedQuery.toLowerCase()
+    );
+
+    newHistory.unshift(trimmedQuery);
+    this.searchHistory = newHistory.slice(0, 10);
+  }
+
+  removeFromHistory(query: string) {
+    this.searchHistory = this.searchHistory.filter((item) => item !== query);
+  }
+
+  clearHistory() {
+    this.searchHistory = [];
   }
 }
 

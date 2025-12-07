@@ -15,7 +15,7 @@ import type {
 // Centralized analytics state. Does not depend on a specific RootStore to
 // allow gradual integration. A reference can be added later if needed.
 export class AnalyticsStore {
-  period: AnalyticsPeriod = 'week';
+  period: AnalyticsPeriod = 'day';
   loading: boolean = false;
   error: string | null = null;
 
