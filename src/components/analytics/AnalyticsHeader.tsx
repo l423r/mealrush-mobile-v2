@@ -1,12 +1,14 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { observer } from 'mobx-react-lite';
 import type { AnalyticsPeriod, SummaryKpi } from '../../types/analytics.types';
 import { spacing, typography, componentSpacing } from '../../theme';
 import { useTheme } from '../../hooks/useTheme';
 import type { lightColors, darkColors } from '../../theme/colors';
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import CalendarModal from '../common/CalendarModal';
+import { formatDateForAPI } from '../../utils/formatting';
 
 type ColorsType = typeof lightColors | typeof darkColors;
 
@@ -20,7 +22,7 @@ interface AnalyticsHeaderProps {
 
 function formatRangeLabel(key: AnalyticsPeriod): string {
   const today = new Date();
-  if (key === 'day') return format(today, 'd MMMM', { locale: ru });
+  if (key === 'day') return format(today, 'd MMM', { locale: ru });
   if (key === 'week') {
     const start = startOfWeek(today, { weekStartsOn: 1 });
     const end = endOfWeek(today, { weekStartsOn: 1 });
@@ -32,7 +34,13 @@ function formatRangeLabel(key: AnalyticsPeriod): string {
     return `${format(start, 'd MMM', { locale: ru })} — ${format(end, 'd MMM', { locale: ru })}`;
   }
   // custom range
-  return `${key.from} — ${key.to}`;
+  try {
+    const startDate = parseISO(key.from);
+    const endDate = parseISO(key.to);
+    return `${format(startDate, 'd MMM', { locale: ru })} — ${format(endDate, 'd MMM', { locale: ru })}`;
+  } catch {
+    return `${key.from} — ${key.to}`;
+  }
 }
 
 export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
@@ -44,6 +52,10 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
 }) => {
   const { colors } = useTheme();
   const dynamicStyles = createStyles(colors);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectingStart, setSelectingStart] = useState(true);
+  const [tempStartDate, setTempStartDate] = useState<Date | null>(null);
+  const [tempEndDate, setTempEndDate] = useState<Date | null>(null);
 
   const containerStyle = useMemo(
     () => [dynamicStyles.container, collapsed && dynamicStyles.containerCollapsed],
@@ -52,7 +64,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
 
   // Calculate macro percentages
   const macroPercentages = useMemo(() => {
-    if (!kpi || !kpi.averageDailyCalories || kpi.averageDailyCalories === 0) {
+    if (!kpi?.averageDailyCalories || kpi.averageDailyCalories === 0) {
       return { protein: 0, fat: 0, carbs: 0, proteinKcal: 0, fatKcal: 0, carbsKcal: 0 };
     }
     const proteinKcal = (kpi.protein || 0) * 4;
@@ -81,31 +93,82 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
     };
   }, [kpi?.averageDailyCalories, targetCalories]);
 
+  const handleCustomPeriodPress = () => {
+    setTempStartDate(null);
+    setTempEndDate(null);
+    setSelectingStart(true);
+    setShowCalendar(true);
+  };
+
+  const handleDateSelect = (date: Date) => {
+    if (selectingStart) {
+      setTempStartDate(date);
+      setSelectingStart(false);
+      // Keep calendar open for end date selection
+    } else {
+      if (tempStartDate && date < tempStartDate) {
+        Alert.alert('Ошибка', 'Дата окончания должна быть позже даты начала');
+        return;
+      }
+      setTempEndDate(date);
+      const startStr = formatDateForAPI(tempStartDate!);
+      const endStr = formatDateForAPI(date);
+      onChangePeriod({ from: startStr, to: endStr });
+      setShowCalendar(false);
+    }
+  };
+
+  const getCurrentDateForCalendar = (): Date => {
+    if (selectingStart && tempStartDate) return tempStartDate;
+    if (!selectingStart && tempEndDate) return tempEndDate;
+    if (typeof period === 'string') {
+      return new Date();
+    }
+    try {
+      return parseISO(selectingStart ? period.from : period.to);
+    } catch {
+      return new Date();
+    }
+  };
+
   return (
     <View style={containerStyle}>
-      <View style={dynamicStyles.segment}>
-        {(['day', 'week', 'month'] as AnalyticsPeriod[]).map((p) => (
-          <TouchableOpacity
-            key={typeof p === 'string' ? p : `${(p as any).from}-${(p as any).to}`}
-            style={[
-              dynamicStyles.segmentItem,
-              isActive(period, p) && { backgroundColor: colors.primary, borderWidth: 0 },
-            ]}
-            onPress={() => onChangePeriod(p)}
-          >
-            <Text
+      <View style={dynamicStyles.segmentContainer}>
+        <View style={dynamicStyles.segment}>
+          {(['day', 'week', 'month'] as AnalyticsPeriod[]).map((p) => (
+            <TouchableOpacity
+              key={typeof p === 'string' ? p : `${(p as any).from}-${(p as any).to}`}
               style={[
-                dynamicStyles.segmentText,
-                isActive(period, p) && { color: colors.white },
+                dynamicStyles.segmentItem,
+                isActive(period, p) && { backgroundColor: colors.primary, borderWidth: 0 },
               ]}
+              onPress={() => onChangePeriod(p)}
             >
-              {p === 'day' ? 'День' : p === 'week' ? 'Неделя' : 'Месяц'}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  dynamicStyles.segmentText,
+                  isActive(period, p) && { color: colors.white },
+                ]}
+              >
+                {getPeriodLabel(p)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity
+          style={dynamicStyles.calendarButton}
+          onPress={handleCustomPeriodPress}
+        >
+          <Text style={dynamicStyles.calendarButtonText}>📅</Text>
+        </TouchableOpacity>
       </View>
 
-      <Text style={dynamicStyles.rangeCaption}>{formatRangeLabel(period)}</Text>
+      <View style={dynamicStyles.rangeContainer}>
+        <Text style={dynamicStyles.rangeCaption}>{formatRangeLabel(period)}</Text>
+        {selectingStart && tempStartDate && (
+          <Text style={dynamicStyles.rangeHint}>Выберите дату окончания</Text>
+        )}
+      </View>
 
       {/* Progress to Goal Section */}
       {targetCalories && progressPercentage !== null && (
@@ -131,11 +194,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
             />
           </View>
           <Text style={[dynamicStyles.progressStatus, isOverLimit && { color: colors.error }]}>
-            {isOverLimit
-              ? 'Превышение лимита'
-              : progressPercentage < 90
-                ? 'Ниже цели'
-                : 'На правильном пути'}
+            {getProgressStatus(isOverLimit, progressPercentage)}
           </Text>
         </View>
       )}
@@ -194,6 +253,19 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
           </View>
         </View>
       )}
+
+      <CalendarModal
+        visible={showCalendar}
+        selectedDate={getCurrentDateForCalendar()}
+        onClose={() => {
+          setShowCalendar(false);
+          setTempStartDate(null);
+          setTempEndDate(null);
+          setSelectingStart(true);
+        }}
+        onDateSelect={handleDateSelect}
+        maximumDate={new Date()}
+      />
     </View>
   );
 });
@@ -204,6 +276,18 @@ function isActive(current: AnalyticsPeriod, key: AnalyticsPeriod) {
   if (typeof current !== 'string' && typeof key !== 'string')
     return current.from === key.from && current.to === key.to;
   return false;
+}
+
+function getPeriodLabel(period: AnalyticsPeriod): string {
+  if (period === 'day') return 'День';
+  if (period === 'week') return 'Неделя';
+  return 'Месяц';
+}
+
+function getProgressStatus(isOverLimit: boolean, progressPercentage: number): string {
+  if (isOverLimit) return 'Превышение лимита';
+  if (progressPercentage < 90) return 'Ниже цели';
+  return 'На правильном пути';
 }
 
 const MacroCard: React.FC<{
@@ -218,7 +302,7 @@ const MacroCard: React.FC<{
   <View style={styles.macroCard}>
     <Text style={styles.macroLabel}>{label}</Text>
     <Text style={styles.macroValue}>
-      {value != null ? formatNumber(value) : '—'} {unit}
+      {value !== null && value !== undefined ? formatNumber(value) : '—'} {unit}
     </Text>
     {calories > 0 && (
       <Text style={styles.macroCalories}>{formatNumber(calories)} ккал</Text>
@@ -235,49 +319,79 @@ function formatNumber(n?: number): string {
 const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
     paddingHorizontal: componentSpacing.screenHorizontal,
-    paddingTop: componentSpacing.sectionSpacing,
-    paddingBottom: spacing.md,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
     backgroundColor: colors.background.default,
   },
   containerCollapsed: {
     paddingTop: spacing.sm,
     paddingBottom: spacing.sm,
   },
+  segmentContainer: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    marginBottom: spacing.sm,
+    alignItems: 'center',
+  },
   segment: {
+    flex: 1,
     flexDirection: 'row',
     backgroundColor: colors.background.paper,
-    borderRadius: 10,
+    borderRadius: 8,
     padding: 2,
-    marginBottom: spacing.md,
   },
   segmentItem: {
     flex: 1,
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.xs,
     alignItems: 'center',
-    borderRadius: 8,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: colors.border.light,
   },
   segmentText: {
-    ...typography.button,
+    ...typography.caption,
+    fontSize: 12,
     color: colors.text.secondary,
+  },
+  calendarButton: {
+    width: 36,
+    height: 36,
+    backgroundColor: colors.background.paper,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  calendarButtonText: {
+    fontSize: 16,
+  },
+  rangeContainer: {
+    alignItems: 'center',
+    marginBottom: spacing.sm,
   },
   rangeCaption: {
     ...typography.caption,
+    fontSize: 11,
     color: colors.text.secondary,
-    textAlign: 'center',
-    marginBottom: spacing.md,
+  },
+  rangeHint: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.primary,
+    marginTop: 2,
   },
   progressSection: {
     backgroundColor: colors.background.paper,
-    borderRadius: 12,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    borderRadius: 10,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
   },
   progressTitle: {
-    ...typography.h4,
+    ...typography.body2,
+    fontSize: 13,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   progressInfo: {
     flexDirection: 'row',
@@ -286,88 +400,100 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     marginBottom: spacing.xs,
   },
   progressText: {
-    ...typography.body1,
+    ...typography.body2,
+    fontSize: 12,
     color: colors.text.primary,
   },
   progressPercentage: {
-    ...typography.h3,
+    ...typography.body1,
+    fontSize: 14,
     color: colors.primary,
+    fontWeight: '600',
   },
   progressBarBg: {
-    height: 10,
+    height: 8,
     backgroundColor: colors.gray[200],
-    borderRadius: 8,
+    borderRadius: 4,
     overflow: 'hidden',
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
   },
   progressBarFg: {
-    height: 10,
+    height: 8,
     backgroundColor: colors.primary,
   },
   progressStatus: {
-    ...typography.body2,
+    ...typography.caption,
+    fontSize: 10,
     color: colors.text.secondary,
-    fontSize: 12,
   },
   sectionTitle: {
-    ...typography.h4,
+    ...typography.body2,
+    fontSize: 13,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   macroSection: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   macroGrid: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
   macroCard: {
     flex: 1,
     backgroundColor: colors.background.paper,
-    borderRadius: 12,
-    padding: spacing.md,
+    borderRadius: 8,
+    padding: spacing.xs,
     alignItems: 'center',
   },
   macroLabel: {
-    ...typography.body2,
+    ...typography.caption,
+    fontSize: 10,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   macroValue: {
-    ...typography.h3,
+    ...typography.body1,
+    fontSize: 14,
+    fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   macroCalories: {
     ...typography.caption,
+    fontSize: 9,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   macroPercentage: {
-    ...typography.body1,
+    ...typography.caption,
+    fontSize: 11,
     color: colors.primary,
     fontWeight: '600',
   },
   activitySection: {
     backgroundColor: colors.background.paper,
-    borderRadius: 12,
-    padding: spacing.md,
+    borderRadius: 10,
+    padding: spacing.sm,
   },
   activityRow: {
     flexDirection: 'row',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   activityItem: {
     flex: 1,
     alignItems: 'center',
   },
   activityValue: {
-    ...typography.h3,
+    ...typography.body1,
+    fontSize: 16,
+    fontWeight: '600',
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   activityLabel: {
-    ...typography.body2,
+    ...typography.caption,
+    fontSize: 10,
     color: colors.text.secondary,
     textAlign: 'center',
   },

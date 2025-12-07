@@ -9,9 +9,9 @@ import type {
 } from '../../types/api.types';
 
 export const productService = {
-  getAll: (page: number = 0, size: number = 20) =>
+  getAll: (page: number = 0, size: number = 20, name?: string) =>
     apiClient.get<PaginatedResponse<Product>>(ApiRoutes.Product.Base, {
-      params: { page, size },
+      params: { page, size, name },
     }),
 
   searchByName: (name: string, page: number = 0, size: number = 20) =>
@@ -60,9 +60,9 @@ export const productService = {
       }
     ),
 
-  getFavorites: (page: number = 0, size: number = 20) =>
+  getFavorites: (page: number = 0, size: number = 20, name?: string) =>
     apiClient.get<PaginatedResponse<Product>>(ApiRoutes.Favorites, {
-      params: { page, size },
+      params: { page, size, name },
     }),
 
   addToFavorites: (productId: number) =>

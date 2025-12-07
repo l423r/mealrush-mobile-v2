@@ -123,8 +123,12 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     
-    // Get first day of week (Monday = 0)
-    const firstDayOfWeek = (firstDay.getDay() + 6) % 7;
+    // Get first day of week (Monday = 0, Sunday = 6)
+    // JavaScript getDay(): Sunday = 0, Monday = 1, ..., Saturday = 6
+    // We want: Monday = 0, Tuesday = 1, ..., Sunday = 6
+    const jsDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+    // Convert to Monday-based week: Sunday (0) -> 6, Monday (1) -> 0, etc.
+    const firstDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
     
     const days: CalendarDay[] = [];
     const today = new Date();
@@ -132,20 +136,30 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
     const maxDate = new Date(maximumDate);
     maxDate.setHours(23, 59, 59, 999);
 
-    // Add empty cells for days before month starts
-    for (let i = 0; i < firstDayOfWeek; i++) {
-      const date = new Date(year, month, -firstDayOfWeek + i + 1);
-      days.push({
-        date,
-        dayOfMonth: date.getDate(),
-        isCurrentMonth: false,
-        isSelected: false,
-        isToday: false,
-        isDisabled: true,
-      });
+    // Add empty cells for days before month starts (from previous month)
+    // This ensures the first day of the month is in the correct column
+    if (firstDayOfWeek > 0) {
+      const prevMonth = month === 0 ? 11 : month - 1;
+      const prevYear = month === 0 ? year - 1 : year;
+      const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
+      
+      // Start from the last day of previous month and go backwards
+      for (let i = firstDayOfWeek - 1; i >= 0; i--) {
+        const dayOfPrevMonth = daysInPrevMonth - i;
+        const date = new Date(prevYear, prevMonth, dayOfPrevMonth);
+        date.setHours(0, 0, 0, 0);
+        days.push({
+          date,
+          dayOfMonth: dayOfPrevMonth,
+          isCurrentMonth: false,
+          isSelected: false,
+          isToday: false,
+          isDisabled: true,
+        });
+      }
     }
 
-    // Add days of current month
+    // Add ALL days of current month - including Sundays
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       date.setHours(0, 0, 0, 0);
@@ -167,21 +181,53 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
       });
     }
 
-    // Fill remaining cells to complete 6 weeks
+    // Fill remaining cells to complete 6 weeks (42 cells total = 6 weeks * 7 days)
     const remainingDays = 42 - days.length;
-    for (let i = 1; i <= remainingDays; i++) {
-      const date = new Date(year, month + 1, i);
-      days.push({
-        date,
-        dayOfMonth: i,
-        isCurrentMonth: false,
-        isSelected: false,
-        isToday: false,
-        isDisabled: true,
-      });
+    if (remainingDays > 0) {
+      const nextMonth = month === 11 ? 0 : month + 1;
+      const nextYear = month === 11 ? year + 1 : year;
+      for (let i = 1; i <= remainingDays; i++) {
+        const date = new Date(nextYear, nextMonth, i);
+        date.setHours(0, 0, 0, 0);
+        days.push({
+          date,
+          dayOfMonth: i,
+          isCurrentMonth: false,
+          isSelected: false,
+          isToday: false,
+          isDisabled: true,
+        });
+      }
     }
 
-    return days;
+    // Final safety check: ensure exactly 42 cells
+    // If we still don't have 42, fill with next month's days
+    while (days.length < 42) {
+      const lastDay = days.at(-1);
+      if (lastDay?.date) {
+        const nextDate = new Date(lastDay.date);
+        nextDate.setDate(nextDate.getDate() + 1);
+        nextDate.setHours(0, 0, 0, 0);
+        days.push({
+          date: nextDate,
+          dayOfMonth: nextDate.getDate(),
+          isCurrentMonth: false,
+          isSelected: false,
+          isToday: false,
+          isDisabled: true,
+        });
+      } else {
+        break;
+      }
+    }
+
+    // Debug: log Sundays in current month
+    if (__DEV__) {
+      const sundays = days.filter(d => d.isCurrentMonth && d.date.getDay() === 0);
+      console.log(`[Calendar] Sundays in month: ${sundays.length}, days: ${sundays.map(d => d.dayOfMonth).join(', ')}`);
+    }
+
+    return days.slice(0, 42); // Ensure exactly 42 days
   }, [currentMonth, selectedDate, maximumDate, caloriesData]);
 
   const handlePreviousMonth = () => {
@@ -273,8 +319,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
 
                 {/* Week day labels */}
                 <View style={styles.weekDaysContainer}>
-                  {WEEK_DAYS.map((day, index) => (
-                    <View key={index} style={styles.weekDayLabel}>
+                  {WEEK_DAYS.map((day) => (
+                    <View key={day} style={styles.weekDayLabel}>
                       <Text style={styles.weekDayText}>{day}</Text>
                     </View>
                   ))}
@@ -289,20 +335,30 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                   <View style={styles.calendarGrid}>
                     {calendarDays.map((day, index) => {
                       const dateStr = formatDateForAPI(day.date);
+                      const dayKey = `${day.date.getFullYear()}-${day.date.getMonth()}-${day.date.getDate()}-${index}`;
+                      const isSunday = day.date.getDay() === 0;
                       const hasCalories = day.isCurrentMonth &&
                         !day.isDisabled &&
                         caloriesData[dateStr] !== undefined &&
                         caloriesData[dateStr] > 0;
 
+                      // Debug: log if Sunday is not visible
+                      if (__DEV__ && isSunday && day.isCurrentMonth) {
+                        console.log(`[Calendar] Rendering Sunday: day ${day.dayOfMonth}, index ${index}, isCurrentMonth: ${day.isCurrentMonth}, isDisabled: ${day.isDisabled}`);
+                      }
+
                       return (
                         <TouchableOpacity
-                          key={index}
+                          key={dayKey}
                           style={[
                             styles.dayCell,
                             !day.isCurrentMonth && styles.dayCellOtherMonth,
                             day.isSelected && styles.dayCellSelected,
                             day.isToday && !day.isSelected && styles.dayCellToday,
-                            day.isDisabled && styles.dayCellDisabled,
+                            // Only apply disabled opacity to days from other months
+                            day.isDisabled && !day.isCurrentMonth && styles.dayCellDisabled,
+                            // Ensure Sundays are always visible
+                            isSunday && day.isCurrentMonth && { opacity: 1 },
                           ]}
                           onPress={() => handleDatePress(day)}
                           disabled={day.isDisabled || !day.isCurrentMonth}
@@ -313,7 +369,12 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                               !day.isCurrentMonth && styles.dayNumberOtherMonth,
                               day.isSelected && styles.dayNumberSelected,
                               day.isToday && !day.isSelected && styles.dayNumberToday,
-                              day.isDisabled && styles.dayNumberDisabled,
+                              day.isDisabled && !day.isCurrentMonth && styles.dayNumberDisabled,
+                              // Ensure Sunday text is always visible
+                              isSunday && day.isCurrentMonth && { 
+                                opacity: 1, 
+                                color: day.isSelected ? colors.white : (day.isToday ? colors.primary : colors.text.primary)
+                              },
                             ]}
                           >
                             {day.dayOfMonth}
@@ -456,6 +517,10 @@ const styles = StyleSheet.create({
   },
   dayCellDisabled: {
     opacity: 0.3,
+  },
+  dayCellDisabledCurrentMonth: {
+    // Disabled days from current month should still be visible
+    opacity: 1,
   },
   dayNumber: {
     ...typography.body2,

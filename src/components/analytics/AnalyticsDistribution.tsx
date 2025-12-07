@@ -57,88 +57,78 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = obser
 
   return (
     <View style={dynamicStyles.container}>
-      <Text style={dynamicStyles.sectionTitle}>Распределение Б/Ж/У</Text>
-      {hasMacroData ? (
-        <View style={dynamicStyles.pieContainer}>
-          <PieChart
-            key={`pie-${pieData.map((p) => `${p.x}-${p.y}`).join('-')}`}
-            donut
-            innerRadius={60}
-            radius={90}
-            data={pieData
-              .filter((p) => (p.y || 0) > 0)
-              .map((p) => ({
-                value: Math.max(0, Math.round((p.y || 0) * 100)),
-                color:
-                  p.x === 'Белки'
-                    ? metricColor('protein')
-                    : p.x === 'Жиры'
-                      ? metricColor('fat')
-                      : metricColor('carbs'),
-                text: `${p.x}`,
-              }))}
-            centerLabelComponent={() => (
-              <Text
-                style={{ ...typography.body2, color: colors.text.secondary }}
-              >
-                %
-              </Text>
-            )}
-          />
-          <View style={dynamicStyles.legend}>
-            {pieData.map((p, idx) => {
-              const pct = Math.round((p.y || 0) * 100);
-              return (
-                <View key={idx} style={dynamicStyles.legendItem}>
-                  <View
-                    style={[
-                      dynamicStyles.legendColor,
-                      {
-                        backgroundColor:
-                          p.x === 'Белки'
-                            ? metricColor('protein')
-                            : p.x === 'Жиры'
-                              ? metricColor('fat')
-                              : metricColor('carbs'),
-                      },
-                    ]}
-                  />
-                  <Text style={dynamicStyles.legendText}>
-                    {p.x}: {pct}%
-                  </Text>
-                </View>
-              );
-            })}
+      <View style={dynamicStyles.card}>
+        <Text style={dynamicStyles.sectionTitle}>Распределение Б/Ж/У</Text>
+        {hasMacroData ? (
+          <View style={dynamicStyles.pieContainer}>
+            <PieChart
+              key={`pie-${getPieKey(pieData)}`}
+              donut
+              innerRadius={50}
+              radius={75}
+              data={pieData
+                .filter((p) => (p.y || 0) > 0)
+                .map((p) => ({
+                  value: Math.max(0, Math.round((p.y || 0) * 100)),
+                  color: getMacroColor(p.x),
+                  text: p.x,
+                }))}
+              centerLabelComponent={() => (
+                <Text
+                  style={{ ...typography.caption, fontSize: 10, color: colors.text.secondary }}
+                >
+                  %
+                </Text>
+              )}
+            />
+            <View style={dynamicStyles.legend}>
+              {pieData.map((p) => {
+                const pct = Math.round((p.y || 0) * 100);
+                const macroColor = getMacroColor(p.x);
+                return (
+                  <View key={p.x} style={dynamicStyles.legendItem}>
+                    <View
+                      style={[
+                        dynamicStyles.legendColor,
+                        { backgroundColor: macroColor },
+                      ]}
+                    />
+                    <Text style={dynamicStyles.legendText}>
+                      {p.x}: {pct}%
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
           </View>
-        </View>
-      ) : (
-        <Text style={dynamicStyles.emptyText}>Недостаточно данных</Text>
-      )}
+        ) : (
+          <Text style={dynamicStyles.emptyText}>Недостаточно данных</Text>
+        )}
+      </View>
 
-      <Text style={[dynamicStyles.sectionTitle, { marginTop: spacing.md }]}>
-        Вклад категорий приёмов
-      </Text>
-      {hasMealData ? (
-        <BarChart
-          key={`bar-${mealDataWithValues.length}-${mealDataWithValues.map((i) => i.mealType).join('-')}`}
-          height={220}
-          data={mealDataWithValues.map((item) => ({
-            label: formatMealTypeLabel(item.mealType),
-            value: Math.max(0, Math.round(item.calories || 0)),
-            frontColor: colors.primary,
-          }))}
-          barWidth={28}
-          xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
-          yAxisTextStyle={{ color: colors.text.secondary, fontSize: 10 }}
-          yAxisThickness={0}
-          xAxisThickness={0}
-          noOfSections={4}
-          spacing={mealDataWithValues.length > 3 ? 20 : 40}
-        />
-      ) : (
-        <Text style={dynamicStyles.emptyText}>Недостаточно данных</Text>
-      )}
-
+      <View style={dynamicStyles.card}>
+        <Text style={dynamicStyles.sectionTitle}>Вклад категорий приёмов</Text>
+        {hasMealData ? (
+          <BarChart
+            key={`bar-${getBarKey(mealDataWithValues)}`}
+            height={180}
+            data={mealDataWithValues.map((item) => ({
+              label: formatMealTypeLabel(item.mealType),
+              value: Math.max(0, Math.round(item.calories || 0)),
+              frontColor: colors.primary,
+            }))}
+            barWidth={24}
+            xAxisLabelTextStyle={{ color: colors.text.secondary, fontSize: 9 }}
+            yAxisTextStyle={{ color: colors.text.secondary, fontSize: 9 }}
+            yAxisThickness={0}
+            xAxisThickness={0}
+            noOfSections={4}
+            spacing={mealDataWithValues.length > 3 ? 16 : 32}
+          />
+        ) : (
+          <Text style={dynamicStyles.emptyText}>Недостаточно данных</Text>
+        )}
+      </View>
     </View>
   );
 });
@@ -154,12 +144,34 @@ function metricColor(metric: 'protein' | 'fat' | 'carbs') {
   }
 }
 
+function getMacroColor(macroName: string): string {
+  if (macroName === 'Белки') return metricColor('protein');
+  if (macroName === 'Жиры') return metricColor('fat');
+  return metricColor('carbs');
+}
+
+function getPieKey(pieData: Array<{ x: string; y: number }>): string {
+  return pieData.map((p) => `${p.x}-${p.y}`).join('-');
+}
+
+function getBarKey(mealData: Array<{ mealType: string }>): string {
+  return `${mealData.length}-${mealData.map((i) => i.mealType).join('-')}`;
+}
+
 const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
-    padding: spacing.md,
+    gap: spacing.sm,
+  },
+  card: {
+    backgroundColor: colors.background.paper,
+    borderRadius: 10,
+    padding: spacing.sm,
+    marginBottom: spacing.xs,
   },
   sectionTitle: {
-    ...typography.h3,
+    ...typography.body2,
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.text.primary,
     marginBottom: spacing.sm,
   },
@@ -167,10 +179,10 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: spacing.sm,
+    marginVertical: spacing.xs,
   },
   legend: {
-    marginLeft: spacing.lg,
+    marginLeft: spacing.md,
     gap: spacing.xs,
   },
   legendItem: {
@@ -179,20 +191,21 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     gap: spacing.xs,
   },
   legendColor: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
   },
   legendText: {
-    ...typography.body2,
+    ...typography.caption,
+    fontSize: 11,
     color: colors.text.primary,
-    fontSize: 12,
   },
   emptyText: {
-    ...typography.body2,
+    ...typography.caption,
+    fontSize: 11,
     color: colors.text.secondary,
     textAlign: 'center',
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.md,
   },
 });
 

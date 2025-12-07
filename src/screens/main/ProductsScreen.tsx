@@ -27,10 +27,18 @@ import {
 import { useTheme } from '../../hooks/useTheme';
 import type { lightColors, darkColors } from '../../theme/colors';
 import { formatCalories, formatWeight } from '../../utils/formatting';
+import Header from '../../components/common/Header';
+import Button from '../../components/common/Button';
+import Loading from '../../components/common/Loading';
+import InsightCard from '../../components/recommendations/InsightCard';
+import RecommendedProductCard from '../../components/recommendations/RecommendedProductCard';
+import SectionHeader from '../../components/recommendations/SectionHeader';
+import RecommendationInfoSheet from '../../components/recommendations/RecommendationInfoSheet';
+import MealSelectorDialog from '../../components/common/MealSelectorDialog';
 
 type ColorsType = typeof lightColors | typeof darkColors;
 
-// Product Item Component - отдельный компонент для реактивности
+// Product Item Component
 interface ProductItemProps {
   product: any;
   activeTab: 'my' | 'favorites' | 'search' | 'reco';
@@ -122,15 +130,6 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
   );
 });
 
-import Header from '../../components/common/Header';
-import Button from '../../components/common/Button';
-import Loading from '../../components/common/Loading';
-import InsightCard from '../../components/recommendations/InsightCard';
-import RecommendedProductCard from '../../components/recommendations/RecommendedProductCard';
-import SectionHeader from '../../components/recommendations/SectionHeader';
-import RecommendationInfoSheet from '../../components/recommendations/RecommendationInfoSheet';
-import MealSelectorDialog from '../../components/common/MealSelectorDialog';
-
 type ProductsScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
   'HomeTabs'
@@ -139,8 +138,8 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
   const { productStore, recommendationsStore, mealStore, uiStore } = useStores();
-  const { colors } = useTheme();
-  const dynamicStyles = createStyles(colors);
+  const { colors, isDark } = useTheme();
+  const dynamicStyles = createStyles(colors, isDark);
 
   const [activeTab, setActiveTab] = useState<
     'my' | 'favorites' | 'search' | 'reco'
@@ -153,26 +152,24 @@ const ProductsScreen: React.FC = observer(() => {
   >('products');
   const [showMealSelector, setShowMealSelector] = useState(false);
   const [selectedProductForAdd, setSelectedProductForAdd] = useState<ProductResponse | null>(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isHistoryVisible, setIsHistoryVisible] = useState(true);
 
-  // Track initial mount and loaded tabs to prevent duplicate requests
+  const textInputRef = useRef<TextInput>(null);
+
+  // Track initial mount and loaded tabs
   const isInitialMount = useRef(true);
   const loadedTabs = useRef<Set<'my' | 'favorites' | 'search' | 'reco'>>(new Set());
   const previousTab = useRef<'my' | 'favorites' | 'search' | 'reco'>(activeTab);
 
-  // Load favorites only once on mount to enable favorite toggle functionality
   useEffect(() => {
-    console.log('🚀 [ProductsScreen] Mount - Loading favorites');
     productStore.getFavorites();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Only on mount
+  }, []);
 
-  // Handle tab changes and load data when needed
   useEffect(() => {
-    // Skip on initial mount - handleTabChange will handle initial load
     if (isInitialMount.current) {
       isInitialMount.current = false;
       previousTab.current = activeTab;
-      // Load initial tab data if needed
       if (activeTab === 'my' || activeTab === 'favorites') {
         loadData(activeTab);
       } else if (activeTab === 'reco') {
@@ -181,91 +178,82 @@ const ProductsScreen: React.FC = observer(() => {
       return;
     }
 
-    // Skip if tab hasn't actually changed
     if (previousTab.current === activeTab) {
       return;
     }
 
-    console.log(`🔄 [ProductsScreen] Tab changed from ${previousTab.current} to ${activeTab}`);
     previousTab.current = activeTab;
 
-    // Load data for the new tab if needed
     if (activeTab === 'my' || activeTab === 'favorites') {
       loadData(activeTab);
     } else if (activeTab === 'reco') {
       loadRecommendations();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab]); // Only depend on activeTab
+  }, [activeTab]);
 
   const loadData = async (tab?: 'my' | 'favorites' | 'search' | 'reco', force: boolean = false) => {
     const targetTab = tab || activeTab;
-    console.log(`📦 [ProductsScreen] loadData() called for tab: ${targetTab}, force: ${force}`);
-
-    // Check if data is already loaded (unless forced refresh)
-    if (!force && loadedTabs.current.has(targetTab)) {
-      console.log(`⏭️ [ProductsScreen] Data already loaded for tab: ${targetTab}, skipping`);
-      return;
-    }
+    if (!force && loadedTabs.current.has(targetTab)) return;
 
     try {
       if (targetTab === 'my') {
-        console.log('📦 [ProductsScreen] Loading my products (GET /product)');
         await productStore.getAll();
         loadedTabs.current.add('my');
       } else if (targetTab === 'favorites') {
-        console.log('⭐ [ProductsScreen] Loading favorites (GET /favorite)');
         await productStore.getFavorites();
         loadedTabs.current.add('favorites');
       } else if (targetTab === 'search') {
-        console.log(
-          '🔍 [ProductsScreen] Search tab - will be handled by searchQuery effect'
-        );
-        // Search will be handled by searchQuery effect
         loadedTabs.current.add('search');
       } else if (targetTab === 'reco') {
         await loadRecommendations();
         loadedTabs.current.add('reco');
       }
     } catch (error) {
-      console.error('❌ [ProductsScreen] Error loading products:', error);
-      // Remove from loaded tabs on error so it can be retried
+      console.error('Error loading products:', error);
       loadedTabs.current.delete(targetTab);
     }
   };
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    // Force reload by clearing the loaded tab and passing force=true
     loadedTabs.current.delete(activeTab);
     await loadData(activeTab, true);
     setRefreshing(false);
   };
 
   const handleTabChange = (tab: 'my' | 'favorites' | 'search' | 'reco') => {
-    // Clear search query when changing tabs
-    setSearchQuery('');
     setActiveTab(tab);
   };
 
-  // Handle search when searchQuery changes
   useEffect(() => {
-    if (activeTab === 'search' && searchQuery.trim().length >= 2) {
+    const trimmedQuery = searchQuery.trim();
+
+    if (activeTab === 'search') {
+      if (trimmedQuery.length >= 2) {
+        const searchTimeout = setTimeout(() => {
+          productStore.searchProducts(trimmedQuery);
+        }, 300);
+        return () => clearTimeout(searchTimeout);
+      } else {
+        productStore.clearSearch();
+      }
+    } else if (activeTab === 'my') {
       const searchTimeout = setTimeout(() => {
-        productStore.searchProducts(searchQuery);
+        productStore.getAll(0, trimmedQuery);
       }, 300);
       return () => clearTimeout(searchTimeout);
-    } else if (activeTab === 'search') {
-      productStore.clearSearch();
+    } else if (activeTab === 'favorites') {
+      const searchTimeout = setTimeout(() => {
+        productStore.getFavorites(0, trimmedQuery);
+      }, 300);
+      return () => clearTimeout(searchTimeout);
     }
   }, [searchQuery, activeTab, productStore]);
 
   const loadRecommendations = async () => {
     try {
       await recommendationsStore.loadAll(10, 5);
-    } catch {
-      // handled in store
-    }
+    } catch { }
   };
 
   const handleAddProductToMeal = (product: ProductResponse) => {
@@ -300,7 +288,6 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const handleProductPress = (product: any) => {
-    // Для "Мои продукты" - открыть редактирование продукта
     if (activeTab === 'my') {
       navigation.navigate('Product', {
         product: product,
@@ -308,8 +295,6 @@ const ProductsScreen: React.FC = observer(() => {
       });
       return;
     }
-
-    // Для избранного и рекомендаций - только просмотр в MealElement
     const readOnly = activeTab === 'favorites' || activeTab === 'reco';
     navigation.navigate('MealElement', {
       item: product,
@@ -328,7 +313,6 @@ const ProductsScreen: React.FC = observer(() => {
       } else {
         await productStore.addToFavorites(product.id);
       }
-      // Note: favorites list is updated in store, no need to reload
     } catch {
       uiStore.showSnackbar('Не удалось обновить избранное', 'error');
     }
@@ -336,13 +320,20 @@ const ProductsScreen: React.FC = observer(() => {
 
   const handleLoadMore = () => {
     if (
-      activeTab === 'search' &&
       productStore.pagination.hasMore &&
       !productStore.loading &&
-      !productStore.loadingMore &&
-      searchQuery.trim().length >= 2
+      !productStore.loadingMore
     ) {
-      productStore.searchProducts(searchQuery, productStore.pagination.page + 1);
+      const nextPage = productStore.pagination.page + 1;
+      const query = searchQuery.trim();
+
+      if (activeTab === 'search' && query.length >= 2) {
+        productStore.searchProducts(query, nextPage);
+      } else if (activeTab === 'my') {
+        productStore.getAll(nextPage, query);
+      } else if (activeTab === 'favorites') {
+        productStore.getFavorites(nextPage, query);
+      }
     }
   };
 
@@ -386,6 +377,14 @@ const ProductsScreen: React.FC = observer(() => {
     }
 
     if (activeTab === 'search') {
+      if (productStore.loading) {
+        return (
+          <View style={dynamicStyles.emptyState}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={dynamicStyles.emptySubtitle}>Поиск...</Text>
+          </View>
+        );
+      }
       return (
         <View style={dynamicStyles.emptyState}>
           <Ionicons name="search-outline" size={64} color={colors.text.secondary} />
@@ -407,20 +406,12 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const getData = () => {
-    const query = searchQuery.trim().toLowerCase();
-
     if (activeTab === 'favorites') {
-      const favorites = productStore.favorites;
-      if (!query) return favorites;
-      return favorites.filter(p => p.name.toLowerCase().includes(query));
+      return productStore.favorites;
     } else if (activeTab === 'search') {
-      // Search results from GET /product/search/name (API contract 4.6)
       return productStore.products;
     } else if (activeTab === 'my') {
-      // User's products from GET /product (API contract 4.5)
-      const myProducts = productStore.myProducts;
-      if (!query) return myProducts;
-      return myProducts.filter(p => p.name.toLowerCase().includes(query));
+      return productStore.myProducts;
     }
     return productStore.myProducts;
   };
@@ -442,30 +433,30 @@ const ProductsScreen: React.FC = observer(() => {
     );
   };
 
-  // Show full loading screen only for initial load when list is empty
   const data = getData();
-  if (productStore.loading && !refreshing && data.length === 0) {
+  if (productStore.loading && !refreshing && data.length === 0 && activeTab !== 'search') {
     return <Loading message="Загрузка продуктов..." />;
   }
+
+  const showHistory =
+    isSearchFocused &&
+    isHistoryVisible &&
+    activeTab !== 'reco' &&
+    searchQuery.length === 0 &&
+    productStore.searchHistory.length > 0;
 
   return (
     <View style={dynamicStyles.container}>
       <Header title="База продуктов" />
 
       <View style={dynamicStyles.content}>
-        {/* Tabs */}
         <View style={dynamicStyles.tabs}>
           <TouchableOpacity
             style={[dynamicStyles.tab, activeTab === 'search' && { borderBottomColor: colors.primary }]}
             onPress={() => handleTabChange('search')}
           >
             {renderTabIcon('search')}
-            <Text
-              style={[
-                dynamicStyles.tabText,
-                activeTab === 'search' && { color: colors.primary, fontWeight: '700' },
-              ]}
-            >
+            <Text style={[dynamicStyles.tabText, activeTab === 'search' && { color: colors.primary, fontWeight: '700' }]}>
               Поиск
             </Text>
           </TouchableOpacity>
@@ -474,12 +465,7 @@ const ProductsScreen: React.FC = observer(() => {
             onPress={() => handleTabChange('favorites')}
           >
             {renderTabIcon('favorites')}
-            <Text
-              style={[
-                dynamicStyles.tabText,
-                activeTab === 'favorites' && { color: colors.primary, fontWeight: '700' },
-              ]}
-            >
+            <Text style={[dynamicStyles.tabText, activeTab === 'favorites' && { color: colors.primary, fontWeight: '700' }]}>
               Избранное
             </Text>
           </TouchableOpacity>
@@ -488,12 +474,7 @@ const ProductsScreen: React.FC = observer(() => {
             onPress={() => handleTabChange('my')}
           >
             {renderTabIcon('my')}
-            <Text
-              style={[
-                dynamicStyles.tabText,
-                activeTab === 'my' && { color: colors.primary, fontWeight: '700' },
-              ]}
-            >
+            <Text style={[dynamicStyles.tabText, activeTab === 'my' && { color: colors.primary, fontWeight: '700' }]}>
               Мои
             </Text>
           </TouchableOpacity>
@@ -502,36 +483,51 @@ const ProductsScreen: React.FC = observer(() => {
             onPress={() => handleTabChange('reco')}
           >
             {renderTabIcon('reco')}
-            <Text
-              style={[
-                dynamicStyles.tabText,
-                activeTab === 'reco' && { color: colors.primary, fontWeight: '700' },
-              ]}
-            >
+            <Text style={[dynamicStyles.tabText, activeTab === 'reco' && { color: colors.primary, fontWeight: '700' }]}>
               Советы
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Search Input (for search, favorites and my tabs) */}
         {activeTab !== 'reco' && (
           <View style={dynamicStyles.searchContainer}>
-            <TextInput
-              style={[dynamicStyles.searchInput, { color: colors.text.primary }]}
-              placeholder={
-                activeTab === 'search'
-                  ? 'Поиск продуктов...'
-                  : 'Поиск в списке...'
-              }
-              placeholderTextColor={colors.text.secondary}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              autoFocus={activeTab === 'search'}
-            />
+            <View style={dynamicStyles.searchWrapper}>
+              <TextInput
+                ref={textInputRef}
+                style={[dynamicStyles.searchInput, { color: colors.text.primary }]}
+                placeholder={activeTab === 'search' ? 'Поиск продуктов...' : 'Поиск в списке...'}
+                placeholderTextColor={colors.text.secondary}
+                value={searchQuery}
+                onChangeText={setSearchQuery}
+                autoFocus={activeTab === 'search'}
+                onFocus={() => {
+                  setIsSearchFocused(true);
+                  setIsHistoryVisible(true);
+                }}
+                onTouchStart={() => setIsHistoryVisible(true)}
+                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              />
+              {productStore.loading && activeTab === 'search' ? (
+                <View style={dynamicStyles.searchLoader}>
+                  <ActivityIndicator size="small" color={colors.primary} />
+                </View>
+              ) : searchQuery.length > 0 ? (
+                <TouchableOpacity
+                  style={dynamicStyles.searchClearButton}
+                  onPress={() => {
+                    setSearchQuery('');
+                    setIsSearchFocused(true);
+                    textInputRef.current?.focus();
+                  }}
+                >
+                  <Ionicons name="close-circle" size={20} color={colors.text.secondary} />
+                </TouchableOpacity>
+              ) : null}
+            </View>
           </View>
         )}
 
-        {/* Products List or Recommendations */}
+        <View style={{ flex: 1 }}>
         {activeTab !== 'reco' ? (
           <FlashList
             data={getData()}
@@ -543,12 +539,7 @@ const ProductsScreen: React.FC = observer(() => {
             ListFooterComponent={renderLoadingFooter}
             contentContainerStyle={dynamicStyles.listContainer}
             showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={handleRefresh}
-              />
-            }
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
             onEndReached={handleLoadMore}
             onEndReachedThreshold={0.5}
           />
@@ -564,28 +555,22 @@ const ProductsScreen: React.FC = observer(() => {
               />
             }
           >
-            {/* Критичные и важные инсайты сверху */}
-            {(recommendationsStore.criticalInsights.length > 0 ||
-              recommendationsStore.warningInsights.length > 0) && (
-                <>
-                  <SectionHeader
-                    title="Важные уведомления"
-                    icon="flash-outline"
-                    count={
-                      recommendationsStore.criticalInsights.length +
-                      recommendationsStore.warningInsights.length
-                    }
-                  />
-                  {recommendationsStore.criticalInsights.map((insight) => (
-                    <InsightCard key={insight.id} insight={insight} />
-                  ))}
-                  {recommendationsStore.warningInsights.map((insight) => (
-                    <InsightCard key={insight.id} insight={insight} />
-                  ))}
-                </>
-              )}
+            {(recommendationsStore.criticalInsights.length > 0 || recommendationsStore.warningInsights.length > 0) && (
+              <>
+                <SectionHeader
+                  title="Важные уведомления"
+                  icon="flash-outline"
+                  count={recommendationsStore.criticalInsights.length + recommendationsStore.warningInsights.length}
+                />
+                {recommendationsStore.criticalInsights.map((insight) => (
+                  <InsightCard key={insight.id} insight={insight} />
+                ))}
+                {recommendationsStore.warningInsights.map((insight) => (
+                  <InsightCard key={insight.id} insight={insight} />
+                ))}
+              </>
+            )}
 
-            {/* Подборки для приёма */}
             <SectionHeader
               title="Подборки для приёма"
               icon="target-outline"
@@ -612,7 +597,6 @@ const ProductsScreen: React.FC = observer(() => {
               ))
             )}
 
-            {/* Рекомендованные продукты */}
             <SectionHeader
               title="Рекомендованные продукты"
               icon="sparkles-outline"
@@ -624,8 +608,7 @@ const ProductsScreen: React.FC = observer(() => {
             ) : recommendationsStore.allProducts.length === 0 ? (
               <View style={dynamicStyles.emptySection}>
                 <Text style={dynamicStyles.emptySectionText}>
-                  Нет рекомендаций. Добавьте больше приемов пищи для
-                  персонализации.
+                  Нет рекомендаций. Добавьте больше приемов пищи для персонализации.
                 </Text>
               </View>
             ) : (
@@ -650,7 +633,6 @@ const ProductsScreen: React.FC = observer(() => {
               </>
             )}
 
-            {/* Информационные инсайты */}
             {recommendationsStore.infoInsights.length > 0 && (
               <>
                 <SectionHeader
@@ -664,13 +646,56 @@ const ProductsScreen: React.FC = observer(() => {
                 ))}
               </>
             )}
-
             <View style={dynamicStyles.bottomSpacer} />
           </ScrollView>
         )}
-      </View>
 
-      {/* Add Button - показываем только на вкладке "Мои продукты" */}
+        {showHistory && (
+          <View style={dynamicStyles.historyContainer}>
+            <View style={dynamicStyles.historyHeader}>
+              <Text style={dynamicStyles.historyTitle}>Недавние запросы</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <TouchableOpacity onPress={() => productStore.clearHistory()}>
+                  <Text style={dynamicStyles.clearHistoryText}>Очистить</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setIsHistoryVisible(false)}
+                  style={{ marginLeft: spacing.md, padding: 4 }}
+                >
+                  <Ionicons name="chevron-up" size={20} color={colors.text.secondary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+            <ScrollView keyboardShouldPersistTaps="handled">
+              {productStore.searchHistory.map((item, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={dynamicStyles.historyItem}
+                  onPress={() => {
+                    setSearchQuery(item);
+                    setIsSearchFocused(false);
+                  }}
+                >
+                  <View style={dynamicStyles.historyItemLeft}>
+                    <Ionicons name="time-outline" size={20} color={colors.text.secondary} />
+                    <Text style={dynamicStyles.historyItemText}>{item}</Text>
+                  </View>
+                  <TouchableOpacity
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      productStore.removeFromHistory(item);
+                    }}
+                  >
+                    <Ionicons name="close-circle-outline" size={20} color={colors.text.hint} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+        </View>
+      </View >
+
       {activeTab === 'my' && (
         <View style={dynamicStyles.addButtonContainer}>
           <Button
@@ -681,7 +706,6 @@ const ProductsScreen: React.FC = observer(() => {
         </View>
       )}
 
-      {/* Recommendation Info Sheet */}
       <RecommendationInfoSheet
         visible={infoSheetVisible}
         type={infoSheetType}
@@ -690,7 +714,6 @@ const ProductsScreen: React.FC = observer(() => {
         preferredCategories={[]}
       />
 
-      {/* Meal Selector Dialog */}
       <MealSelectorDialog
         visible={showMealSelector}
         meals={mealStore.mealsForSelectedDate}
@@ -705,7 +728,7 @@ const ProductsScreen: React.FC = observer(() => {
   );
 });
 
-const createStyles = (colors: ColorsType) => StyleSheet.create({
+const createStyles = (colors: ColorsType, isDark: boolean) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background.default,
@@ -718,14 +741,32 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     backgroundColor: colors.background.paper,
     paddingBottom: spacing.md,
   },
+  searchWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+  },
   searchInput: {
     ...typography.body1,
     backgroundColor: colors.background.light,
     borderRadius: borderRadius.lg,
-    paddingHorizontal: spacing.md,
+    paddingLeft: spacing.md,
+    paddingRight: 48,
     paddingVertical: spacing.md,
     borderWidth: 0,
     ...shadows.sm,
+  },
+  searchClearButton: {
+    position: 'absolute',
+    right: spacing.xs,
+    height: '100%',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  searchLoader: {
+    position: 'absolute',
+    right: spacing.sm,
+    height: '100%',
+    justifyContent: 'center',
   },
   tabs: {
     flexDirection: 'row',
@@ -747,84 +788,125 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
   tabText: {
     ...typography.caption,
     color: colors.text.secondary,
-    fontWeight: '500',
-    textAlign: 'center',
   },
   listContainer: {
     padding: spacing.lg,
-    paddingBottom: 100, // Space for add button
+    paddingBottom: 100,
   },
   productCard: {
+    flexDirection: 'row',
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    padding: spacing.md,
     marginBottom: spacing.md,
-    borderWidth: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...shadows.md,
+    ...shadows.sm,
   },
   productImage: {
     width: 60,
     height: 60,
     borderRadius: borderRadius.md,
-    marginRight: spacing.md,
+    backgroundColor: colors.background.light,
   },
   productImagePlaceholder: {
     width: 60,
     height: 60,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.background.default,
+    backgroundColor: colors.background.light,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: spacing.md,
   },
   productInfo: {
     flex: 1,
+    marginLeft: spacing.md,
+    justifyContent: 'center',
   },
   productName: {
-    ...typography.h5,
+    ...typography.body1,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 4,
   },
   productMacros: {
-    ...typography.body2,
+    ...typography.caption,
     color: colors.text.secondary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
   },
   productCalories: {
     ...typography.caption,
     color: colors.primary,
-    fontWeight: '600',
-    marginBottom: spacing.xs,
+    fontWeight: '700',
   },
   productSource: {
     ...typography.caption,
     color: colors.text.hint,
+    fontSize: 10,
+    marginTop: 2,
   },
   productActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    marginLeft: spacing.sm,
   },
   favoriteButton: {
-    padding: spacing.sm,
-  },
-  productArrow: {
-    ...typography.h3,
-    color: colors.text.secondary,
+    padding: 4,
   },
   addButtonSmall: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.md,
   },
   addButtonSmallIcon: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: -2,
+  },
+  productArrow: {
     fontSize: 24,
-    fontWeight: '600',
+    color: colors.text.secondary,
+    marginTop: 8,
+  },
+  historyContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: isDark ? 'rgba(18, 18, 18, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+    zIndex: 10,
+    padding: spacing.lg,
+  },
+  historyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  historyTitle: {
+    ...typography.h6,
+    color: colors.text.secondary,
+  },
+  clearHistoryText: {
+    ...typography.caption,
+    color: colors.primary,
+  },
+  historyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border.light,
+  },
+  historyItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  historyItemText: {
+    ...typography.body1,
+    color: colors.text.primary,
+    marginLeft: spacing.md,
   },
   emptyState: {
     alignItems: 'center',

@@ -39,6 +39,14 @@ const AnalyticsScreen: React.FC = observer(() => {
     store.fetchAllForPeriod();
   }, [store, store.period]);
 
+  // Switch to distributions tab if trend is selected and period changes to 'day'
+  useEffect(() => {
+    const isDayPeriod = typeof store.period === 'string' && store.period === 'day';
+    if (isDayPeriod && activeTab === 'trend') {
+      setActiveTab('distributions');
+    }
+  }, [store.period, activeTab]);
+
   // Load weight history when entering screen
   useEffect(() => {
     const loadWeight = async () => {
@@ -143,13 +151,15 @@ const AnalyticsScreen: React.FC = observer(() => {
         <AnalyticsInsights insights={store.insights} />
 
         <View style={dynamicStyles.tabbar}>
-          <TabButton
-            label="Тренд"
-            active={activeTab === 'trend'}
-            onPress={() => setActiveTab('trend')}
-            colors={colors}
-            styles={dynamicStyles}
-          />
+          {!(typeof store.period === 'string' && store.period === 'day') && (
+            <TabButton
+              label="Тренд"
+              active={activeTab === 'trend'}
+              onPress={() => setActiveTab('trend')}
+              colors={colors}
+              styles={dynamicStyles}
+            />
+          )}
           <TabButton
             label="Распределения"
             active={activeTab === 'distributions'}
@@ -185,7 +195,7 @@ const TabButton: React.FC<{
     style={[styles.tabButton, active && { backgroundColor: colors.primary }]}
     onPress={onPress}
   >
-    <Text style={[{ ...typography.button }, { color: active ? colors.white : colors.text.secondary }]}>
+    <Text style={[styles.tabButtonText, { color: active ? colors.white : colors.text.secondary }]}>
       {label}
     </Text>
   </TouchableOpacity>
@@ -198,24 +208,29 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
   },
   tabbar: {
     flexDirection: 'row',
-    gap: spacing.sm,
+    gap: spacing.xs,
     paddingHorizontal: componentSpacing.screenHorizontal,
-    marginTop: spacing.sm,
-    marginBottom: spacing.sm,
+    marginTop: spacing.xs,
+    marginBottom: spacing.xs,
   },
   tabButton: {
     flex: 1,
     backgroundColor: colors.background.paper,
-    paddingVertical: spacing.sm,
-    borderRadius: 10,
+    paddingVertical: spacing.xs,
+    borderRadius: 8,
     alignItems: 'center',
   },
   section: {
     backgroundColor: colors.background.paper,
     marginHorizontal: componentSpacing.screenHorizontal,
     marginBottom: componentSpacing.sectionSpacing,
-    borderRadius: 12,
-    padding: spacing.lg,
+    borderRadius: 10,
+    padding: spacing.sm,
+  },
+  tabButtonText: {
+    ...typography.caption,
+    fontSize: 12,
+    fontWeight: '500',
   },
   placeholder: {
     ...typography.body1,
