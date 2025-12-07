@@ -54,7 +54,9 @@ export const AnalyticsGoalCalendar: React.FC<AnalyticsGoalCalendarProps> = obser
             {/* Week Header */}
             <View style={dynamicStyles.weekRow}>
                 {WEEK_DAYS.map(day => (
-                    <Text key={day} style={dynamicStyles.weekDayText}>{day}</Text>
+                    <View key={day} style={dynamicStyles.dayCell}>
+                        <Text style={dynamicStyles.weekDayText}>{day}</Text>
+                    </View>
                 ))}
             </View>
 
@@ -136,13 +138,11 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     },
     weekRow: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
         marginBottom: spacing.xs,
     },
     weekDayText: {
         ...typography.caption,
         color: colors.text.secondary,
-        width: 30,
         textAlign: 'center',
     },
     calendarGrid: {
@@ -150,7 +150,7 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
         flexWrap: 'wrap',
     },
     dayCell: {
-        width: '14.28%', // 100% / 7
+        width: '14.2%', // Slightly less than 100/7 to prevent wrapping
         aspectRatio: 1,
         justifyContent: 'center',
         alignItems: 'center',

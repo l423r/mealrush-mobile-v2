@@ -122,109 +122,139 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
-    
+
+    // Helper function to convert JavaScript day (0=Sunday) to Monday-based week (0=Monday, 6=Sunday)
+    const getMondayBasedDay = (date: Date): number => {
+      const jsDay = date.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+      return jsDay === 0 ? 6 : jsDay - 1; // Sunday (0) -> 6, Monday (1) -> 0, etc.
+    };
+
     // Get first day of week (Monday = 0, Sunday = 6)
-    // JavaScript getDay(): Sunday = 0, Monday = 1, ..., Saturday = 6
-    // We want: Monday = 0, Tuesday = 1, ..., Sunday = 6
-    const jsDay = firstDay.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-    // Convert to Monday-based week: Sunday (0) -> 6, Monday (1) -> 0, etc.
-    const firstDayOfWeek = jsDay === 0 ? 6 : jsDay - 1;
-    
-    const days: CalendarDay[] = [];
+    const firstDayOfWeek = getMondayBasedDay(firstDay);
+
+    // Create a grid of 42 cells (6 weeks * 7 days)
+    const grid: (CalendarDay | null)[] = new Array(42).fill(null);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const maxDate = new Date(maximumDate);
     maxDate.setHours(23, 59, 59, 999);
 
-    // Add empty cells for days before month starts (from previous month)
-    // This ensures the first day of the month is in the correct column
+    // Add days from previous month to fill cells before the first day
     if (firstDayOfWeek > 0) {
       const prevMonth = month === 0 ? 11 : month - 1;
       const prevYear = month === 0 ? year - 1 : year;
       const daysInPrevMonth = new Date(prevYear, prevMonth + 1, 0).getDate();
-      
+
       // Start from the last day of previous month and go backwards
       for (let i = firstDayOfWeek - 1; i >= 0; i--) {
         const dayOfPrevMonth = daysInPrevMonth - i;
         const date = new Date(prevYear, prevMonth, dayOfPrevMonth);
         date.setHours(0, 0, 0, 0);
-        days.push({
+        grid[i] = {
           date,
           dayOfMonth: dayOfPrevMonth,
           isCurrentMonth: false,
           isSelected: false,
           isToday: false,
           isDisabled: true,
-        });
+        };
       }
     }
 
-    // Add ALL days of current month - including Sundays
+    // Add ALL days of current month - place each day in the correct column based on its actual day of week
     for (let day = 1; day <= daysInMonth; day++) {
       const date = new Date(year, month, day);
       date.setHours(0, 0, 0, 0);
-      
-      const dateStr = formatDateForAPI(date);
-      const isSelected =
-        date.toDateString() === selectedDate.toDateString();
-      const isToday = date.toDateString() === today.toDateString();
-      const isDisabled = date > maxDate;
 
-      days.push({
-        date,
-        dayOfMonth: day,
-        isCurrentMonth: true,
-        isSelected,
-        isToday,
-        calories: caloriesData[dateStr],
-        isDisabled,
-      });
-    }
+      // Calculate the correct column for this day (0=Monday, 6=Sunday)
+      const dayColumn = getMondayBasedDay(date);
 
-    // Fill remaining cells to complete 6 weeks (42 cells total = 6 weeks * 7 days)
-    const remainingDays = 42 - days.length;
-    if (remainingDays > 0) {
-      const nextMonth = month === 11 ? 0 : month + 1;
-      const nextYear = month === 11 ? year + 1 : year;
-      for (let i = 1; i <= remainingDays; i++) {
-        const date = new Date(nextYear, nextMonth, i);
-        date.setHours(0, 0, 0, 0);
-        days.push({
+      // Find the correct grid index: start from firstDayOfWeek, then find the week and position
+      // Day 1 should be at index firstDayOfWeek
+      // Day 2 should be at index firstDayOfWeek + 1
+      // But we verify by checking the actual day of week
+      const dayIndex = firstDayOfWeek + (day - 1);
+
+      // Double-check: the column at this index should match the day's actual column
+      if (dayIndex % 7 !== dayColumn) {
+        // Misalignment detected - recalculate based on actual day of week
+        // Find which week this day belongs to and place it in the correct column
+        const weekNumber = Math.floor(dayIndex / 7);
+        const correctIndex = weekNumber * 7 + dayColumn;
+
+        if (correctIndex < 42 && grid[correctIndex] === null) {
+          const dateStr = formatDateForAPI(date);
+          grid[correctIndex] = {
+            date,
+            dayOfMonth: day,
+            isCurrentMonth: true,
+            isSelected: date.toDateString() === selectedDate.toDateString(),
+            isToday: date.toDateString() === today.toDateString(),
+            calories: caloriesData[dateStr],
+            isDisabled: date > maxDate,
+          };
+          continue;
+        }
+      }
+
+      // Normal case: day is correctly aligned
+      if (dayIndex < 42 && grid[dayIndex] === null) {
+        const dateStr = formatDateForAPI(date);
+        grid[dayIndex] = {
           date,
-          dayOfMonth: i,
+          dayOfMonth: day,
+          isCurrentMonth: true,
+          isSelected: date.toDateString() === selectedDate.toDateString(),
+          isToday: date.toDateString() === today.toDateString(),
+          calories: caloriesData[dateStr],
+          isDisabled: date > maxDate,
+        };
+      }
+    }
+
+    // Fill remaining empty cells with next month's days
+    let nextMonthDay = 1;
+    for (let i = 0; i < 42; i++) {
+      if (grid[i] === null) {
+        const nextMonth = month === 11 ? 0 : month + 1;
+        const nextYear = month === 11 ? year + 1 : year;
+        const date = new Date(nextYear, nextMonth, nextMonthDay);
+        date.setHours(0, 0, 0, 0);
+        grid[i] = {
+          date,
+          dayOfMonth: nextMonthDay,
           isCurrentMonth: false,
           isSelected: false,
           isToday: false,
           isDisabled: true,
-        });
+        };
+        nextMonthDay++;
       }
     }
 
-    // Final safety check: ensure exactly 42 cells
-    // If we still don't have 42, fill with next month's days
-    while (days.length < 42) {
-      const lastDay = days.at(-1);
-      if (lastDay?.date) {
-        const nextDate = new Date(lastDay.date);
-        nextDate.setDate(nextDate.getDate() + 1);
-        nextDate.setHours(0, 0, 0, 0);
-        days.push({
-          date: nextDate,
-          dayOfMonth: nextDate.getDate(),
-          isCurrentMonth: false,
-          isSelected: false,
-          isToday: false,
-          isDisabled: true,
-        });
-      } else {
-        break;
-      }
-    }
+    // Convert grid to array and filter out nulls (shouldn't be any, but safety check)
+    const days = grid.filter((d): d is CalendarDay => d !== null);
 
-    // Debug: log Sundays in current month
-    if (__DEV__) {
-      const sundays = days.filter(d => d.isCurrentMonth && d.date.getDay() === 0);
-      console.log(`[Calendar] Sundays in month: ${sundays.length}, days: ${sundays.map(d => d.dayOfMonth).join(', ')}`);
+    // Debug: verify alignment for December 2025
+    if (__DEV__ && year === 2025 && month === 11) {
+      const day7 = days.find(d => d.isCurrentMonth && d.dayOfMonth === 7);
+      if (day7) {
+        const day7Index = days.indexOf(day7);
+        const day7Column = day7Index % 7;
+        const day7ActualDay = getMondayBasedDay(day7.date);
+        console.log(`[Calendar] Day 7 at index ${day7Index}, column ${day7Column}, actual day of week: ${day7ActualDay}, date.getDay(): ${day7.date.getDay()}`);
+        if (day7Column !== day7ActualDay) {
+          console.error(`[Calendar] MISALIGNMENT: Day 7 is in column ${day7Column} but should be in column ${day7ActualDay}`);
+        }
+      }
+      // Also verify first day
+      const day1 = days.find(d => d.isCurrentMonth && d.dayOfMonth === 1);
+      if (day1) {
+        const day1Index = days.indexOf(day1);
+        const day1Column = day1Index % 7;
+        const day1ActualDay = getMondayBasedDay(day1.date);
+        console.log(`[Calendar] Day 1 at index ${day1Index}, column ${day1Column}, actual day of week: ${day1ActualDay}, firstDayOfWeek calculated: ${firstDayOfWeek}`);
+      }
     }
 
     return days.slice(0, 42); // Ensure exactly 42 days
@@ -342,6 +372,18 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                         caloriesData[dateStr] !== undefined &&
                         caloriesData[dateStr] > 0;
 
+                      // Calculate Sunday text color
+                      let sundayTextStyle = null;
+                      if (isSunday && day.isCurrentMonth) {
+                        if (day.isSelected) {
+                          sundayTextStyle = { opacity: 1, color: colors.white };
+                        } else if (day.isToday) {
+                          sundayTextStyle = { opacity: 1, color: colors.primary };
+                        } else {
+                          sundayTextStyle = { opacity: 1, color: colors.text.primary };
+                        }
+                      }
+
                       // Debug: log if Sunday is not visible
                       if (__DEV__ && isSunday && day.isCurrentMonth) {
                         console.log(`[Calendar] Rendering Sunday: day ${day.dayOfMonth}, index ${index}, isCurrentMonth: ${day.isCurrentMonth}, isDisabled: ${day.isDisabled}`);
@@ -371,10 +413,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                               day.isToday && !day.isSelected && styles.dayNumberToday,
                               day.isDisabled && !day.isCurrentMonth && styles.dayNumberDisabled,
                               // Ensure Sunday text is always visible
-                              isSunday && day.isCurrentMonth && { 
-                                opacity: 1, 
-                                color: day.isSelected ? colors.white : (day.isToday ? colors.primary : colors.text.primary)
-                              },
+                              sundayTextStyle,
                             ]}
                           >
                             {day.dayOfMonth}
@@ -501,7 +540,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: spacing.xs,
     borderRadius: borderRadius.sm,
-    margin: 1,
     minHeight: 50,
   },
   dayCellOtherMonth: {
