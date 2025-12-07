@@ -53,7 +53,7 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
   const { productStore } = useStores();
   const showAddButton = activeTab === 'favorites' || activeTab === 'my';
   const isFavorite = productStore.favorites.some((f) => f.id === product.id);
-  
+
   return (
     <TouchableOpacity
       style={styles.productCard}
@@ -153,7 +153,7 @@ const ProductsScreen: React.FC = observer(() => {
   >('products');
   const [showMealSelector, setShowMealSelector] = useState(false);
   const [selectedProductForAdd, setSelectedProductForAdd] = useState<ProductResponse | null>(null);
-  
+
   // Track initial mount and loaded tabs to prevent duplicate requests
   const isInitialMount = useRef(true);
   const loadedTabs = useRef<Set<'my' | 'favorites' | 'search' | 'reco'>>(new Set());
@@ -201,7 +201,7 @@ const ProductsScreen: React.FC = observer(() => {
   const loadData = async (tab?: 'my' | 'favorites' | 'search' | 'reco', force: boolean = false) => {
     const targetTab = tab || activeTab;
     console.log(`📦 [ProductsScreen] loadData() called for tab: ${targetTab}, force: ${force}`);
-    
+
     // Check if data is already loaded (unless forced refresh)
     if (!force && loadedTabs.current.has(targetTab)) {
       console.log(`⏭️ [ProductsScreen] Data already loaded for tab: ${targetTab}, skipping`);
@@ -243,10 +243,8 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const handleTabChange = (tab: 'my' | 'favorites' | 'search' | 'reco') => {
-    // Only update the tab state - useEffect will handle loading data
-    if (tab === 'search') {
-      setSearchQuery('');
-    }
+    // Clear search query when changing tabs
+    setSearchQuery('');
     setActiveTab(tab);
   };
 
@@ -304,16 +302,16 @@ const ProductsScreen: React.FC = observer(() => {
   const handleProductPress = (product: any) => {
     // Для "Мои продукты" - открыть редактирование продукта
     if (activeTab === 'my') {
-      navigation.navigate('Product', { 
+      navigation.navigate('Product', {
         product: product,
         isEditing: true,
       });
       return;
     }
-    
+
     // Для избранного и рекомендаций - только просмотр в MealElement
     const readOnly = activeTab === 'favorites' || activeTab === 'reco';
-    navigation.navigate('MealElement', { 
+    navigation.navigate('MealElement', {
       item: product,
       readOnly: readOnly,
     });
@@ -349,7 +347,7 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const renderLoadingFooter = () => {
-    if (!productStore.loadingMore || activeTab !== 'search') {
+    if (!productStore.loadingMore || (activeTab !== 'search' && activeTab !== 'my' && activeTab !== 'favorites')) {
       return null;
     }
     return (
@@ -409,14 +407,20 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const getData = () => {
+    const query = searchQuery.trim().toLowerCase();
+
     if (activeTab === 'favorites') {
-      return productStore.favorites;
+      const favorites = productStore.favorites;
+      if (!query) return favorites;
+      return favorites.filter(p => p.name.toLowerCase().includes(query));
     } else if (activeTab === 'search') {
       // Search results from GET /product/search/name (API contract 4.6)
       return productStore.products;
     } else if (activeTab === 'my') {
       // User's products from GET /product (API contract 4.5)
-      return productStore.myProducts;
+      const myProducts = productStore.myProducts;
+      if (!query) return myProducts;
+      return myProducts.filter(p => p.name.toLowerCase().includes(query));
     }
     return productStore.myProducts;
   };
@@ -509,16 +513,20 @@ const ProductsScreen: React.FC = observer(() => {
           </TouchableOpacity>
         </View>
 
-        {/* Search Input (only for search tab) */}
-        {activeTab === 'search' && (
+        {/* Search Input (for search, favorites and my tabs) */}
+        {activeTab !== 'reco' && (
           <View style={dynamicStyles.searchContainer}>
             <TextInput
               style={[dynamicStyles.searchInput, { color: colors.text.primary }]}
-              placeholder="Поиск продуктов..."
+              placeholder={
+                activeTab === 'search'
+                  ? 'Поиск продуктов...'
+                  : 'Поиск в списке...'
+              }
               placeholderTextColor={colors.text.secondary}
               value={searchQuery}
               onChangeText={setSearchQuery}
-              autoFocus
+              autoFocus={activeTab === 'search'}
             />
           </View>
         )}
@@ -559,23 +567,23 @@ const ProductsScreen: React.FC = observer(() => {
             {/* Критичные и важные инсайты сверху */}
             {(recommendationsStore.criticalInsights.length > 0 ||
               recommendationsStore.warningInsights.length > 0) && (
-              <>
-                <SectionHeader
-                  title="Важные уведомления"
-                  icon="flash-outline"
-                  count={
-                    recommendationsStore.criticalInsights.length +
-                    recommendationsStore.warningInsights.length
-                  }
-                />
-                {recommendationsStore.criticalInsights.map((insight) => (
-                  <InsightCard key={insight.id} insight={insight} />
-                ))}
-                {recommendationsStore.warningInsights.map((insight) => (
-                  <InsightCard key={insight.id} insight={insight} />
-                ))}
-              </>
-            )}
+                <>
+                  <SectionHeader
+                    title="Важные уведомления"
+                    icon="flash-outline"
+                    count={
+                      recommendationsStore.criticalInsights.length +
+                      recommendationsStore.warningInsights.length
+                    }
+                  />
+                  {recommendationsStore.criticalInsights.map((insight) => (
+                    <InsightCard key={insight.id} insight={insight} />
+                  ))}
+                  {recommendationsStore.warningInsights.map((insight) => (
+                    <InsightCard key={insight.id} insight={insight} />
+                  ))}
+                </>
+              )}
 
             {/* Подборки для приёма */}
             <SectionHeader
