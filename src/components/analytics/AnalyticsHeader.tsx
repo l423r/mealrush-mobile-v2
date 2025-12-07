@@ -1,8 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
 import type { AnalyticsPeriod, SummaryKpi } from '../../types/analytics.types';
-import { spacing, typography, componentSpacing } from '../../theme';
+import { spacing, typography, componentSpacing, borderRadius } from '../../theme';
 import { useTheme } from '../../hooks/useTheme';
 import type { lightColors, darkColors } from '../../theme/colors';
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO } from 'date-fns';
@@ -20,26 +21,29 @@ interface AnalyticsHeaderProps {
   collapsed?: boolean; // reduces vertical paddings when true
 }
 
-function formatRangeLabel(key: AnalyticsPeriod): string {
+function getRangeDates(key: AnalyticsPeriod): { start: string, end: string } {
   const today = new Date();
-  if (key === 'day') return format(today, 'd MMM', { locale: ru });
+  if (key === 'day') {
+    const dateStr = format(today, 'd MMM', { locale: ru });
+    return { start: dateStr, end: dateStr };
+  }
   if (key === 'week') {
     const start = startOfWeek(today, { weekStartsOn: 1 });
     const end = endOfWeek(today, { weekStartsOn: 1 });
-    return `${format(start, 'd MMM', { locale: ru })} — ${format(end, 'd MMM', { locale: ru })}`;
+    return { start: format(start, 'd MMM', { locale: ru }), end: format(end, 'd MMM', { locale: ru }) };
   }
   if (key === 'month') {
     const start = startOfMonth(today);
     const end = endOfMonth(today);
-    return `${format(start, 'd MMM', { locale: ru })} — ${format(end, 'd MMM', { locale: ru })}`;
+    return { start: format(start, 'd MMM', { locale: ru }), end: format(end, 'd MMM', { locale: ru }) };
   }
   // custom range
   try {
     const startDate = parseISO(key.from);
     const endDate = parseISO(key.to);
-    return `${format(startDate, 'd MMM', { locale: ru })} — ${format(endDate, 'd MMM', { locale: ru })}`;
+    return { start: format(startDate, 'd MMM', { locale: ru }), end: format(endDate, 'd MMM', { locale: ru }) };
   } catch {
-    return `${key.from} — ${key.to}`;
+    return { start: key.from, end: key.to };
   }
 }
 
@@ -101,6 +105,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
   };
 
   const handleDateSelect = (date: Date) => {
+    console.log('[AnalyticsHeader] handleDateSelect:', date, 'selectingStart:', selectingStart);
     if (selectingStart) {
       setTempStartDate(date);
       setSelectingStart(false);
@@ -113,8 +118,12 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
       setTempEndDate(date);
       const startStr = formatDateForAPI(tempStartDate!);
       const endStr = formatDateForAPI(date);
+      console.log('[AnalyticsHeader] Setting range:', startStr, endStr);
       onChangePeriod({ from: startStr, to: endStr });
       setShowCalendar(false);
+      setTempStartDate(null);
+      setTempEndDate(null);
+      setSelectingStart(true);
     }
   };
 
@@ -147,7 +156,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
               <Text
                 style={[
                   dynamicStyles.segmentText,
-                  isActive(period, p) && { color: colors.white },
+                  isActive(period, p) && { color: colors.text.inverse },
                 ]}
               >
                 {getPeriodLabel(p)}
@@ -155,20 +164,43 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
             </TouchableOpacity>
           ))}
         </View>
-        <TouchableOpacity
-          style={dynamicStyles.calendarButton}
-          onPress={handleCustomPeriodPress}
-        >
-          <Text style={dynamicStyles.calendarButtonText}>📅</Text>
-        </TouchableOpacity>
       </View>
 
       <View style={dynamicStyles.rangeContainer}>
-        <Text style={dynamicStyles.rangeCaption}>{formatRangeLabel(period)}</Text>
-        {selectingStart && tempStartDate && (
-          <Text style={dynamicStyles.rangeHint}>Выберите дату окончания</Text>
-        )}
+        <View style={dynamicStyles.dateBlock}>
+          <Text style={dynamicStyles.rangeCaption}>
+            {tempStartDate
+              ? format(tempStartDate, 'd MMM', { locale: ru })
+              : getRangeDates(period).start}
+          </Text>
+          <TouchableOpacity
+            style={dynamicStyles.calendarButton}
+            onPress={handleCustomPeriodPress}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
+
+        <Text style={dynamicStyles.rangeSeparator}>—</Text>
+
+        <View style={dynamicStyles.dateBlock}>
+          <Text style={dynamicStyles.rangeCaption}>
+            {tempStartDate && !tempEndDate
+              ? '...'
+              : getRangeDates(period).end}
+          </Text>
+          <TouchableOpacity
+            style={dynamicStyles.calendarButton}
+            onPress={handleCustomPeriodPress}
+          >
+            <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
+
+      {selectingStart && tempStartDate && (
+        <Text style={dynamicStyles.rangeHint}>Выберите дату окончания</Text>
+      )}
 
       {/* Progress to Goal Section */}
       {targetCalories && progressPercentage !== null && (
@@ -236,7 +268,19 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
       {/* Activity Section */}
       {(kpi?.mealsCount !== undefined || kpi?.daysCount !== undefined) && (
         <View style={dynamicStyles.activitySection}>
-          <Text style={dynamicStyles.sectionTitle}>Активность за период</Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.xs }}>
+            <Text style={[dynamicStyles.sectionTitle, { marginBottom: 0 }]}>Активность за период</Text>
+            {kpi?.daysCount !== undefined && (
+              <Text style={{
+                ...typography.caption,
+                fontSize: 10,
+                fontWeight: '600',
+                color: getConsistencyMessage((kpi.daysCount / getTotalDaysInPeriod(period)) * 100).color
+              }}>
+                {getConsistencyMessage((kpi.daysCount / getTotalDaysInPeriod(period)) * 100).text}
+              </Text>
+            )}
+          </View>
           <View style={dynamicStyles.activityRow}>
             {kpi?.mealsCount !== undefined && (
               <View style={dynamicStyles.activityItem}>
@@ -265,6 +309,7 @@ export const AnalyticsHeader: React.FC<AnalyticsHeaderProps> = observer(({
         }}
         onDateSelect={handleDateSelect}
         maximumDate={new Date()}
+        closeOnSelect={false}
       />
     </View>
   );
@@ -282,6 +327,32 @@ function getPeriodLabel(period: AnalyticsPeriod): string {
   if (period === 'day') return 'День';
   if (period === 'week') return 'Неделя';
   return 'Месяц';
+}
+
+function getTotalDaysInPeriod(period: AnalyticsPeriod): number {
+  if (period === 'day') return 1;
+  if (period === 'week') return 7;
+  const today = new Date();
+  if (period === 'month') {
+    return new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+  }
+  // custom range
+  try {
+    const start = parseISO(period.from);
+    const end = parseISO(period.to);
+    const diffTime = Math.abs(end.getTime() - start.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+  } catch {
+    return 1;
+  }
+}
+
+function getConsistencyMessage(percentage: number): { text: string; color: string } {
+  if (percentage > 95) return { text: 'Безупречная дисциплина! 🏆', color: '#4CAF50' }; // Green
+  if (percentage > 85) return { text: 'Отличный результат! 🔥', color: '#8BC34A' }; // Light Green
+  if (percentage > 75) return { text: 'Хороший темп! 💪', color: '#FFC107' }; // Amber
+  if (percentage > 50) return { text: 'Неплохое начало! 🚀', color: '#FF9800' }; // Orange
+  return { text: 'Нужно больше активности 📉', color: '#F44336' }; // Red
 }
 
 function getProgressStatus(isOverLimit: boolean, progressPercentage: number): string {
@@ -354,32 +425,41 @@ const createStyles = (colors: ColorsType) => StyleSheet.create({
     color: colors.text.secondary,
   },
   calendarButton: {
-    width: 36,
-    height: 36,
-    backgroundColor: colors.background.paper,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
+    padding: spacing.xs,
+    borderRadius: borderRadius.md,
     borderWidth: 1,
     borderColor: colors.border.light,
-  },
-  calendarButtonText: {
-    fontSize: 16,
+    backgroundColor: colors.background.light,
   },
   rangeContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: spacing.sm,
+    gap: spacing.sm,
+  },
+  dateBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  rangeSeparator: {
+    ...typography.body2,
+    color: colors.text.secondary,
   },
   rangeCaption: {
     ...typography.caption,
-    fontSize: 11,
-    color: colors.text.secondary,
+    fontSize: 12,
+    color: colors.text.primary,
+    fontWeight: '500',
   },
   rangeHint: {
     ...typography.caption,
     fontSize: 10,
     color: colors.primary,
     marginTop: 2,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
   },
   progressSection: {
     backgroundColor: colors.background.paper,

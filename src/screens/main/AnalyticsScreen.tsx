@@ -74,6 +74,7 @@ const AnalyticsScreen: React.FC = observer(() => {
   };
 
   const onChangePeriod = (next: AnalyticsPeriod) => {
+    console.log('[AnalyticsScreen] onChangePeriod:', JSON.stringify(next));
     store.setPeriod(next);
   };
 
@@ -195,7 +196,7 @@ const TabButton: React.FC<{
     style={[styles.tabButton, active && { backgroundColor: colors.primary }]}
     onPress={onPress}
   >
-    <Text style={[styles.tabButtonText, { color: active ? colors.white : colors.text.secondary }]}>
+    <Text style={[styles.tabButtonText, { color: active ? colors.text.inverse : colors.text.secondary }]}>
       {label}
     </Text>
   </TouchableOpacity>

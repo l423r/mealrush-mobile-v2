@@ -18,6 +18,7 @@ interface CalendarModalProps {
   onClose: () => void;
   onDateSelect: (date: Date) => void;
   maximumDate?: Date;
+  closeOnSelect?: boolean;
 }
 
 interface CalendarDay {
@@ -52,6 +53,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   onClose,
   onDateSelect,
   maximumDate = new Date(),
+  closeOnSelect = true,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(
     new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -237,17 +239,6 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
 
     // Debug: verify alignment for December 2025
     if (__DEV__ && year === 2025 && month === 11) {
-      const day7 = days.find(d => d.isCurrentMonth && d.dayOfMonth === 7);
-      if (day7) {
-        const day7Index = days.indexOf(day7);
-        const day7Column = day7Index % 7;
-        const day7ActualDay = getMondayBasedDay(day7.date);
-        console.log(`[Calendar] Day 7 at index ${day7Index}, column ${day7Column}, actual day of week: ${day7ActualDay}, date.getDay(): ${day7.date.getDay()}`);
-        if (day7Column !== day7ActualDay) {
-          console.error(`[Calendar] MISALIGNMENT: Day 7 is in column ${day7Column} but should be in column ${day7ActualDay}`);
-        }
-      }
-      // Also verify first day
       const day1 = days.find(d => d.isCurrentMonth && d.dayOfMonth === 1);
       if (day1) {
         const day1Index = days.indexOf(day1);
@@ -281,7 +272,9 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   const handleDatePress = (day: CalendarDay) => {
     if (!day.isDisabled && day.date <= maximumDate && day.isCurrentMonth) {
       onDateSelect(day.date);
-      onClose();
+      if (closeOnSelect) {
+        onClose();
+      }
     }
   };
 
