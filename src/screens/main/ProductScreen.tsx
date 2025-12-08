@@ -57,6 +57,7 @@ const ProductScreen: React.FC = observer(() => {
   const [fatsStr, setFatsStr] = useState<string>('');
   const [carbohydratesStr, setCarbohydratesStr] = useState<string>('');
   const [caloriesStr, setCaloriesStr] = useState<string>('');
+  const [portionQuantityStr, setPortionQuantityStr] = useState<string>('100');
 
   const product = route.params?.product;
 
@@ -84,6 +85,7 @@ const ProductScreen: React.FC = observer(() => {
   const watchedFats = watch('fats');
   const watchedCarbohydrates = watch('carbohydrates');
   const watchedCalories = watch('calories');
+  const watchedPortionQuantity = watch('portionQuantity');
 
   useEffect(() => {
     if (product) {
@@ -158,6 +160,20 @@ const ProductScreen: React.FC = observer(() => {
       }
     }
   }, [watchedCalories, caloriesStr]);
+
+  useEffect(() => {
+    if (watchedPortionQuantity === undefined || watchedPortionQuantity === null) {
+      if (portionQuantityStr !== '') {
+        setPortionQuantityStr('');
+      }
+      return;
+    }
+
+    const currentStr = Number.parseFloat(portionQuantityStr);
+    if (Number.isNaN(currentStr) || Math.abs(currentStr - watchedPortionQuantity) > 0.01) {
+      setPortionQuantityStr(watchedPortionQuantity.toString());
+    }
+  }, [watchedPortionQuantity, portionQuantityStr]);
 
   const handleImagePicker = async () => {
     const hasPermission = await requestMediaLibraryPermission();
@@ -382,12 +398,29 @@ const ProductScreen: React.FC = observer(() => {
                     <Input
                       label="Количество порции (г)"
                       placeholder="100"
-                      value={value?.toString() || '100'}
+                      value={portionQuantityStr}
                       onChangeText={(text) => {
-                        const num = Number.parseFloat(text);
-                        onChange(Number.isNaN(num) ? 100 : num);
+                        if (/^\d*\.?\d*$/.test(text)) {
+                          let newText = text;
+                          if (newText.length > 1 && newText.startsWith('0') && newText[1] !== '.') {
+                            newText = newText.substring(1);
+                          }
+                          setPortionQuantityStr(newText);
+                          const num = Number.parseFloat(newText);
+                          onChange(newText === '' || Number.isNaN(num) ? undefined : num);
+                        }
                       }}
-                      onBlur={onBlur}
+                      onBlur={() => {
+                        const num = Number.parseFloat(portionQuantityStr);
+                        if (portionQuantityStr === '' || Number.isNaN(num)) {
+                          onChange(undefined);
+                        } else {
+                          const normalized = num.toString();
+                          setPortionQuantityStr(normalized);
+                          onChange(num);
+                        }
+                        onBlur();
+                      }}
                       error={errors.portionQuantity?.message}
                       keyboardType="decimal-pad"
                       containerStyle={styles.portionInput}

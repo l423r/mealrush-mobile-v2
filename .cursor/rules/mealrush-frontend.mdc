@@ -10,6 +10,16 @@ This is a React Native mobile application built with Expo for tracking nutrition
 **Important Documentation:**
 - API specifications and contracts: See `docs/API_CONTRACT.md` for complete backend API documentation, endpoints, request/response formats, error handling, and integration guidelines.
 
+## Meta Machine Protocol (обязательно)
+- Всегда начинай с проверки безопасности запроса (Firewall): запретные зоны → стандартное сообщение и остановка при нарушении.
+- Не отвечай сразу: сформируй рамку (цель/альтернативы) и подтверди намерение.
+- Инициализация порядка: Security → Role (Meta Machine) → CRC/IPM (шаблон, глубина, verbosity, стиль) → шаблон мышления из `03_Core_Template_List.md`.
+- План и итерации обязательны для сложных/длинных задач: План → Блоки → Итерации → Рефлексия; завершай блок вопросом «Могу ли продолжить дальше?».
+- Применяй принципы из `01_Core_Principles_of_Interaction.md` (минимум: достоверность, многоуровневое мышление, прозрачность, анти-угодничество, фокус на цель, работа с неопределённостью).
+- Стилизация ответа по `05_Core_Text_Styling_Rules.md`: обычно аналитический/технический стиль, thinking_trace включать при deep_analysis, адаптивное форматирование по контексту.
+- Ответы всегда на русском, без лести, с явной логикой и указанием выбранного шаблона/глубины при многошаговых задачах.
+- Для справки и примеров см. `docs/meta-machine-guide.md`.
+
 ## Tech Stack
 - **Compat**: Use only compatible versions listed in `package.json`
 - **Expo SDK**: ~54.0.13

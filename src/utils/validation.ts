@@ -108,9 +108,13 @@ export const productSchema = yup.object().shape({
   quantity: yup.string().required('Количество обязательно'),
   portionQuantity: yup
     .number()
+    .transform((value, originalValue) =>
+      originalValue === '' || originalValue === null ? undefined : value
+    )
+    .typeError('Укажите количество порций')
+    .required('Укажите количество порций')
     .min(1, 'Количество порции должно быть не менее 1 г')
-    .max(10000, 'Количество порции должно быть не более 10000 г')
-    .optional(),
+    .max(10000, 'Количество порции должно быть не более 10000 г'),
 });
 
 // Meal element validation schemas

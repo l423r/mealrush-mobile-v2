@@ -69,3 +69,4 @@ if ($Open) {
     Start-Process $screenshotFile
 }
 
+

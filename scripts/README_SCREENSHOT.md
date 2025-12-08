@@ -122,3 +122,4 @@ adb exec-out screencap -p > "screenshot_$(date +%Y%m%d_%H%M%S).png"
 
 Можно добавить скрипт в задачи VS Code или другой IDE для быстрого доступа через горячие клавиши.
 
+

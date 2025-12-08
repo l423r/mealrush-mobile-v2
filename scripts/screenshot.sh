@@ -62,3 +62,4 @@ echo "Скриншот сохранен: $SCREENSHOT_FILE"
 # Для Linux: xdg-open "$SCREENSHOT_FILE"
 # Для macOS: open "$SCREENSHOT_FILE"
 
+
