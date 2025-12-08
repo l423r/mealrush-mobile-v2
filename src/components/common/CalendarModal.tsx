@@ -596,12 +596,17 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border.light,
   },
   cancelButton: {
-    paddingVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.background.light,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     alignItems: 'center',
   },
   cancelButtonText: {
-    ...typography.body1,
-    color: colors.primary,
+    ...typography.button,
+    color: colors.text.primary,
     fontWeight: '600',
   },
 });

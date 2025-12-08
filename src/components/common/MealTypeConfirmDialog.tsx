@@ -194,13 +194,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.md,
-    backgroundColor: colors.gray[100],
+    backgroundColor: colors.background.light,
+    borderWidth: 1,
+    borderColor: colors.border.light,
     alignItems: 'center',
+    marginTop: spacing.sm,
   },
   cancelText: {
     ...typography.button,
     color: colors.text.primary,
-    fontWeight: '500',
+    fontWeight: '600',
   },
 });
 

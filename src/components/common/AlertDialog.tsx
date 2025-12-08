@@ -202,7 +202,9 @@ const styles = StyleSheet.create({
     minHeight: 48,
   },
   cancelButton: {
-    backgroundColor: colors.gray[100],
+    backgroundColor: colors.background.light,
+    borderWidth: 1,
+    borderColor: colors.border.light,
   },
   confirmButton: {
     ...shadows.md,
