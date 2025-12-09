@@ -717,6 +717,17 @@ GET /my-food/product?page=0&size=20
 Headers: Authorization: Bearer {token}
 ```
 
+**Query Parameters:**
+- `page` (int, default: 0) - номер страницы
+- `size` (int, default: 20, max: 100) - размер страницы
+- `name` (string, optional) - подстрока для фильтрации по названию (case-insensitive)
+
+**Примеры:**
+```
+/product?page=0&size=20
+/product?page=0&size=20&name=гречка
+```
+
 **Response (200 OK):**
 ```json
 {
@@ -1752,6 +1763,17 @@ Headers: Authorization: Bearer {token}
 ```
 GET /my-food/favorite?page=0&size=20
 Headers: Authorization: Bearer {token}
+```
+
+**Query Parameters:**
+- `page` (int, default: 0) - номер страницы
+- `size` (int, default: 20, max: 100) - размер страницы
+- `name` (string, optional) - подстрока для фильтрации по названию (case-insensitive)
+
+**Примеры:**
+```
+/favorite?page=0&size=20
+/favorite?page=0&size=20&name=курица
 ```
 
 **Response (200 OK):**
@@ -3842,4 +3864,262 @@ Authorization: Bearer {JWT_TOKEN}
 
 **Версия:** 1.0  
 **Дата:** 20 октября 2024
+
+---
+
+## 24. Diet Chat (AI Nutritionist, SSE)
+
+**Назначение:** диалог с AI-диетологом в нескольких чатах, потоковая выдача ответа через SSE (OpenAI gpt-4o, существующий клиент).
+
+### 24.1 Создать чат
+
+**Endpoint**
+```
+POST /my-food/diet-chat/sessions
+Headers: Authorization: Bearer {token}
+```
+
+**Request**
+```json
+{
+  "title": "Консультация по сушке" // optional, max 255
+}
+```
+
+**Response (201)**
+```json
+{
+  "id": 12,
+  "title": "Консультация по сушке",
+  "model": "gpt-4o",
+  "lastMessageAt": null,
+  "createdAt": "2025-12-08T12:00:00",
+  "updatedAt": "2025-12-08T12:00:00"
+}
+```
+
+**Errors**
+- 401 Unauthorized
+
+### 24.2 Список чатов пользователя
+
+**Endpoint**
+```
+GET /my-food/diet-chat/sessions
+Headers: Authorization: Bearer {token}
+```
+
+**Response (200)**
+```json
+[
+  {
+    "id": 12,
+    "title": "Консультация по сушке",
+    "model": "gpt-4o",
+    "lastMessageAt": "2025-12-08T12:05:00",
+    "createdAt": "2025-12-08T12:00:00",
+    "updatedAt": "2025-12-08T12:05:00"
+  }
+]
+```
+
+**Errors**
+- 401 Unauthorized
+
+### 24.3 История сообщений
+
+**Endpoint**
+```
+GET /my-food/diet-chat/sessions/{sessionId}/messages?limit=20
+Headers: Authorization: Bearer {token}
+```
+
+`limit` — optional, default 20, max 50. Сообщения возвращаются по возрастанию времени.
+
+**Response (200)**
+```json
+[
+  {
+    "id": 101,
+    "role": "USER",
+    "content": "Помоги сбросить вес на 5 кг за 2 месяца",
+    "createdAt": "2025-12-08T12:01:00"
+  },
+  {
+    "id": 102,
+    "role": "ASSISTANT",
+    "content": "Для безопасного снижения веса рекомендую...",
+    "createdAt": "2025-12-08T12:01:05"
+  }
+]
+```
+
+**Errors**
+- 401 Unauthorized
+- 404 Chat not found / not owned by user
+
+### 24.4 Отправить сообщение и получать поток ответа (SSE)
+
+**Endpoint**
+```
+GET /my-food/diet-chat/sessions/{sessionId}/stream
+Headers:
+  Authorization: Bearer {token}
+  Accept: text/event-stream
+Query params:
+  message   (required, max 4000)
+  language  (optional: ru|en, default ru)
+```
+
+**Response (200, text/event-stream)**
+События:
+- `event: token` — части ответа (string)
+- `event: done`  — `"completed"` когда ответ закончен
+
+Пример потока:
+```
+event: token
+data: Для поддержания веса придерживайтесь...
+
+event: token
+data:  Завтрак: овсянка...
+
+event: done
+data: completed
+```
+
+**Поведение**
+- Сообщение пользователя сохраняется в истории
+- Ответ ассистента собирается из токенов и сохраняется в истории по завершении
+- Валидация: message — required, max 4000 chars
+- AI получает контекст профиля и последних показателей (рост/вес/возраст/цель/активность, 7-дневные ккал/БЖУ и тренд веса); язык ответа определяется полем `language`
+
+**Errors**
+- 401 Unauthorized
+- 404 Chat not found / not owned by user
+- 500 При ошибке внешнего AI
+
+### 24.5 Stateless анализ дня (SSE, без сессий)
+
+**Назначение:** одноразовый анализ текущего дня питания (КБЖУ, совместимость продуктов), без истории и без создания сессии.
+
+**Endpoint**
+```
+GET /my-food/diet-chat/stream
+Headers:
+  Authorization: Bearer {token}
+  Accept: text/event-stream
+Query params:
+  prompt    (required, max 4000)
+  language  (optional: ru|en, default ru)
+```
+
+**Response (200, text/event-stream)**
+- `event: token` — части ответа (string)
+- `event: done`  — `"completed"` когда ответ закончен
+
+**Поведение**
+- Используется тот же системный промпт, что и для сессионного чата, плюс контекст пользователя (профиль: рост/вес/возраст/цель/активность; последние 7 дней КБЖУ и тренд веса).
+- История не сохраняется, сессии не создаются.
+- Язык ответа выбирается по полю `language` (ru|en).
+
+**Errors**
+- 400 — неверный запрос (пустой prompt)
+- 401 — Unauthorized
+- 429 — слишком много запросов
+- 503 — сервис недоступен
+
+---
+
+## 25. Друзья и совместный доступ
+
+### 25.1 Модель прав
+- `canViewMeals` — смотреть приемы пищи друга.
+- `canAddMeals` — добавлять приемы пищи другу.
+- `canViewAnalytics` — смотреть аналитику/статистику друга.
+- При принятии запроса все три флага по умолчанию включены. Владелец может менять их по каждому другу.
+
+### 25.2 Эндпоинты
+
+**Отправить запрос в друзья**  
+`POST /my-food/friends/requests`  
+Body:
+```json
+{ "targetUserId": 42 }
+```
+Response `201`:
+```json
+{
+  "id": 10,
+  "senderId": 7,
+  "receiverId": 42,
+  "status": "PENDING",
+  "createdAt": "2025-12-08T12:00:00"
+}
+```
+
+**Принять/отклонить запрос**  
+`POST /my-food/friends/requests/{id}/accept`  
+`POST /my-food/friends/requests/{id}/decline`  
+Response `200` — `FriendRequestResponse`.
+
+**Отозвать исходящий запрос**  
+`DELETE /my-food/friends/requests/{id}` → `204 No Content`
+
+**Удалить друга**  
+`DELETE /my-food/friends/{friendId}` → `204 No Content`
+
+**Список друзей**  
+`GET /my-food/friends`  
+Response:
+```json
+[
+  {
+    "friendId": 42,
+    "name": "Bob",
+    "email": "bob@example.com",
+    "avatarUrl": "https://cdn/avatars/bob.png",
+    "friendsSince": "2025-12-08T12:05:00",
+    "permissions": {
+      "ownerId": 7,
+      "friendId": 42,
+      "canViewMeals": true,
+      "canAddMeals": true,
+      "canViewAnalytics": true,
+      "updatedAt": "2025-12-08T12:05:00"
+    }
+  }
+]
+```
+
+**Получить/обновить разрешения**  
+`GET /my-food/friends/{friendId}/permissions`  
+`PUT /my-food/friends/{friendId}/permissions`  
+Body:
+```json
+{
+  "canViewMeals": true,
+  "canAddMeals": false,
+  "canViewAnalytics": true
+}
+```
+Response `200` — `FriendPermissionResponse`.
+
+**Списки запросов**  
+`GET /my-food/friends/requests/incoming` — входящие PENDING  
+`GET /my-food/friends/requests/outgoing` — исходящие PENDING
+
+### 25.3 Доступ к данным друзей
+
+Для чтения/создания данных друзей используется query-параметр `targetUserId`.  
+Если параметр не передан — используется текущий пользователь.
+
+Эндпоинты с поддержкой `targetUserId`:
+- Meals: `POST /my-food/meal`, `GET /my-food/meal`, `GET /my-food/meal/{id}`, `GET /my-food/meal/findByDate`
+- Nutrition: `/my-food/nutrition/daily`, `/my-food/nutrition/weekly`, `/my-food/nutrition/monthly`, `/my-food/nutrition/trend`, `/my-food/nutrition/statistics`, `/my-food/nutrition/progress`
+- Weight history (только чтение): `GET /my-food/weight-history`, `/my-food/weight-history/latest`, `/my-food/weight-history/stats`
+
+Правила:
+- При отсутствии нужного права возвращается `403 Forbidden`.
+- Изменение/удаление чужих приемов пищи и веса запрещено.
 

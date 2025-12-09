@@ -28,11 +28,10 @@ const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect, calor
 
     // Generate dates
     const dates = React.useMemo(() => {
-        const result = [];
-        const today = new Date();
-        // Start from 7 days ago
-        const startDate = new Date(today);
-        startDate.setDate(today.getDate() - 7);
+        const result: Date[] = [];
+        const halfWindow = Math.floor(DAYS_TO_SHOW / 2);
+        const startDate = new Date(selectedDate);
+        startDate.setDate(selectedDate.getDate() - halfWindow);
 
         for (let i = 0; i < DAYS_TO_SHOW; i++) {
             const date = new Date(startDate);
@@ -40,7 +39,7 @@ const DateStrip: React.FC<DateStripProps> = ({ selectedDate, onDateSelect, calor
             result.push(date);
         }
         return result;
-    }, []);
+    }, [selectedDate]);
 
     useEffect(() => {
         // Scroll to selected date

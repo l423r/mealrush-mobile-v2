@@ -674,3 +674,51 @@ export interface NotificationPreferencesUpdateRequest {
   dailyInsights?: Partial<DailyInsightsSettings>;
   achievementsEnabled?: boolean;
 }
+
+// =========================
+// Diet Chat (AI Nutritionist)
+// =========================
+
+export type DietChatMessageRole = 'USER' | 'ASSISTANT';
+
+export interface DietChatSession {
+  id: number;
+  title: string | null;
+  model: string;
+  lastMessageAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DietChatMessage {
+  id: number;
+  role: DietChatMessageRole;
+  content: string;
+  createdAt: string;
+}
+
+export interface CreateDietChatSessionRequest {
+  title?: string;
+}
+
+export interface SendDietChatMessageRequest {
+  message: string;
+  language?: string;
+}
+
+export type DietChatMessagesResponse = DietChatMessage[];
+
+export interface DietChatStreamEvent {
+  event: 'token' | 'done';
+  data: string;
+}
+
+// Stateless daily analysis (SSE)
+export interface DailyAnalysisRequest {
+  prompt: string;
+  language?: string;
+}
+
+export interface DailyAnalysisResponse {
+  answer: string;
+}

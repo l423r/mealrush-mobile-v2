@@ -31,6 +31,7 @@ import MiniWeightChart from '../../components/weight/MiniWeightChart';
 import WeightEntryModal from '../../components/weight/WeightEntryModal';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
+import { Ionicons } from '@expo/vector-icons';
 
 type ProfileScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,

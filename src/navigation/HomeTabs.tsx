@@ -11,6 +11,7 @@ import ProductsScreen from '../screens/main/ProductsScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 // Use the new compact analytics screen
 import AnalyticsScreen from '../screens/main/AnalyticsScreen';
+import DietChatListScreen from '../screens/main/DietChatListScreen';
 
 const Tab = createBottomTabNavigator<HomeTabParamList>();
 
@@ -65,6 +66,20 @@ const HomeTabs: React.FC = observer(() => {
               name={focused ? 'nutrition' : 'nutrition-outline'} 
               size={size} 
               color={color} 
+            />
+          ),
+        }}
+      />
+      <Tab.Screen
+        name="Chat"
+        component={DietChatListScreen}
+        options={{
+          tabBarLabel: 'Чаты',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'chatbubbles' : 'chatbubbles-outline'}
+              size={size}
+              color={color}
             />
           ),
         }}

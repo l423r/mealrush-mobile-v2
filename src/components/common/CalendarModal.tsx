@@ -52,7 +52,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   selectedDate,
   onClose,
   onDateSelect,
-  maximumDate = new Date(),
+  maximumDate,
   closeOnSelect = true,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(
@@ -138,8 +138,10 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
     const grid: (CalendarDay | null)[] = new Array(42).fill(null);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const maxDate = new Date(maximumDate);
-    maxDate.setHours(23, 59, 59, 999);
+    const maxDate = maximumDate ? new Date(maximumDate) : null;
+    if (maxDate) {
+      maxDate.setHours(23, 59, 59, 999);
+    }
 
     // Add days from previous month to fill cells before the first day
     if (firstDayOfWeek > 0) {
@@ -193,7 +195,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
             isSelected: date.toDateString() === selectedDate.toDateString(),
             isToday: date.toDateString() === today.toDateString(),
             calories: caloriesData[dateStr],
-            isDisabled: date > maxDate,
+            isDisabled: maxDate ? date > maxDate : false,
           };
           continue;
         }
@@ -209,7 +211,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
           isSelected: date.toDateString() === selectedDate.toDateString(),
           isToday: date.toDateString() === today.toDateString(),
           calories: caloriesData[dateStr],
-          isDisabled: date > maxDate,
+          isDisabled: maxDate ? date > maxDate : false,
         };
       }
     }
@@ -263,6 +265,10 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
       currentMonth.getMonth() + 1,
       1
     );
+    if (!maximumDate) {
+      setCurrentMonth(nextMonth);
+      return;
+    }
     const maxMonth = new Date(maximumDate.getFullYear(), maximumDate.getMonth(), 1);
     if (nextMonth <= maxMonth) {
       setCurrentMonth(nextMonth);
@@ -270,7 +276,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   };
 
   const handleDatePress = (day: CalendarDay) => {
-    if (!day.isDisabled && day.date <= maximumDate && day.isCurrentMonth) {
+    const withinMax = maximumDate ? day.date <= maximumDate : true;
+    if (!day.isDisabled && withinMax && day.isCurrentMonth) {
       onDateSelect(day.date);
       if (closeOnSelect) {
         onClose();
@@ -286,6 +293,9 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
       currentMonth.getMonth() + 1,
       1
     );
+    if (!maximumDate) {
+      return true;
+    }
     const maxMonth = new Date(maximumDate.getFullYear(), maximumDate.getMonth(), 1);
     return nextMonth <= maxMonth;
   };
@@ -375,11 +385,6 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                         } else {
                           sundayTextStyle = { opacity: 1, color: colors.text.primary };
                         }
-                      }
-
-                      // Debug: log if Sunday is not visible
-                      if (__DEV__ && isSunday && day.isCurrentMonth) {
-                        console.log(`[Calendar] Rendering Sunday: day ${day.dayOfMonth}, index ${index}, isCurrentMonth: ${day.isCurrentMonth}, isDisabled: ${day.isDisabled}`);
                       }
 
                       return (

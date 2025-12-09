@@ -8,8 +8,9 @@ const getBaseURL = () => {
         // Development
         // Use 10.0.2.2 for Android Emulator
         // Use localhost for iOS Simulator
-        // Use local IP for physical devices
-        return 'http://88.210.20.137:8083/my-food';
+        // Use local IP for physical devices connected via USB
+        // For USB-connected devices, use your computer's IP in the local network
+        return 'http://localhost:8083/my-food';
     } else {
         // Production
         return 'http://88.210.20.137:8083/my-food';
@@ -99,6 +100,12 @@ export const ApiRoutes = {
         Device: '/notifications/device',
         Preferences: '/notifications/preferences',
         ResetPreferences: '/notifications/preferences/reset',
+    },
+
+    // Diet Chat (AI Dietitian)
+    DietChat: {
+        Sessions: '/diet-chat/sessions',
+        DailyAnalysisStream: '/diet-chat/stream',
     },
 } as const;
 

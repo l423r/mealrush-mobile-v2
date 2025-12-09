@@ -9,6 +9,7 @@ import RecommendationsStore from './RecommendationsStore';
 import WeightStore from './WeightStore';
 import NotificationStore from './NotificationStore';
 import MealTemplateStore from './MealTemplateStore';
+import DietChatStore from './DietChatStore';
 
 class RootStore {
   authStore: AuthStore;
@@ -21,6 +22,7 @@ class RootStore {
   weightStore: WeightStore;
   notificationStore: NotificationStore;
   mealTemplateStore: MealTemplateStore;
+  dietChatStore: DietChatStore;
 
   constructor() {
     this.authStore = new AuthStore(this);
@@ -33,6 +35,7 @@ class RootStore {
     this.weightStore = new WeightStore(this);
     this.notificationStore = new NotificationStore(this);
     this.mealTemplateStore = new MealTemplateStore(this);
+    this.dietChatStore = new DietChatStore(this);
 
     makeAutoObservable(this);
   }
@@ -49,6 +52,7 @@ class RootStore {
     this.weightStore.reset();
     this.notificationStore.reset();
     this.mealTemplateStore.reset();
+    this.dietChatStore.reset();
   }
 }
 

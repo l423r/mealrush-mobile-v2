@@ -63,3 +63,4 @@ echo "Скриншот сохранен: $SCREENSHOT_FILE"
 # Для macOS: open "$SCREENSHOT_FILE"
 
 
+

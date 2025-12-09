@@ -19,6 +19,8 @@ import SettingsEmailScreen from '../screens/main/SettingsEmailScreen';
 import SettingsPasswordScreen from '../screens/main/SettingsPasswordScreen';
 import SettingsDeleteAccountScreen from '../screens/main/SettingsDeleteAccountScreen';
 import NotificationSettingsScreen from '../screens/main/NotificationSettingsScreen';
+import DietChatListScreen from '../screens/main/DietChatListScreen';
+import DietChatScreen from '../screens/main/DietChatScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -57,6 +59,8 @@ const MainNavigator: React.FC = () => {
         name="NotificationSettings"
         component={NotificationSettingsScreen}
       />
+      <Stack.Screen name="DietChatList" component={DietChatListScreen} />
+      <Stack.Screen name="DietChat" component={DietChatScreen} />
     </Stack.Navigator>
   );
 };

@@ -8,6 +8,7 @@ import type {
   MealTemplate,
   MealTemplateElement,
 } from './api.types';
+import type { AnalyticsPeriod } from './analytics.types';
 
 // Root Stack
 export type RootStackParamList = {
@@ -171,13 +172,21 @@ export type MainStackParamList = {
   SettingsPassword: undefined;
   SettingsDeleteAccount: undefined;
   NotificationSettings: undefined;
+  DietChatList: undefined;
+  DietChat: {
+    sessionId: number;
+    title?: string | null;
+  };
 };
 
 // Home Tabs
 export type HomeTabParamList = {
   Main: undefined;
   Products: undefined;
-  Analytics: undefined;
+  Analytics: {
+    period?: AnalyticsPeriod;
+  } | undefined;
+  Chat: undefined;
   Profile: undefined;
 };
 

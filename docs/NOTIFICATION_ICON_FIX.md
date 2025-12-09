@@ -77,3 +77,4 @@ python scripts/generate_notification_icon.py assets/icon.png --project-root .
 - Для Android 13+ могут быть дополнительные требования
 
 
+

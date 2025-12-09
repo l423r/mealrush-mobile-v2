@@ -18,6 +18,7 @@ interface HeaderProps {
   title: string;
   subtitle?: React.ReactNode;
   showBackButton?: boolean;
+  leftComponent?: React.ReactNode;
   rightComponent?: React.ReactNode;
   onBackPress?: () => void;
   titleStyle?: StyleProp<TextStyle>;
@@ -27,6 +28,7 @@ const Header: React.FC<HeaderProps> = observer(({
   title,
   subtitle,
   showBackButton = false,
+  leftComponent,
   rightComponent,
   onBackPress,
   titleStyle,
@@ -60,7 +62,9 @@ const Header: React.FC<HeaderProps> = observer(({
         ]}
       >
         <View style={styles.left}>
-          {showBackButton && (
+          {leftComponent ? (
+            leftComponent
+          ) : showBackButton ? (
             <TouchableOpacity
               style={styles.backButton}
               onPress={handleBackPress}
@@ -68,7 +72,7 @@ const Header: React.FC<HeaderProps> = observer(({
             >
               <Text style={[styles.backButtonText, { color: colors.primary }]}>←</Text>
             </TouchableOpacity>
-          )}
+          ) : null}
         </View>
 
         <View style={styles.center}>

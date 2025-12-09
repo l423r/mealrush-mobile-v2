@@ -8,6 +8,7 @@ import {
   Text,
 } from 'react-native';
 import { observer } from 'mobx-react-lite';
+import { useFocusEffect, useRoute } from '@react-navigation/native';
 import AnalyticsStore from '../../stores/AnalyticsStore';
 import { AnalyticsHeader } from '../../components/analytics/AnalyticsHeader';
 import type { AnalyticsPeriod, TrendMetric } from '../../types/analytics.types';
@@ -22,6 +23,8 @@ import Header from '../../components/common/Header';
 import { useStores } from '../../stores';
 import { useTheme } from '../../hooks/useTheme';
 import type { lightColors, darkColors } from '../../theme/colors';
+import type { HomeTabParamList } from '../../types/navigation.types';
+import type { RouteProp } from '@react-navigation/native';
 
 type ColorsType = typeof lightColors | typeof darkColors;
 
@@ -30,6 +33,7 @@ type TabKey = 'trend' | 'distributions' | 'products';
 const AnalyticsScreen: React.FC = observer(() => {
   const { profileStore, weightStore } = useStores();
   const { colors } = useTheme();
+  const route = useRoute<RouteProp<HomeTabParamList, 'Analytics'>>();
   const store = useMemo(() => new AnalyticsStore(), []);
   const [activeTab, setActiveTab] = useState<TabKey>('trend');
   const [metric, setMetric] = useState<TrendMetric>('calories');
@@ -77,6 +81,16 @@ const AnalyticsScreen: React.FC = observer(() => {
     console.log('[AnalyticsScreen] onChangePeriod:', JSON.stringify(next));
     store.setPeriod(next);
   };
+
+  // Sync period when coming from other screens with explicit period param
+  useFocusEffect(
+    React.useCallback(() => {
+      const nextPeriod = route.params?.period;
+      if (nextPeriod && nextPeriod !== store.period) {
+        store.setPeriod(nextPeriod);
+      }
+    }, [route.params?.period, store])
+  );
 
   // Helper to get period key for component keys
   const periodKey = useMemo(() => {
