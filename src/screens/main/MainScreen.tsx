@@ -369,15 +369,6 @@ const MainScreen: React.FC = observer(() => {
             />
           </TouchableOpacity>
 
-          {/* Daily Analysis Block */}
-          <DailyAnalysisBlock
-            analysisText={analysisText}
-            analysisError={analysisError}
-            analysisLoading={analysisLoading}
-            analysisUpdatedAt={analysisUpdatedAt}
-            onRetry={handleAnalyzeDay}
-          />
-
           <AlertDialog
             visible={showPermissionError}
             title="Нет доступа"
@@ -421,6 +412,15 @@ const MainScreen: React.FC = observer(() => {
               })
             )}
           </View>
+
+          {/* Daily Analysis Block */}
+          <DailyAnalysisBlock
+            analysisText={analysisText}
+            analysisError={analysisError}
+            analysisLoading={analysisLoading}
+            analysisUpdatedAt={analysisUpdatedAt}
+            onRetry={handleAnalyzeDay}
+          />
         </ScrollView>
       </GestureDetector>
 

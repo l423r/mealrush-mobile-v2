@@ -125,3 +125,4 @@ adb exec-out screencap -p > "screenshot_$(date +%Y%m%d_%H%M%S).png"
 
 
 
+

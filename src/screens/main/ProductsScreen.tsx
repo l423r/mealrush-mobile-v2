@@ -35,6 +35,7 @@ import RecommendedProductCard from '../../components/recommendations/Recommended
 import SectionHeader from '../../components/recommendations/SectionHeader';
 import RecommendationInfoSheet from '../../components/recommendations/RecommendationInfoSheet';
 import MealSelectorDialog from '../../components/common/MealSelectorDialog';
+import ImageViewer from '../../components/common/ImageViewer';
 
 type ColorsType = typeof lightColors | typeof darkColors;
 
@@ -45,6 +46,7 @@ interface ProductItemProps {
   onPress: (product: any) => void;
   onFavoriteToggle: (product: any) => void;
   onAddToMeal: (product: any) => void;
+  onImagePress?: (imageUri: string) => void;
   colors: ColorsType;
   styles: ReturnType<typeof createStyles>;
 }
@@ -55,6 +57,7 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
   onPress,
   onFavoriteToggle,
   onAddToMeal,
+  onImagePress,
   colors,
   styles,
 }) => {
@@ -69,11 +72,17 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
       activeOpacity={0.7}
     >
       {product.imageUrl ? (
-        <Image
-          source={{ uri: product.imageUrl }}
-          style={styles.productImage}
-          resizeMode="cover"
-        />
+        <TouchableOpacity
+          onPress={() => onImagePress?.(product.imageUrl)}
+          activeOpacity={0.8}
+          style={{ marginRight: spacing.sm }}
+        >
+          <Image
+            source={{ uri: product.imageUrl }}
+            style={styles.productImage}
+            resizeMode="cover"
+          />
+        </TouchableOpacity>
       ) : (
         <View style={styles.productImagePlaceholder}>
           <Ionicons name="restaurant-outline" size={20} color={colors.text.secondary} />
@@ -151,6 +160,8 @@ const ProductsScreen: React.FC = observer(() => {
   const [selectedProductForAdd, setSelectedProductForAdd] = useState<ProductResponse | null>(null);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isHistoryVisible, setIsHistoryVisible] = useState(true);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState<string | null>(null);
 
   const textInputRef = useRef<TextInput>(null);
 
@@ -158,6 +169,11 @@ const ProductsScreen: React.FC = observer(() => {
   const isInitialMount = useRef(true);
   const loadedTabs = useRef<Set<'my' | 'favorites' | 'search' | 'reco'>>(new Set());
   const previousTab = useRef<'my' | 'favorites' | 'search' | 'reco'>(activeTab);
+  // Track if search was applied for each tab (persist across tab switches)
+  const wasSearchApplied = useRef<{ my: boolean; favorites: boolean }>({ my: false, favorites: false });
+  const previousSearchQuery = useRef<string>('');
+  // Store last search query for each tab to detect if data is filtered
+  const lastSearchQueryForTab = useRef<{ my: string; favorites: string }>({ my: '', favorites: '' });
 
   useEffect(() => {
     productStore.getFavorites();
@@ -178,6 +194,10 @@ const ProductsScreen: React.FC = observer(() => {
     if (previousTab.current === activeTab) {
       return;
     }
+
+    // Don't reset search state when switching tabs - preserve it for each tab
+    // Only reset previousSearchQuery to current query to avoid false clearing detection
+    previousSearchQuery.current = searchQuery.trim();
 
     previousTab.current = activeTab;
 
@@ -224,6 +244,8 @@ const ProductsScreen: React.FC = observer(() => {
 
   useEffect(() => {
     const trimmedQuery = searchQuery.trim();
+    const queryChanged = previousSearchQuery.current !== trimmedQuery;
+    const isClearingSearch = queryChanged && trimmedQuery.length === 0 && previousSearchQuery.current.length > 0;
 
     if (activeTab === 'search') {
       if (trimmedQuery.length >= 2) {
@@ -235,16 +257,100 @@ const ProductsScreen: React.FC = observer(() => {
         productStore.clearSearch();
       }
     } else if (activeTab === 'my') {
+      // Track if search was applied and save last query for this tab
+      if (trimmedQuery.length > 0) {
+        wasSearchApplied.current.my = true;
+        lastSearchQueryForTab.current.my = trimmedQuery;
+      }
+
+      // Check if returning to tab with filtered data but empty query
+      const returningWithFilteredData = 
+        trimmedQuery.length === 0 && 
+        lastSearchQueryForTab.current.my.length > 0 && 
+        wasSearchApplied.current.my;
+
+      // If clearing search and search was applied, restore full list without loading screen
+      if (isClearingSearch && wasSearchApplied.current.my) {
+        wasSearchApplied.current.my = false;
+        lastSearchQueryForTab.current.my = '';
+        const searchTimeout = setTimeout(() => {
+          productStore.getAll(0, '', true); // skipLoading = true
+        }, 0);
+        previousSearchQuery.current = trimmedQuery;
+        return () => clearTimeout(searchTimeout);
+      }
+
+      // If returning to tab with filtered data but empty query, restore without loading
+      if (returningWithFilteredData) {
+        wasSearchApplied.current.my = false;
+        lastSearchQueryForTab.current.my = '';
+        const searchTimeout = setTimeout(() => {
+          productStore.getAll(0, '', true); // skipLoading = true
+        }, 0);
+        previousSearchQuery.current = trimmedQuery;
+        return () => clearTimeout(searchTimeout);
+      }
+
+      // Don't reload if query is empty and data already exists and search wasn't applied
+      if (trimmedQuery.length === 0 && productStore.myProducts.length > 0 && !wasSearchApplied.current.my) {
+        previousSearchQuery.current = trimmedQuery;
+        return;
+      }
+
       const searchTimeout = setTimeout(() => {
         productStore.getAll(0, trimmedQuery);
       }, 300);
+      previousSearchQuery.current = trimmedQuery;
       return () => clearTimeout(searchTimeout);
     } else if (activeTab === 'favorites') {
+      // Track if search was applied and save last query for this tab
+      if (trimmedQuery.length > 0) {
+        wasSearchApplied.current.favorites = true;
+        lastSearchQueryForTab.current.favorites = trimmedQuery;
+      }
+
+      // Check if returning to tab with filtered data but empty query
+      const returningWithFilteredData = 
+        trimmedQuery.length === 0 && 
+        lastSearchQueryForTab.current.favorites.length > 0 && 
+        wasSearchApplied.current.favorites;
+
+      // If clearing search and search was applied, restore full list without loading screen
+      if (isClearingSearch && wasSearchApplied.current.favorites) {
+        wasSearchApplied.current.favorites = false;
+        lastSearchQueryForTab.current.favorites = '';
+        const searchTimeout = setTimeout(() => {
+          productStore.getFavorites(0, '', true); // skipLoading = true
+        }, 0);
+        previousSearchQuery.current = trimmedQuery;
+        return () => clearTimeout(searchTimeout);
+      }
+
+      // If returning to tab with filtered data but empty query, restore without loading
+      if (returningWithFilteredData) {
+        wasSearchApplied.current.favorites = false;
+        lastSearchQueryForTab.current.favorites = '';
+        const searchTimeout = setTimeout(() => {
+          productStore.getFavorites(0, '', true); // skipLoading = true
+        }, 0);
+        previousSearchQuery.current = trimmedQuery;
+        return () => clearTimeout(searchTimeout);
+      }
+
+      // Don't reload if query is empty and data already exists and search wasn't applied
+      if (trimmedQuery.length === 0 && productStore.favorites.length > 0 && !wasSearchApplied.current.favorites) {
+        previousSearchQuery.current = trimmedQuery;
+        return;
+      }
+
       const searchTimeout = setTimeout(() => {
         productStore.getFavorites(0, trimmedQuery);
       }, 300);
+      previousSearchQuery.current = trimmedQuery;
       return () => clearTimeout(searchTimeout);
     }
+
+    previousSearchQuery.current = trimmedQuery;
   }, [searchQuery, activeTab, productStore]);
 
   const loadRecommendations = async () => {
@@ -352,6 +458,11 @@ const ProductsScreen: React.FC = observer(() => {
     );
   };
 
+  const handleImagePress = (imageUri: string) => {
+    setViewerImageUri(imageUri);
+    setIsImageViewerVisible(true);
+  };
+
   const renderProductItem = ({ item: product }: { item: any }) => {
     return (
       <ProductItem
@@ -360,6 +471,7 @@ const ProductsScreen: React.FC = observer(() => {
         onPress={handleProductPress}
         onFavoriteToggle={handleFavoriteToggle}
         onAddToMeal={handleAddProductToMeal}
+        onImagePress={handleImagePress}
         colors={colors}
         styles={dynamicStyles}
       />
@@ -394,6 +506,27 @@ const ProductsScreen: React.FC = observer(() => {
           <Text style={dynamicStyles.emptyTitle}>Поиск продуктов</Text>
           <Text style={dynamicStyles.emptySubtitle}>
             Введите название продукта для поиска
+          </Text>
+        </View>
+      );
+    }
+
+    // For 'my' tab: show different message when searching
+    if (activeTab === 'my' && searchQuery.trim().length > 0) {
+      if (productStore.loading) {
+        return (
+          <View style={dynamicStyles.emptyState}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={dynamicStyles.emptySubtitle}>Поиск...</Text>
+          </View>
+        );
+      }
+      return (
+        <View style={dynamicStyles.emptyState}>
+          <Ionicons name="search-outline" size={64} color={colors.text.secondary} />
+          <Text style={dynamicStyles.emptyTitle}>Продукты не найдены</Text>
+          <Text style={dynamicStyles.emptySubtitle}>
+            Попробуйте другой запрос или создайте новый продукт
           </Text>
         </View>
       );
@@ -437,7 +570,12 @@ const ProductsScreen: React.FC = observer(() => {
   };
 
   const data = getData();
-  if (productStore.loading && !refreshing && data.length === 0 && activeTab !== 'search') {
+  const isSearching = searchQuery.trim().length > 0;
+  // Don't show full screen loading if:
+  // 1. It's search tab (already excluded)
+  // 2. User is searching (has search query) - show list with loading indicator instead
+  // 3. Data is already loaded (data.length > 0)
+  if (productStore.loading && !refreshing && data.length === 0 && activeTab !== 'search' && !isSearching) {
     return <Loading message="Загрузка продуктов..." />;
   }
 
@@ -510,7 +648,7 @@ const ProductsScreen: React.FC = observer(() => {
                 onTouchStart={() => setIsHistoryVisible(true)}
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
               />
-              {productStore.loading && activeTab === 'search' ? (
+              {productStore.loading && isSearching ? (
                 <View style={dynamicStyles.searchLoader}>
                   <ActivityIndicator size="small" color={colors.primary} />
                 </View>
@@ -726,6 +864,15 @@ const ProductsScreen: React.FC = observer(() => {
         }}
         onMealSelect={handleMealSelect}
         onCreateNew={handleCreateNewMeal}
+      />
+
+      <ImageViewer
+        visible={isImageViewerVisible}
+        imageUri={viewerImageUri}
+        onClose={() => {
+          setIsImageViewerVisible(false);
+          setViewerImageUri(null);
+        }}
       />
     </View>
   );

@@ -121,9 +121,11 @@ class ProductStore {
     }
   }
 
-  async getAll(page: number = 0, query?: string) {
-    console.log(`🔵 [ProductStore] getAll() called - Loading user products, query: "${query}"`);
-    this.loading = true;
+  async getAll(page: number = 0, query?: string, skipLoading: boolean = false) {
+    console.log(`🔵 [ProductStore] getAll() called - Loading user products, query: "${query}", skipLoading: ${skipLoading}`);
+    if (!skipLoading) {
+      this.loading = true;
+    }
     this.error = null;
 
     try {
@@ -147,13 +149,17 @@ class ProductStore {
           hasMore: !response.data.last,
         };
 
-        this.loading = false;
+        if (!skipLoading) {
+          this.loading = false;
+        }
         this.error = null;
       });
     } catch (error: any) {
       console.error('❌ [ProductStore] getAll() error:', error);
       runInAction(() => {
-        this.loading = false;
+        if (!skipLoading) {
+          this.loading = false;
+        }
         this.error =
           error.response?.data?.message || 'Ошибка загрузки продуктов';
       });
@@ -292,9 +298,18 @@ class ProductStore {
     }
   }
 
-  async getFavorites(page: number = 0, query?: string) {
-    console.log(`⭐ [ProductStore] getFavorites() called - Loading favorites, query: "${query}"`);
-    this.loading = true;
+  async getFavorites(page: number = 0, query?: string, skipLoading: boolean = false) {
+    console.log(`⭐ [ProductStore] getFavorites() called - Loading favorites, query: "${query}", skipLoading: ${skipLoading}`);
+    
+    // Set loading state based on page
+    if (!skipLoading) {
+      if (page === 0) {
+        this.loading = true; // Initial load
+        this.loadingMore = false;
+      } else {
+        this.loadingMore = true; // Loading next page
+      }
+    }
     this.error = null;
 
     try {
@@ -304,14 +319,40 @@ class ProductStore {
       );
 
       runInAction(() => {
-        this.favorites = response.data.content;
-        this.loading = false;
+        if (page === 0) {
+          this.favorites = response.data.content;
+        } else {
+          this.favorites = [...this.favorites, ...response.data.content];
+        }
+
+        this.pagination = {
+          page: response.data.page,
+          size: response.data.size,
+          totalElements: response.data.totalElements,
+          totalPages: response.data.totalPages,
+          hasMore: !response.data.last,
+        };
+
+        // Reset loading state based on page
+        if (!skipLoading) {
+          if (page === 0) {
+            this.loading = false;
+          } else {
+            this.loadingMore = false;
+          }
+        }
         this.error = null;
       });
     } catch (error: any) {
       console.error('❌ [ProductStore] getFavorites() error:', error);
       runInAction(() => {
-        this.loading = false;
+        if (!skipLoading) {
+          if (page === 0) {
+            this.loading = false;
+          } else {
+            this.loadingMore = false;
+          }
+        }
         this.error =
           error.response?.data?.message || 'Ошибка загрузки избранного';
       });

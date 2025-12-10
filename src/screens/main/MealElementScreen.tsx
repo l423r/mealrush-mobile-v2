@@ -26,6 +26,7 @@ import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import MealTypeConfirmDialog from '../../components/common/MealTypeConfirmDialog';
+import ImageViewer from '../../components/common/ImageViewer';
 
 type MealElementScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -73,6 +74,7 @@ const MealElementScreen: React.FC = observer(() => {
   const [isCalculating, setIsCalculating] = useState(false);
   const [showMealTypeConfirmDialog, setShowMealTypeConfirmDialog] = useState(false);
   const [existingMealForConfirm, setExistingMealForConfirm] = useState<Meal | null>(null);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
 
   const {
     control,
@@ -482,11 +484,16 @@ const MealElementScreen: React.FC = observer(() => {
         {item && (
           <View style={styles.productInfo}>
             {item.imageUrl ? (
-              <Image
-                source={{ uri: item.imageUrl }}
-                style={styles.productImage}
-                resizeMode="cover"
-              />
+              <TouchableOpacity
+                onPress={() => setIsImageViewerVisible(true)}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={{ uri: item.imageUrl }}
+                  style={styles.productImage}
+                  resizeMode="cover"
+                />
+              </TouchableOpacity>
             ) : (
               <View style={styles.productImagePlaceholder}>
                 <Text style={styles.productImagePlaceholderIcon}>🍽️</Text>
@@ -676,6 +683,12 @@ const MealElementScreen: React.FC = observer(() => {
         onCancel={handleCancelDialog}
         mealTypeName={formatMealType(mealType)}
         mealTime={existingMealForConfirm ? new Date(existingMealForConfirm.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
+      />
+
+      <ImageViewer
+        visible={isImageViewerVisible}
+        imageUri={item?.imageUrl || null}
+        onClose={() => setIsImageViewerVisible(false)}
       />
     </View>
   );

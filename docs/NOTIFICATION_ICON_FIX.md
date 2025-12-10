@@ -79,3 +79,4 @@ python scripts/generate_notification_icon.py assets/icon.png --project-root .
 
 
 
+

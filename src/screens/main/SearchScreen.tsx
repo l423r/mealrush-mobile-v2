@@ -40,6 +40,7 @@ import TextAnalysisDialog from '../../components/common/TextAnalysisDialog';
 import AudioRecordDialog from '../../components/common/AudioRecordDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import QuickActionCard from '../../components/common/QuickActionCard';
+import ImageViewer from '../../components/common/ImageViewer';
 import { useAlert, useImageSource } from '../../hooks/useAlert';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<
@@ -64,6 +65,8 @@ const SearchScreen: React.FC = observer(() => {
   const [showPhotoAnalysisDialog, setShowPhotoAnalysisDialog] = useState(false);
   const [showTextAnalysisDialog, setShowTextAnalysisDialog] = useState(false);
   const [showAudioRecordDialog, setShowAudioRecordDialog] = useState(false);
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
+  const [viewerImageUri, setViewerImageUri] = useState<string | null>(null);
 
   const searchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -410,16 +413,24 @@ const SearchScreen: React.FC = observer(() => {
         onPress={() => handleProductPress(product)}
       >
         {product.imageUrl ? (
-          <CachedImage
-            uri={product.imageUrl}
-            style={styles.productImage}
-            resizeMode="cover"
-            placeholder={
-              <View style={styles.productImagePlaceholder}>
-                <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
-              </View>
-            }
-          />
+          <TouchableOpacity
+            onPress={() => {
+              setViewerImageUri(product.imageUrl || null);
+              setIsImageViewerVisible(true);
+            }}
+            activeOpacity={0.8}
+          >
+            <CachedImage
+              uri={product.imageUrl}
+              style={styles.productImage}
+              resizeMode="cover"
+              placeholder={
+                <View style={styles.productImagePlaceholder}>
+                  <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
+                </View>
+              }
+            />
+          </TouchableOpacity>
         ) : (
           <View style={styles.productImagePlaceholder}>
             <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
@@ -710,6 +721,15 @@ const SearchScreen: React.FC = observer(() => {
         confirmText={alertState.confirmText}
         onConfirm={alertState.onConfirm}
         onDismiss={hideAlert}
+      />
+
+      <ImageViewer
+        visible={isImageViewerVisible}
+        imageUri={viewerImageUri}
+        onClose={() => {
+          setIsImageViewerVisible(false);
+          setViewerImageUri(null);
+        }}
       />
     </View>
   );

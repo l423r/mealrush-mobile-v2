@@ -32,6 +32,7 @@ import Button from '../../components/common/Button';
 import Input from '../../components/common/Input';
 import ImageSourceDialog from '../../components/common/ImageSourceDialog';
 import AlertDialog from '../../components/common/AlertDialog';
+import ImageViewer from '../../components/common/ImageViewer';
 import { useAlert, useImageSource } from '../../hooks/useAlert';
 
 type ProductScreenNavigationProp = NativeStackNavigationProp<
@@ -51,6 +52,7 @@ const ProductScreen: React.FC = observer(() => {
   const [isEditing, setIsEditing] = useState(false);
   const [isCalculating, setIsCalculating] = useState(false);
   const [inputMode, setInputMode] = useState<'per100g' | 'perPortion'>('per100g');
+  const [isImageViewerVisible, setIsImageViewerVisible] = useState(false);
 
   // String states for decimal input
   const [proteinsStr, setProteinsStr] = useState<string>('');
@@ -67,6 +69,7 @@ const ProductScreen: React.FC = observer(() => {
     formState: { errors, isValid },
     watch,
     setValue,
+    reset,
   } = useForm({
     resolver: yupResolver(productSchema),
     mode: 'onChange',
@@ -96,14 +99,36 @@ const ProductScreen: React.FC = observer(() => {
       setFatsStr(product.fats?.toString() || '0');
       setCarbohydratesStr(product.carbohydrates?.toString() || '0');
       setCaloriesStr(product.calories?.toString() || '0');
+      
+      // Reset form with product values to ensure all fields are editable
+      reset({
+        name: product.name || '',
+        proteins: product.proteins || 0,
+        fats: product.fats || 0,
+        carbohydrates: product.carbohydrates || 0,
+        calories: product.calories || 0,
+        quantity: product.quantity || '100',
+        portionQuantity: 100,
+      });
     } else {
       // Initialize with default values
       setProteinsStr('0');
       setFatsStr('0');
       setCarbohydratesStr('0');
       setCaloriesStr('0');
+      
+      // Reset form with default values
+      reset({
+        name: '',
+        proteins: 0,
+        fats: 0,
+        carbohydrates: 0,
+        calories: 0,
+        quantity: '100',
+        portionQuantity: 100,
+      });
     }
-  }, [product]);
+  }, [product, reset]);
 
   useEffect(() => {
     // Auto-calculate calories when macronutrients change
@@ -212,6 +237,16 @@ const ProductScreen: React.FC = observer(() => {
     }
   };
 
+  const handleImagePress = () => {
+    if (imageUri) {
+      // Если есть изображение, открываем просмотр
+      setIsImageViewerVisible(true);
+    } else {
+      // Если нет изображения, открываем выбор источника
+      handleImageSource();
+    }
+  };
+
   const handleImageSource = () => {
     imageSource.showImageSourceDialog((source) => {
       if (source === 'camera') {
@@ -316,7 +351,7 @@ const ProductScreen: React.FC = observer(() => {
             <Text style={styles.sectionTitle}>Фото продукта</Text>
             <TouchableOpacity
               style={styles.imageContainer}
-              onPress={handleImageSource}
+              onPress={handleImagePress}
             >
               {imageUri ? (
                 <Image source={{ uri: imageUri }} style={styles.image} />
@@ -342,6 +377,7 @@ const ProductScreen: React.FC = observer(() => {
                   onChangeText={onChange}
                   onBlur={onBlur}
                   error={errors.name?.message}
+                  editable={true}
                 />
               )}
             />
@@ -627,6 +663,12 @@ const ProductScreen: React.FC = observer(() => {
         onConfirm={alertState.onConfirm}
         onCancel={alertState.onCancel}
         onDismiss={hideAlert}
+      />
+
+      <ImageViewer
+        visible={isImageViewerVisible}
+        imageUri={imageUri}
+        onClose={() => setIsImageViewerVisible(false)}
       />
     </View>
   );
