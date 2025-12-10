@@ -10,25 +10,30 @@ import type {
 
 export interface GetDailyParams {
   date: string; // YYYY-MM-DD
+  targetUserId?: number;
 }
 
 export interface GetWeeklyParams {
   startDate: string; // YYYY-MM-DD
+  targetUserId?: number;
 }
 
 export interface GetMonthlyParams {
   month: string; // YYYY-MM
+  targetUserId?: number;
 }
 
 export interface GetTrendParams {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   metric: NutritionMetricType;
+  targetUserId?: number;
 }
 
 export interface GetRangeParams {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  targetUserId?: number;
 }
 
 export const nutritionService = {

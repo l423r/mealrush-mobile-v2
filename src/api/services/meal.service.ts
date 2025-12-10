@@ -14,16 +14,20 @@ import type {
 } from '../../types/api.types';
 
 export const mealService = {
-  createMeal: (mealData: MealCreate) =>
-    apiClient.post<Meal>(ApiRoutes.Meal.Base, mealData),
-
-  getMealsByDate: (date: string) =>
-    apiClient.get<Meal[]>(ApiRoutes.Meal.FindByDate, {
-      params: { date },
+  createMeal: (mealData: MealCreate, targetUserId?: number) =>
+    apiClient.post<Meal>(ApiRoutes.Meal.Base, mealData, {
+      params: { ...(targetUserId && { targetUserId }) },
     }),
 
-  getMeal: (id: number) =>
-    apiClient.get<Meal>(`${ApiRoutes.Meal.Base}/${id}`),
+  getMealsByDate: (date: string, targetUserId?: number) =>
+    apiClient.get<Meal[]>(ApiRoutes.Meal.FindByDate, {
+      params: { date, ...(targetUserId && { targetUserId }) },
+    }),
+
+  getMeal: (id: number, targetUserId?: number) =>
+    apiClient.get<Meal>(`${ApiRoutes.Meal.Base}/${id}`, {
+      params: { ...(targetUserId && { targetUserId }) },
+    }),
 
   updateMeal: (id: number, mealData: Meal) =>
     apiClient.put<Meal>(`${ApiRoutes.Meal.Base}/${id}`, mealData),
@@ -31,14 +35,16 @@ export const mealService = {
   deleteMeal: (id: number) =>
     apiClient.delete(`${ApiRoutes.Meal.Base}/${id}`),
 
-  createMealElement: (elementData: MealElementCreate) =>
-    apiClient.post<MealElement>(ApiRoutes.MealElement.Base, elementData),
+  createMealElement: (elementData: MealElementCreate, targetUserId?: number) =>
+    apiClient.post<MealElement>(ApiRoutes.MealElement.Base, elementData, {
+      params: { ...(targetUserId && { targetUserId }) },
+    }),
 
-  getMealElements: (mealId: number, page: number = 0, size: number = 50) =>
+  getMealElements: (mealId: number, page: number = 0, size: number = 50, targetUserId?: number) =>
     apiClient.get<PaginatedResponse<MealElement>>(
       `${ApiRoutes.MealElement.ByMeal}/${mealId}`,
       {
-        params: { page, size },
+        params: { page, size, ...(targetUserId && { targetUserId }) },
       }
     ),
 

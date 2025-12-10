@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, G } from 'react-native-svg';
 import { typography, spacing, borderRadius, shadows } from '../../theme';
 import { calculateProgressPercentage } from '../../utils/calculations';
@@ -12,6 +13,9 @@ interface DailySummaryProps {
     fats: number;
     carbohydrates: number;
     caloriesLimit: number;
+    onAnalyzePress?: () => void;
+    onInfoPress?: () => void;
+    analysisLoading?: boolean;
 }
 
 const { width } = Dimensions.get('window');
@@ -26,6 +30,9 @@ const DailySummary: React.FC<DailySummaryProps> = observer(({
     fats,
     carbohydrates,
     caloriesLimit,
+    onAnalyzePress,
+    onInfoPress,
+    analysisLoading = false,
 }) => {
     const { colors } = useTheme();
     const progress = calculateProgressPercentage(calories, caloriesLimit);
@@ -35,8 +42,35 @@ const DailySummary: React.FC<DailySummaryProps> = observer(({
     return (
         <View style={[styles.container, { backgroundColor: colors.background.paper, borderColor: colors.border.light }]}>
             <View style={styles.header}>
-                <Text style={[styles.title, { color: colors.text.primary }]}>Сегодня</Text>
-                <Text style={[styles.subtitle, { color: colors.text.secondary }]}>Сводка питания</Text>
+                <View style={styles.headerLeft}>
+                    <Text style={[styles.title, { color: colors.text.primary }]}>Сегодня</Text>
+                    <Text style={[styles.subtitle, { color: colors.text.secondary }]}>Сводка питания</Text>
+                </View>
+                {(onAnalyzePress || onInfoPress) && (
+                    <View style={styles.headerActions}>
+                        {onAnalyzePress && (
+                            <TouchableOpacity
+                                onPress={onAnalyzePress}
+                                style={[styles.actionButton, { borderColor: colors.border.light, backgroundColor: colors.background.light }]}
+                                disabled={analysisLoading}
+                            >
+                                {analysisLoading ? (
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                ) : (
+                                    <Ionicons name="sparkles-outline" size={18} color={colors.primary} />
+                                )}
+                            </TouchableOpacity>
+                        )}
+                        {onInfoPress && (
+                            <TouchableOpacity
+                                onPress={onInfoPress}
+                                style={[styles.actionButton, { borderColor: colors.border.light, backgroundColor: colors.background.light }]}
+                            >
+                                <Ionicons name="information-circle-outline" size={18} color={colors.text.secondary} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+                )}
             </View>
 
             <View style={styles.content}>
@@ -143,7 +177,23 @@ const styles = StyleSheet.create({
         ...shadows.medium,
     },
     header: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
         marginBottom: spacing.lg,
+    },
+    headerLeft: {
+        flex: 1,
+    },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: spacing.xs,
+    },
+    actionButton: {
+        padding: spacing.xs,
+        borderRadius: borderRadius.round,
+        borderWidth: 1,
     },
     title: {
         ...typography.h4,

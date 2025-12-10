@@ -105,6 +105,7 @@ const SearchScreen: React.FC = observer(() => {
 
   const templateId = route.params?.templateId;
   const mealId = route.params?.mealId;
+  const targetUserId = route.params?.targetUserId;
 
   const handleProductPress = (product: Product) => {
     navigation.navigate('MealElement', {
@@ -113,6 +114,7 @@ const SearchScreen: React.FC = observer(() => {
       mealId: templateId ? undefined : mealId,
       templateId: templateId,
       fromSearch: true,
+      targetUserId: targetUserId,
     });
   };
 
@@ -162,6 +164,7 @@ const SearchScreen: React.FC = observer(() => {
         imageUri: selectedImageUri,
         mealId: route.params?.mealId,
         date: route.params?.date,
+        targetUserId: targetUserId,
       });
 
       // Очищаем состояние
@@ -244,6 +247,7 @@ const SearchScreen: React.FC = observer(() => {
         description,
         mealId: route.params?.mealId,
         date: route.params?.date,
+        targetUserId: targetUserId,
       });
     } catch {
       setIsAnalyzing(false);
@@ -286,6 +290,7 @@ const SearchScreen: React.FC = observer(() => {
         transcription,
         mealId: route.params?.mealId,
         date: route.params?.date,
+        targetUserId: targetUserId,
       });
     } catch {
       setIsAnalyzing(false);

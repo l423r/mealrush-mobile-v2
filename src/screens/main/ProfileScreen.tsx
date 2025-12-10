@@ -40,7 +40,7 @@ type ProfileScreenNavigationProp = NativeStackNavigationProp<
 
 const ProfileScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-  const { profileStore, authStore, weightStore, uiStore } = useStores();
+  const { profileStore, authStore, weightStore, uiStore, friendsStore } = useStores();
   const { colors, isDark } = useTheme();
   const { alertState, showConfirm, hideAlert } = useAlert();
   const [showWeightModal, setShowWeightModal] = useState(false);
@@ -52,6 +52,9 @@ const ProfileScreen: React.FC = observer(() => {
     // Load weight data
     weightStore.fetchLatest();
     weightStore.fetchHistory(0, 7); // Last 7 entries for mini chart
+    // Load friends
+    friendsStore.loadFriends();
+    friendsStore.loadIncomingRequests();
   }, [profileStore]);
 
   const handleEditProfile = () => {
@@ -83,6 +86,10 @@ const ProfileScreen: React.FC = observer(() => {
     showConfirm('Выход', 'Вы уверены, что хотите выйти из аккаунта?', async () => {
       await authStore.logout();
     });
+  };
+
+  const handleFriends = () => {
+    navigation.navigate('Friends');
   };
 
   if (profileStore.loading) {
@@ -266,6 +273,33 @@ const ProfileScreen: React.FC = observer(() => {
             </Text>
           </View>
         </View>
+
+        {/* Friends */}
+        <TouchableOpacity
+          style={[styles.friendsCard, { backgroundColor: colors.background.paper }]}
+          onPress={handleFriends}
+          activeOpacity={0.7}
+        >
+          <View style={styles.friendsHeader}>
+            <View style={styles.friendsHeaderLeft}>
+              <Ionicons name="people" size={24} color={colors.primary} />
+              <Text style={[styles.cardTitle, { color: colors.text.primary }]}>Друзья</Text>
+            </View>
+            <View style={styles.friendsBadge}>
+              <Text style={[styles.friendsCount, { color: colors.primary }]}>
+                {friendsStore.friends.length}
+              </Text>
+              {friendsStore.incomingRequests.length > 0 && (
+                <View style={[styles.requestBadge, { backgroundColor: colors.error }]}>
+                  <Text style={[styles.requestBadgeText, { color: colors.white }]}>
+                    {friendsStore.incomingRequests.length}
+                  </Text>
+                </View>
+              )}
+              <Ionicons name="chevron-forward" size={20} color={colors.text.secondary} />
+            </View>
+          </View>
+        </TouchableOpacity>
 
         {/* Actions */}
         <View style={styles.actions}>
@@ -470,6 +504,46 @@ const styles = StyleSheet.create({
   calorieValue: {
     ...typography.body1,
     fontWeight: '600',
+  },
+  friendsCard: {
+    marginHorizontal: spacing.lg,
+    marginBottom: spacing.lg,
+    padding: spacing.lg,
+    borderRadius: borderRadius.xl,
+    borderWidth: 0,
+    ...shadows.lg,
+  },
+  friendsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  friendsHeaderLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  friendsBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  friendsCount: {
+    ...typography.h5,
+    fontWeight: '600',
+  },
+  requestBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xs / 2,
+  },
+  requestBadgeText: {
+    ...typography.caption,
+    fontSize: 10,
+    fontWeight: '700',
   },
   calorieNote: {
     marginTop: spacing.md,

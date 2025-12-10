@@ -44,7 +44,7 @@ type MealScreenRouteProp = RouteProp<MainStackParamList, 'Meal'>;
 const MealScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealScreenNavigationProp>();
   const route = useRoute<MealScreenRouteProp>();
-  const { mealStore, uiStore, profileStore, mealTemplateStore } = useStores();
+  const { mealStore, uiStore, profileStore, mealTemplateStore, friendsStore } = useStores();
   const { alertState, showConfirm, hideAlert } = useAlert();
   const { colors, isDark } = useTheme();
 
@@ -61,9 +61,10 @@ const MealScreen: React.FC = observer(() => {
 
   useEffect(() => {
     if (!elements.length) {
-      mealStore.loadMealElements(meal.id);
+      const targetUserId = friendsStore.selectedFriend?.friendId;
+      mealStore.loadMealElements(meal.id, targetUserId);
     }
-  }, [elements.length, mealStore, meal.id]);
+  }, [elements.length, mealStore, meal.id, friendsStore.selectedFriend]);
 
   useEffect(() => {
     if (showCopyDialog) {
@@ -84,8 +85,10 @@ const MealScreen: React.FC = observer(() => {
 
   const handleAddElement = () => {
     haptics.light();
+    const targetUserId = friendsStore.selectedFriend?.friendId;
     navigation.navigate('Search', {
       mealId: meal.id,
+      targetUserId: targetUserId,
     });
   };
 
@@ -197,6 +200,7 @@ const MealScreen: React.FC = observer(() => {
     }
 
     try {
+      const targetUserId = friendsStore.selectedFriend?.friendId;
       for (const element of elements) {
         await mealStore.createMealElement({
           mealId: targetMealId,
@@ -214,9 +218,9 @@ const MealScreen: React.FC = observer(() => {
           defaultQuantity: element.defaultQuantity,
           parentProductId: element.parentProductId || undefined,
           imageUrl: element.imageUrl || undefined,
-        });
+        }, targetUserId);
       }
-      await mealStore.loadMealElements(targetMealId);
+      await mealStore.loadMealElements(targetMealId, targetUserId);
       if (showSuccessMessage) {
         haptics.success();
         uiStore.showSnackbar('Прием пищи скопирован', 'success');

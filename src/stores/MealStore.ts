@@ -106,14 +106,14 @@ class MealStore {
   }
 
   // Actions
-  async loadMealsForDate(date: Date) {
+  async loadMealsForDate(date: Date, targetUserId?: number) {
     this.selectedDate = date;
 
     await withAsync(
       this,
       async () => {
         const dateString = formatDateForAPI(date);
-        const response = await mealService.getMealsByDate(dateString);
+        const response = await mealService.getMealsByDate(dateString, targetUserId);
 
         runInAction(() => {
           this.meals = response.data || [];
@@ -121,14 +121,14 @@ class MealStore {
 
         // Load meal elements for each meal
         await Promise.all(
-          this.meals.map((meal) => this.loadMealElements(meal.id))
+          this.meals.map((meal) => this.loadMealElements(meal.id, targetUserId))
         );
       },
       'Ошибка загрузки приемов пищи'
     );
   }
 
-  async loadCaloriesForRange(startDate: Date, endDate: Date) {
+  async loadCaloriesForRange(startDate: Date, endDate: Date, targetUserId?: number) {
     try {
       const startDateStr = formatDateForAPI(startDate);
       const endDateStr = formatDateForAPI(endDate);
@@ -137,6 +137,7 @@ class MealStore {
         startDate: startDateStr,
         endDate: endDateStr,
         metric: 'CALORIES',
+        ...(targetUserId && { targetUserId }),
       });
 
       runInAction(() => {
@@ -152,9 +153,9 @@ class MealStore {
     }
   }
 
-  async loadMealElements(mealId: number) {
+  async loadMealElements(mealId: number, targetUserId?: number) {
     try {
-      const response = await mealService.getMealElements(mealId);
+      const response = await mealService.getMealElements(mealId, 0, 50, targetUserId);
 
       runInAction(() => {
         this.mealElements[mealId] = response.data.content;
@@ -164,11 +165,11 @@ class MealStore {
     }
   }
 
-  async createMeal(mealData: MealCreate) {
+  async createMeal(mealData: MealCreate, targetUserId?: number) {
     return withAsync(
       this,
       async () => {
-        const response = await mealService.createMeal(mealData);
+        const response = await mealService.createMeal(mealData, targetUserId);
         runInAction(() => {
           this.meals.push(response.data);
         });
@@ -195,11 +196,11 @@ class MealStore {
     );
   }
 
-  async createMealElement(elementData: MealElementCreate) {
+  async createMealElement(elementData: MealElementCreate, targetUserId?: number) {
     return withAsync(
       this,
       async () => {
-        const response = await mealService.createMealElement(elementData);
+        const response = await mealService.createMealElement(elementData, targetUserId);
         runInAction(() => {
           const mealId = elementData.mealId;
           if (!this.mealElements[mealId]) {

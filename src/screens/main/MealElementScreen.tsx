@@ -56,10 +56,11 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, uiStore, productStore, mealTemplateStore } = useStores();
+  const { mealStore, uiStore, productStore, mealTemplateStore, friendsStore } = useStores();
 
   const item = route.params?.item;
   const templateId = route.params?.templateId;
+  const targetUserId = route.params?.targetUserId ?? friendsStore.selectedFriend?.friendId;
   const isEditing = !!item && (('mealId' in item) || ('templateId' in item)); // MealElement or MealTemplateElement
   const isFromSearch = route.params?.fromSearch;
   const readOnly = route.params?.readOnly || false;
@@ -254,7 +255,7 @@ const MealElementScreen: React.FC = observer(() => {
           const meal = await mealStore.createMeal({
             mealType: mealType,
             dateTime: mealTime.toISOString(),
-          });
+          }, targetUserId);
           mealId = meal.id;
           console.log('✅ [MealElementScreen] Прием пищи создан, id:', mealId);
         } else {
@@ -323,7 +324,7 @@ const MealElementScreen: React.FC = observer(() => {
         };
 
         console.log('📝 [MealElementScreen] Создание элемента приема пищи:', elementData);
-        await mealStore.createMealElement(elementData);
+        await mealStore.createMealElement(elementData, targetUserId);
         console.log('✅ [MealElementScreen] Элемент создан успешно');
         uiStore.showSnackbar('Блюдо добавлено', 'success');
 
@@ -371,7 +372,7 @@ const MealElementScreen: React.FC = observer(() => {
       const meal = await mealStore.createMeal({
         mealType: mealType,
         dateTime: mealTime.toISOString(),
-      });
+      }, targetUserId);
       console.log('✅ [MealElementScreen] Прием пищи создан, id:', meal.id);
 
       const data = getValues();

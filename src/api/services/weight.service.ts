@@ -13,20 +13,32 @@ export const weightService = {
     apiClient.post<WeightEntry>(ApiRoutes.WeightHistory.Base, data),
 
   // Get weight history with pagination
-  getHistory: (page: number = 0, size: number = 20) =>
+  getHistory: (page: number = 0, size: number = 20, targetUserId?: number) =>
     apiClient.get<PaginatedResponse<WeightEntry>>(
-      `${ApiRoutes.WeightHistory.Base}?page=${page}&size=${size}`
+      ApiRoutes.WeightHistory.Base,
+      {
+        params: {
+          page,
+          size,
+          ...(targetUserId && { targetUserId }),
+        },
+      }
     ),
 
   // Get latest weight entry
-  getLatest: () =>
-    apiClient.get<WeightEntry>(ApiRoutes.WeightHistory.Latest),
+  getLatest: (targetUserId?: number) =>
+    apiClient.get<WeightEntry>(ApiRoutes.WeightHistory.Latest, {
+      params: { ...(targetUserId && { targetUserId }) },
+    }),
 
   // Get weight statistics for a period
-  getStats: (days: number = 30) =>
-    apiClient.get<WeightStats>(
-      `${ApiRoutes.WeightHistory.Stats}?days=${days}`
-    ),
+  getStats: (days: number = 30, targetUserId?: number) =>
+    apiClient.get<WeightStats>(ApiRoutes.WeightHistory.Stats, {
+      params: {
+        days,
+        ...(targetUserId && { targetUserId }),
+      },
+    }),
 
   // Delete weight entry
   deleteWeight: (id: number) =>

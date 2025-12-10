@@ -80,3 +80,4 @@ export const buildDailyAnalysisPrompt = (
   return [header, '', mealsBlock, '', instructions].join('\n');
 };
 
+

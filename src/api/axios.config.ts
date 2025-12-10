@@ -108,12 +108,55 @@ apiClient.interceptors.response.use(
       }
     }
 
-    if (error.response?.status === 401) {
-      // Token expired or invalid, redirect to login
+    const status = error.response?.status;
+    const url = error.config?.url;
+    const method = error.config?.method?.toLowerCase();
+
+    // 401 - токен истек или невалиден
+    // 404 на /auth/user - пользователь не найден (токен невалиден или пользователь удален)
+    if (
+      status === 401 ||
+      (status === 404 && url === ApiRoutes.Auth.User)
+    ) {
+      // Token expired, invalid, or user not found - delete token
       await deleteToken();
-      // You can dispatch a logout action here or use navigation
-      // navigation.navigate('Auth', { screen: 'SignIn' });
+      // AuthStore.checkAuth() or getUser() will handle logout when error is thrown
     }
+
+    // 403 - Forbidden (нет прав доступа)
+    // Для GET /user-profile с 403 - это нормально (профиль не создан), не удаляем токен
+    // Для POST/PUT /user-profile с 403 - токен невалиден, удаляем токен
+    // Для эндпоинтов друзей (meal, nutrition, weight-history) с targetUserId - это нормально (нет прав доступа к данным друга), не удаляем токен
+    // Для других эндпоинтов с 403 - токен невалиден, удаляем токен
+    if (status === 403) {
+      const isGetUserProfile = url === ApiRoutes.UserProfile && method === 'get';
+      
+      // Проверяем, является ли это запросом к эндпоинту друзей (с targetUserId в params)
+      // Для POST запросов targetUserId может быть в params (query-параметры)
+      const hasTargetUserId = error.config?.params?.targetUserId !== undefined;
+      const isFriendsEndpoint = 
+        (url?.includes('/meal') || 
+         url?.includes('/meal_element') ||
+         url?.includes('/nutrition') || 
+         url?.includes('/weight-history')) &&
+        hasTargetUserId;
+      
+      if (__DEV__) {
+        console.log(`[Interceptor] 403 on ${method?.toUpperCase()} ${url}, isGetUserProfile: ${isGetUserProfile}, isFriendsEndpoint: ${isFriendsEndpoint}, hasTargetUserId: ${hasTargetUserId}`);
+      }
+      
+      if (!isGetUserProfile && !isFriendsEndpoint) {
+        // 403 на других эндпоинтах или POST/PUT /user-profile - токен невалиден
+        if (__DEV__) {
+          console.log('[Interceptor] Deleting token due to 403');
+        }
+        await deleteToken();
+        // AuthStore.checkAuth() or соответствующий метод handle logout when error is thrown
+      }
+      // Для GET /user-profile с 403 не удаляем токен - это означает отсутствие профиля
+      // Для эндпоинтов друзей с 403 не удаляем токен - это означает отсутствие прав доступа к данным друга
+    }
+
     throw error;
   }
 );

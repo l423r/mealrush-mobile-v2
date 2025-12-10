@@ -64,3 +64,4 @@ echo "Скриншот сохранен: $SCREENSHOT_FILE"
 
 
 
+

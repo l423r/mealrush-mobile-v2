@@ -52,11 +52,11 @@ class WeightStore {
   }
 
   // Fetch weight history with pagination
-  async fetchHistory(page: number = 0, size: number = 20, refresh = false) {
+  async fetchHistory(page: number = 0, size: number = 20, refresh = false, targetUserId?: number) {
     this.loading = true;
     this.error = null;
     try {
-      const response = await weightService.getHistory(page, size);
+      const response = await weightService.getHistory(page, size, targetUserId);
       runInAction(() => {
         if (refresh || page === 0) {
           this.history = response.data.content;
@@ -78,15 +78,15 @@ class WeightStore {
   }
 
   // Load more entries (pagination)
-  async loadMore(size: number = 20) {
+  async loadMore(size: number = 20, targetUserId?: number) {
     if (!this.hasMore || this.loading) return;
-    await this.fetchHistory(this.currentPage + 1, size, false);
+    await this.fetchHistory(this.currentPage + 1, size, false, targetUserId);
   }
 
   // Fetch latest weight entry
-  async fetchLatest() {
+  async fetchLatest(targetUserId?: number) {
     try {
-      const response = await weightService.getLatest();
+      const response = await weightService.getLatest(targetUserId);
       runInAction(() => {
         this.latest = response.data;
       });
@@ -104,9 +104,9 @@ class WeightStore {
   }
 
   // Fetch weight statistics for a period
-  async fetchStats(days: number = 30) {
+  async fetchStats(days: number = 30, targetUserId?: number) {
     try {
-      const response = await weightService.getStats(days);
+      const response = await weightService.getStats(days, targetUserId);
       runInAction(() => {
         this.stats = response.data;
       });
@@ -121,12 +121,12 @@ class WeightStore {
   }
 
   // Refresh all data
-  async refreshAll(days: number = 30) {
+  async refreshAll(days: number = 30, targetUserId?: number) {
     this.loading = true;
     await Promise.all([
-      this.fetchHistory(0, 20, true),
-      this.fetchStats(days),
-      this.fetchLatest(),
+      this.fetchHistory(0, 20, true, targetUserId),
+      this.fetchStats(days, targetUserId),
+      this.fetchLatest(targetUserId),
     ]);
     runInAction(() => {
       this.loading = false;

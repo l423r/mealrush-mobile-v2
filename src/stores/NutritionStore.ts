@@ -27,11 +27,11 @@ class NutritionStore {
     makeAutoObservable(this);
   }
 
-  async loadDaily(date: string) {
+  async loadDaily(date: string, targetUserId?: number) {
     this.loading = true;
     this.error = null;
     try {
-      const data = await nutritionService.getDaily({ date });
+      const data = await nutritionService.getDaily({ date, ...(targetUserId && { targetUserId }) });
       runInAction(() => {
         this.daily = data;
         this.loading = false;
@@ -46,11 +46,11 @@ class NutritionStore {
     }
   }
 
-  async loadWeekly(startDate: string) {
+  async loadWeekly(startDate: string, targetUserId?: number) {
     this.loading = true;
     this.error = null;
     try {
-      const data = await nutritionService.getWeekly({ startDate });
+      const data = await nutritionService.getWeekly({ startDate, ...(targetUserId && { targetUserId }) });
       runInAction(() => {
         this.weekly = data;
         this.loading = false;
@@ -65,11 +65,11 @@ class NutritionStore {
     }
   }
 
-  async loadMonthly(month: string) {
+  async loadMonthly(month: string, targetUserId?: number) {
     this.loading = true;
     this.error = null;
     try {
-      const data = await nutritionService.getMonthly({ month });
+      const data = await nutritionService.getMonthly({ month, ...(targetUserId && { targetUserId }) });
       runInAction(() => {
         this.monthly = data;
         this.loading = false;
@@ -87,7 +87,8 @@ class NutritionStore {
   async loadTrend(
     startDate: string,
     endDate: string,
-    metric: NutritionMetricType
+    metric: NutritionMetricType,
+    targetUserId?: number
   ) {
     this.loading = true;
     this.error = null;
@@ -96,6 +97,7 @@ class NutritionStore {
         startDate,
         endDate,
         metric,
+        ...(targetUserId && { targetUserId }),
       });
       runInAction(() => {
         this.trend = data;
@@ -110,11 +112,11 @@ class NutritionStore {
     }
   }
 
-  async loadStatistics(startDate: string, endDate: string) {
+  async loadStatistics(startDate: string, endDate: string, targetUserId?: number) {
     this.loading = true;
     this.error = null;
     try {
-      const data = await nutritionService.getStatistics({ startDate, endDate });
+      const data = await nutritionService.getStatistics({ startDate, endDate, ...(targetUserId && { targetUserId }) });
       runInAction(() => {
         this.statistics = data;
         this.loading = false;
@@ -128,11 +130,11 @@ class NutritionStore {
     }
   }
 
-  async loadProgress(startDate: string, endDate: string) {
+  async loadProgress(startDate: string, endDate: string, targetUserId?: number) {
     this.loading = true;
     this.error = null;
     try {
-      const data = await nutritionService.getProgress({ startDate, endDate });
+      const data = await nutritionService.getProgress({ startDate, endDate, ...(targetUserId && { targetUserId }) });
       runInAction(() => {
         this.progress = data;
         this.loading = false;

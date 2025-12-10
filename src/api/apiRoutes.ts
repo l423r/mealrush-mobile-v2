@@ -10,7 +10,8 @@ const getBaseURL = () => {
         // Use localhost for iOS Simulator
         // Use local IP for physical devices connected via USB
         // For USB-connected devices, use your computer's IP in the local network
-        return 'http://localhost:8083/my-food';
+        // return 'http://localhost:8083/my-food';
+        return 'http://88.210.20.137:8083/my-food';
     } else {
         // Production
         return 'http://88.210.20.137:8083/my-food';
@@ -106,6 +107,18 @@ export const ApiRoutes = {
     DietChat: {
         Sessions: '/diet-chat/sessions',
         DailyAnalysisStream: '/diet-chat/stream',
+        Reply: '/diet-chat/reply',
+    },
+
+    // Friends
+    Friends: {
+        Base: '/friends',
+        Requests: '/friends/requests',
+        RequestsIncoming: '/friends/requests/incoming',
+        RequestsOutgoing: '/friends/requests/outgoing',
+        RequestAccept: (id: number) => `/friends/requests/${id}/accept`,
+        RequestDecline: (id: number) => `/friends/requests/${id}/decline`,
+        Permissions: (friendId: number) => `/friends/${friendId}/permissions`,
     },
 } as const;
 

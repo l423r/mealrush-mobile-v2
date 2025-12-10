@@ -76,7 +76,7 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
         />
       ) : (
         <View style={styles.productImagePlaceholder}>
-          <Ionicons name="restaurant-outline" size={24} color={colors.text.secondary} />
+          <Ionicons name="restaurant-outline" size={20} color={colors.text.secondary} />
         </View>
       )}
 
@@ -92,9 +92,6 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
           {formatCalories(product.calories)} на{' '}
           {formatWeight(Number.parseFloat(product.quantity))}
         </Text>
-        {product.source && (
-          <Text style={styles.productSource}>Источник: {product.source}</Text>
-        )}
       </View>
 
       <View style={styles.productActions}>
@@ -107,7 +104,7 @@ const ProductItem: React.FC<ProductItemProps> = observer(({
         >
           <Ionicons
             name={isFavorite ? 'star' : 'star-outline'}
-            size={24}
+            size={20}
             color={isFavorite ? colors.warning : colors.text.secondary}
           />
         </TouchableOpacity>
@@ -137,7 +134,7 @@ type ProductsScreenNavigationProp = NativeStackNavigationProp<
 
 const ProductsScreen: React.FC = observer(() => {
   const navigation = useNavigation<ProductsScreenNavigationProp>();
-  const { productStore, recommendationsStore, mealStore, uiStore } = useStores();
+  const { productStore, recommendationsStore, mealStore, uiStore, friendsStore } = useStores();
   const { colors, isDark } = useTheme();
   const dynamicStyles = createStyles(colors, isDark);
 
@@ -263,21 +260,25 @@ const ProductsScreen: React.FC = observer(() => {
 
   const handleMealSelect = (mealId: number) => {
     if (selectedProductForAdd) {
+      const targetUserId = friendsStore.selectedFriend?.friendId;
       navigation.navigate('MealElement', {
         item: selectedProductForAdd,
         mealId: mealId,
         date: mealStore.selectedDate.toISOString(),
         fromSearch: true,
+        targetUserId: targetUserId,
       });
     }
   };
 
   const handleCreateNewMeal = () => {
     if (selectedProductForAdd) {
+      const targetUserId = friendsStore.selectedFriend?.friendId;
       navigation.navigate('MealElement', {
         item: selectedProductForAdd,
         date: mealStore.selectedDate.toISOString(),
         fromSearch: true,
+        targetUserId: targetUserId,
       });
     }
   };
@@ -296,9 +297,11 @@ const ProductsScreen: React.FC = observer(() => {
       return;
     }
     const readOnly = activeTab === 'favorites' || activeTab === 'reco';
+    const targetUserId = friendsStore.selectedFriend?.friendId;
     navigation.navigate('MealElement', {
       item: product,
       readOnly: readOnly,
+      targetUserId: targetUserId,
     });
   };
 
@@ -797,19 +800,19 @@ const createStyles = (colors: ColorsType, isDark: boolean) => StyleSheet.create(
     flexDirection: 'row',
     backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
+    padding: spacing.sm,
+    marginBottom: spacing.sm,
     ...shadows.sm,
   },
   productImage: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background.light,
   },
   productImagePlaceholder: {
-    width: 60,
-    height: 60,
+    width: 50,
+    height: 50,
     borderRadius: borderRadius.md,
     backgroundColor: colors.background.light,
     alignItems: 'center',
@@ -817,37 +820,34 @@ const createStyles = (colors: ColorsType, isDark: boolean) => StyleSheet.create(
   },
   productInfo: {
     flex: 1,
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
     justifyContent: 'center',
   },
   productName: {
-    ...typography.body1,
+    ...typography.body2,
     color: colors.text.primary,
-    marginBottom: 4,
+    marginBottom: 2,
+    fontSize: 14,
   },
   productMacros: {
     ...typography.caption,
     color: colors.text.secondary,
-    marginBottom: 2,
+    marginBottom: 1,
+    fontSize: 12,
   },
   productCalories: {
     ...typography.caption,
     color: colors.primary,
     fontWeight: '700',
-  },
-  productSource: {
-    ...typography.caption,
-    color: colors.text.hint,
-    fontSize: 10,
-    marginTop: 2,
+    fontSize: 12,
   },
   productActions: {
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginLeft: spacing.sm,
+    marginLeft: spacing.xs,
   },
   favoriteButton: {
-    padding: 4,
+    padding: 2,
   },
   addButtonSmall: {
     width: 28,

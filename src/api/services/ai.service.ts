@@ -1,5 +1,6 @@
 import { API_BASE_URL, ApiRoutes } from '../apiRoutes';
 import { getToken } from '../axios.config';
+import { apiClient } from '../axios.config';
 import type { DailyAnalysisRequest } from '../../types/api.types';
 
 export interface DailyAnalysisStreamHandlers {
@@ -115,12 +116,12 @@ export const aiService = {
             const responseText = currentXhr.responseText || '';
             const newData = responseText.substring(lastIndexProcessed);
 
-            if (newData && __DEV__) {
-              console.log('[aiService] streamDailyAnalysis: received data', {
-                newDataLength: newData.length,
-                totalLength: responseText.length,
-              });
-            }
+            // if (newData && __DEV__) {
+            //   console.log('[aiService] streamDailyAnalysis: received data', {
+            //     newDataLength: newData.length,
+            //     totalLength: responseText.length,
+            //   });
+            // }
 
             // Парсим SSE события
             // Используем буфер для накопления неполных событий
@@ -150,20 +151,20 @@ export const aiService = {
               const parsed = parseSseEvent(rawEvent);
               const { event, data } = normalizeEvent(parsed);
 
-              if (__DEV__) {
-                console.log('[aiService] streamDailyAnalysis: parsed event', {
-                  event,
-                  dataLength: data?.length || 0,
-                  dataPreview: data?.substring(0, 50) || '',
-                });
-              }
+              // if (__DEV__) {
+              //   console.log('[aiService] streamDailyAnalysis: parsed event', {
+              //     event,
+              //     dataLength: data?.length || 0,
+              //     dataPreview: data?.substring(0, 50) || '',
+              //   });
+              // }
 
               if (event === 'token' && data) {
-                if (__DEV__) {
-                  console.log('[aiService] streamDailyAnalysis: token event', {
-                    dataLength: data.length,
-                  });
-                }
+                // if (__DEV__) {
+                //   console.log('[aiService] streamDailyAnalysis: token event', {
+                //     dataLength: data.length,
+                //   });
+                // }
                 handlers.onToken?.(data);
               } else if (event === 'done') {
                 if (__DEV__) {
@@ -272,6 +273,70 @@ export const aiService = {
         }
       },
     };
+  },
+
+  /**
+   * Синхронный запрос анализа дня (без streaming)
+   * Возвращает полный ответ сразу в виде строки
+   */
+  getDailyAnalysis: async (
+    payload: DailyAnalysisRequest
+  ): Promise<string> => {
+    if (__DEV__) {
+      console.log('[aiService] getDailyAnalysis: start', {
+        hasPrompt: !!payload.prompt,
+        promptLength: payload.prompt?.length,
+        language: payload.language,
+      });
+    }
+
+    try {
+      const response = await apiClient.get<{ content: string }>(
+        ApiRoutes.DietChat.Reply,
+        {
+          params: {
+            prompt: payload.prompt,
+            ...(payload.language ? { language: payload.language } : {}),
+          },
+        }
+      );
+
+      if (__DEV__) {
+        console.log('[aiService] getDailyAnalysis: success', {
+          contentLength: response.data.content?.length || 0,
+        });
+      }
+
+      return response.data.content || '';
+    } catch (error: any) {
+      if (__DEV__) {
+        console.error('[aiService] getDailyAnalysis: error', error);
+      }
+      
+      // Обрабатываем ошибки и выбрасываем понятное сообщение
+      if (error.response) {
+        const status = error.response.status;
+        const message = error.response.data?.message || error.message;
+        
+        if (status === 400) {
+          throw new Error('Неверный запрос. Проверьте параметры.');
+        } else if (status === 401) {
+          throw new Error('Необходима авторизация.');
+        } else if (status === 429) {
+          throw new Error('Слишком много запросов. Попробуйте позже.');
+        } else if (status === 500) {
+          throw new Error('Ошибка сервера. Попробуйте позже.');
+        } else if (status === 503) {
+          throw new Error('Сервис временно недоступен. Попробуйте позже.');
+        } else {
+          throw new Error(message || 'Не удалось выполнить анализ.');
+        }
+      } else if (error.request) {
+        throw new Error('Нет соединения с сервером. Проверьте интернет.');
+      } else {
+        throw new Error(error.message || 'Не удалось выполнить анализ.');
+      }
+    }
   },
 };
 

@@ -49,7 +49,7 @@ interface EditableIngredient extends AnalysisIngredient {
 const TextAnalysisScreen: React.FC = observer(() => {
   const navigation = useNavigation<TextAnalysisScreenNavigationProp>();
   const route = useRoute<TextAnalysisScreenRouteProp>();
-  const { mealStore, uiStore } = useStores();
+  const { mealStore, uiStore, friendsStore } = useStores();
 
   const { analysisResult, description, mealId } = route.params;
 
@@ -199,7 +199,7 @@ const TextAnalysisScreen: React.FC = observer(() => {
         defaultCarbohydrates: ingredient.carbohydrates,
         defaultCalories: ingredient.calories,
         defaultQuantity: ingredient.editedQuantity.toString(),
-      });
+      }, friendsStore.selectedFriend?.friendId);
     }
 
     uiStore.showSnackbar('Блюда добавлены в прием пищи', 'success');

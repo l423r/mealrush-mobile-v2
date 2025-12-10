@@ -52,7 +52,7 @@ interface EditableIngredient extends PhotoAnalysisIngredient {
 const PhotoAnalysisScreen: React.FC = observer(() => {
   const navigation = useNavigation<PhotoAnalysisScreenNavigationProp>();
   const route = useRoute<PhotoAnalysisScreenRouteProp>();
-  const { mealStore, uiStore } = useStores();
+  const { mealStore, uiStore, friendsStore } = useStores();
 
   const { analysisResult, imageUri, mealId } = route.params;
 
@@ -199,6 +199,7 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
       }
     }
     
+      const targetUserId = friendsStore.selectedFriend?.friendId;
       for (const ingredient of ingredients) {
         await mealStore.createMealElement({
           mealId: currentMealId,
@@ -215,7 +216,7 @@ const PhotoAnalysisScreen: React.FC = observer(() => {
           defaultCalories: ingredient.calories,
           defaultQuantity: ingredient.editedQuantity.toString(),
         imageBase64: shouldSaveImage ? imageBase64 : undefined,
-        });
+        }, targetUserId);
       }
 
     uiStore.showSnackbar(

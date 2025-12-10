@@ -107,12 +107,14 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   center: {
-    flex: 2,
+    flex: 1.5,
     alignItems: 'center',
+    paddingRight: spacing.sm,
   },
   right: {
     flex: 1,
     alignItems: 'flex-end',
+    marginLeft: spacing.sm,
   },
   backButton: {
     padding: spacing.sm,

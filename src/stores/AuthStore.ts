@@ -152,7 +152,16 @@ class AuthStore {
   }
 
   async getUser() {
-    if (!this.token) return;
+    if (!this.token) {
+      if (__DEV__) {
+        console.log('[getUser] No token, skipping');
+      }
+      return;
+    }
+
+    if (__DEV__) {
+      console.log('[getUser] Making request to /auth/user');
+    }
 
     try {
       const response = await authService.getUser();
@@ -160,9 +169,25 @@ class AuthStore {
       runInAction(() => {
         this.user = response.data;
       });
+      
+      if (__DEV__) {
+        console.log('[getUser] Success, user:', this.user?.email);
+      }
     } catch (error: any) {
-      console.error('Error getting user:', error);
-      // Don't throw error here to avoid breaking the app
+      // 404 или 401 на /auth/user - критическая ошибка
+      // Пользователь не найден или токен невалиден
+      if (error.response?.status === 404 || error.response?.status === 401) {
+        if (__DEV__) {
+          console.log(`[getUser] Critical error: ${error.response?.status}`);
+        }
+        // Очищаем состояние пользователя при критической ошибке
+        runInAction(() => {
+          this.user = null;
+        });
+        throw error;
+      }
+      // Другие ошибки логируем, но не прерываем работу
+      console.error('[getUser] Error getting user:', error);
     }
   }
 
@@ -188,21 +213,67 @@ class AuthStore {
     // Load token from SecureStore
     const storedToken = await getToken();
 
+    if (__DEV__) {
+      console.log('[checkAuth] Token exists:', !!storedToken);
+    }
+
     if (storedToken) {
       runInAction(() => {
         this.token = storedToken;
       });
 
       try {
+        if (__DEV__) {
+          console.log('[checkAuth] Calling getUser()');
+        }
         await this.getUser();
+        
+        // Проверяем, что getUser() успешно установил данные пользователя
+        // Если user не установлен, считаем это ошибкой аутентификации
+        if (!this.user) {
+          if (__DEV__) {
+            console.log('[checkAuth] User data not available after getUser()');
+          }
+          throw new Error('User data not available after getUser()');
+        }
+        
+        // Проверяем, что токен все еще существует (не был удален interceptor'ом)
+        const tokenStillExists = await getToken();
+        if (!tokenStillExists) {
+          if (__DEV__) {
+            console.log('[checkAuth] Token was deleted during authentication check');
+          }
+          throw new Error('Token was deleted during authentication check');
+        }
+        
+        // Вызываем checkProfile() ТОЛЬКО если getUser() успешен и токен валиден
+        if (__DEV__) {
+          console.log('[checkAuth] Calling checkProfile()');
+        }
         await this.rootStore.profileStore.checkProfile();
+        
+        // Устанавливаем isAuthenticated только если getUser() успешно вернул данные
+        // Это гарантирует, что пользователь действительно существует и токен валиден
         runInAction(() => {
           this.isAuthenticated = true;
         });
+        
+        if (__DEV__) {
+          console.log('[checkAuth] Authentication successful');
+        }
       } catch (error) {
-        console.error('Auth check failed:', error);
+        console.error('[checkAuth] Auth check failed:', error);
         await this.logout();
       }
+    } else {
+      if (__DEV__) {
+        console.log('[checkAuth] No token found, user not authenticated');
+      }
+      // Если токена нет, убеждаемся, что состояние сброшено
+      runInAction(() => {
+        this.isAuthenticated = false;
+        this.user = null;
+      });
     }
 
     runInAction(() => {

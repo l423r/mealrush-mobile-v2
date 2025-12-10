@@ -84,6 +84,19 @@ class ProfileStore {
         this.loading = false;
         this.error = error.response?.data?.message || 'Ошибка создания профиля';
       });
+      
+      // 403 на POST /user-profile означает, что токен невалиден
+      // Interceptor уже удалил токен, но нужно вызвать logout для обновления состояния
+      if (error.response?.status === 403) {
+        if (__DEV__) {
+          console.log('[createProfile] 403 error - token invalid, calling logout');
+        }
+        // Вызываем logout асинхронно, не блокируя throw error
+        this.rootStore.authStore.logout().catch((logoutError) => {
+          console.error('[createProfile] Error during logout:', logoutError);
+        });
+      }
+      
       throw error;
     }
   }

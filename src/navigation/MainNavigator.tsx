@@ -21,6 +21,9 @@ import SettingsDeleteAccountScreen from '../screens/main/SettingsDeleteAccountSc
 import NotificationSettingsScreen from '../screens/main/NotificationSettingsScreen';
 import DietChatListScreen from '../screens/main/DietChatListScreen';
 import DietChatScreen from '../screens/main/DietChatScreen';
+import FriendsScreen from '../screens/main/friends/FriendsScreen';
+import FriendRequestsScreen from '../screens/main/friends/FriendRequestsScreen';
+import FriendSettingsScreen from '../screens/main/friends/FriendSettingsScreen';
 
 const Stack = createNativeStackNavigator<MainStackParamList>();
 
@@ -61,6 +64,9 @@ const MainNavigator: React.FC = () => {
       />
       <Stack.Screen name="DietChatList" component={DietChatListScreen} />
       <Stack.Screen name="DietChat" component={DietChatScreen} />
+      <Stack.Screen name="Friends" component={FriendsScreen} />
+      <Stack.Screen name="FriendRequests" component={FriendRequestsScreen} />
+      <Stack.Screen name="FriendSettings" component={FriendSettingsScreen} />
     </Stack.Navigator>
   );
 };

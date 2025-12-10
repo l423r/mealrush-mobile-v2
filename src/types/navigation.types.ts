@@ -122,6 +122,7 @@ export type MainStackParamList = {
     templateId?: number;
     preselectedProduct?: ProductResponse;
     quantity?: number;
+    targetUserId?: number;
   };
   Scanner: {
     date?: string;
@@ -145,24 +146,28 @@ export type MainStackParamList = {
     templateId?: number;
     fromSearch?: boolean;
     readOnly?: boolean;
+    targetUserId?: number;
   };
   PhotoAnalysis: {
     analysisResult: AnalysisResponse;
     imageUri: string;
     mealId?: number;
     date?: string;
+    targetUserId?: number;
   };
   TextAnalysis: {
     analysisResult: AnalysisResponse;
     description: string;
     mealId?: number;
     date?: string;
+    targetUserId?: number;
   };
   AudioAnalysis: {
     analysisResult: AnalysisResponse;
     transcription: string;
     mealId?: number;
     date?: string;
+    targetUserId?: number;
   };
   ProfileEdit: undefined;
   Weight: undefined;
@@ -176,6 +181,13 @@ export type MainStackParamList = {
   DietChat: {
     sessionId: number;
     title?: string | null;
+  };
+  Friends: undefined;
+  FriendRequests: {
+    initialTab?: 'incoming' | 'outgoing';
+  };
+  FriendSettings: {
+    friendId: number;
   };
 };
 
