@@ -66,6 +66,7 @@ export const AnalyticsDistribution: React.FC<AnalyticsDistributionProps> = obser
               donut
               innerRadius={50}
               radius={75}
+              innerCircleColor={colors.background.paper}
               data={pieData
                 .filter((p) => (p.y || 0) > 0)
                 .map((p) => ({

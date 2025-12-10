@@ -63,7 +63,7 @@ const FriendRequestsScreen: React.FC = observer(() => {
     <View style={[styles.container, { backgroundColor: colors.background.default }]}>
       <Header title="Запросы в друзья" showBackButton />
 
-      <View style={styles.tabs}>
+      <View style={[styles.tabs, { borderBottomColor: colors.border.light }]}>
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={styles.tab}
@@ -146,7 +146,6 @@ const styles = StyleSheet.create({
   tabs: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#E3E8EF',
     position: 'relative',
   },
   tabContainer: {

@@ -7,8 +7,11 @@ import { useTheme } from '../../hooks/useTheme';
 import { CachedImage } from '../common/CachedImage';
 import Button from '../common/Button';
 import type { FriendRequest } from '../../types/friends.types';
+import type { lightColors, darkColors } from '../../theme/colors';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+
+type ColorsType = typeof lightColors | typeof darkColors;
 
 interface FriendRequestCardProps {
   request: FriendRequest;
@@ -26,6 +29,7 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = observer(({
   onCancel,
 }) => {
   const { colors } = useTheme();
+  const dynamicStyles = createStyles(colors);
 
   const formatDate = (dateString: string) => {
     try {
@@ -48,13 +52,13 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = observer(({
       };
 
   return (
-    <View style={[styles.container, { borderColor: colors.border.light }]}>
-      <View style={styles.content}>
-        <View style={[styles.avatarContainer, { backgroundColor: colors.background.light }]}>
+    <View style={[dynamicStyles.container, { borderColor: colors.border.light }]}>
+      <View style={dynamicStyles.content}>
+        <View style={[dynamicStyles.avatarContainer, { backgroundColor: colors.background.light }]}>
           {userInfo.avatarUrl ? (
             <CachedImage
               uri={userInfo.avatarUrl}
-              style={styles.avatar}
+              style={dynamicStyles.avatar}
             />
           ) : (
             <Ionicons
@@ -65,22 +69,22 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = observer(({
           )}
         </View>
 
-        <View style={styles.info}>
-          <Text style={[styles.name, { color: colors.text.primary }]} numberOfLines={1}>
+        <View style={dynamicStyles.info}>
+          <Text style={[dynamicStyles.name, { color: colors.text.primary }]} numberOfLines={1}>
             {userInfo.name}
           </Text>
           {userInfo.email && (
-            <Text style={[styles.email, { color: colors.text.secondary }]} numberOfLines={1}>
+            <Text style={[dynamicStyles.email, { color: colors.text.secondary }]} numberOfLines={1}>
               {userInfo.email}
             </Text>
           )}
-          <Text style={[styles.date, { color: colors.text.hint }]}>
+          <Text style={[dynamicStyles.date, { color: colors.text.hint }]}>
             {formatDate(request.createdAt)}
           </Text>
         </View>
       </View>
 
-      <View style={styles.actions}>
+      <View style={dynamicStyles.actions}>
         {isIncoming ? (
           <>
             <Button
@@ -88,14 +92,14 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = observer(({
               onPress={() => onAccept?.(request.id)}
               variant="primary"
               size="small"
-              style={styles.actionButton}
+              style={dynamicStyles.actionButton}
             />
             <Button
               title="Отклонить"
               onPress={() => onDecline?.(request.id)}
               variant="outline"
               size="small"
-              style={styles.actionButton}
+              style={dynamicStyles.actionButton}
             />
           </>
         ) : (
@@ -104,7 +108,7 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = observer(({
             onPress={() => onCancel?.(request.id)}
             variant="outline"
             size="small"
-            style={styles.actionButton}
+            style={dynamicStyles.actionButton}
           />
         )}
       </View>
@@ -112,9 +116,9 @@ const FriendRequestCard: React.FC<FriendRequestCardProps> = observer(({
   );
 });
 
-const styles = StyleSheet.create({
+const createStyles = (colors: ColorsType) => StyleSheet.create({
   container: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background.paper,
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
