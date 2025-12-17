@@ -24,7 +24,7 @@ export const ApiRoutes = {
     // Auth
     Auth: {
         Login: '/auth/token',
-        Register: '/auth/user',
+        Register: '/api/auth/register',
         User: '/auth/user',
         ResetPassword: '/auth/reset-password',
         OAuth: '/auth/oauth',

@@ -3,7 +3,13 @@ import { makePersistable } from 'mobx-persist-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../api/services/auth.service';
 import type RootStore from './RootStore';
-import type { User, LoginRequest, RegisterRequest, OAuthProvider } from '../types/api.types';
+import type {
+  User,
+  LoginRequest,
+  RegisterRequest,
+  RegisterResponse,
+  OAuthProvider,
+} from '../types/api.types';
 import { saveToken, deleteToken, getToken } from '../api/axios.config';
 
 class AuthStore {
@@ -74,7 +80,7 @@ class AuthStore {
     }
   }
 
-  async register(userData: RegisterRequest) {
+  async register(userData: RegisterRequest): Promise<RegisterResponse | undefined> {
     this.loading = true;
     this.error = null;
 
@@ -82,16 +88,16 @@ class AuthStore {
       const response = await authService.register(userData);
 
       runInAction(() => {
-        this.user = response.data;
+        this.token = String(response.data.jwtToken);
+        this.user = response.data.user;
+        this.isAuthenticated = true;
         this.loading = false;
         this.error = null;
       });
 
-      // После успешной регистрации автоматически входим в систему
-      await this.login({
-        email: userData.email,
-        password: userData.password,
-      });
+      await saveToken(String(response.data.jwtToken));
+
+      return response.data;
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;

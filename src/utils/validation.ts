@@ -9,6 +9,8 @@ export const loginSchema = yup.object().shape({
   password: yup
     .string()
     .min(8, 'Пароль должен содержать минимум 8 символов')
+    .matches(/[A-Za-z]/, 'Пароль должен содержать буквы')
+    .matches(/\d/, 'Пароль должен содержать цифры')
     .required('Пароль обязателен'),
 });
 
@@ -20,6 +22,8 @@ export const registerSchema = yup.object().shape({
   password: yup
     .string()
     .min(8, 'Пароль должен содержать минимум 8 символов')
+    .matches(/[A-Za-z]/, 'Пароль должен содержать буквы')
+    .matches(/\d/, 'Пароль должен содержать цифры')
     .required('Пароль обязателен'),
   confirmPassword: yup
     .string()
@@ -145,7 +149,9 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePassword = (password: string): boolean => {
-  return password.length >= 8;
+  const hasLetter = /[A-Za-z]/.test(password);
+  const hasDigit = /\d/.test(password);
+  return password.length >= 8 && hasLetter && hasDigit;
 };
 
 export const validateWeight = (weight: number): boolean => {

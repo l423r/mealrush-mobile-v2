@@ -4,7 +4,7 @@ import type {
   LoginRequest,
   LoginResponse,
   RegisterRequest,
-  User,
+  RegisterResponse,
   OAuthRequest,
   OAuthResponse,
 } from '../../types/api.types';
@@ -14,7 +14,7 @@ export const authService = {
     apiClient.post<LoginResponse>(ApiRoutes.Auth.Login, credentials),
 
   register: (userData: RegisterRequest) =>
-    apiClient.post<User>(ApiRoutes.Auth.Register, userData),
+    apiClient.post<RegisterResponse>(ApiRoutes.Auth.Register, userData),
 
   getUser: () => apiClient.get<User>(ApiRoutes.Auth.User),
 

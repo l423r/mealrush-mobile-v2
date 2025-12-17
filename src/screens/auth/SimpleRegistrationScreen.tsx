@@ -47,7 +47,12 @@ const SimpleRegistrationScreen: React.FC = () => {
   }) => {
     try {
       // Register user (this will automatically login the user)
-      await authStore.register(data);
+      await authStore.register({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+        verificationEnabled: false,
+      });
 
       // Navigation will be handled by AppNavigator
       // If user doesn't have profile, they'll be redirected to ProfileSetup

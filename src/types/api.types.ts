@@ -47,6 +47,12 @@ export interface RegisterRequest {
   email: string;
   password: string;
   name: string;
+  verificationEnabled?: boolean;
+}
+
+export interface RegisterResponse extends LoginResponse {
+  verificationRequired?: boolean;
+  verificationMessage?: string | null;
 }
 
 // OAuth2 types
