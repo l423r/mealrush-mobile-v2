@@ -50,13 +50,31 @@ class SignInPage(BasePage):
         (By.XPATH, "//*[@text='👁️' or @text='👁️‍🗨️']")  # Fallback - работает!
     ]
     
+    # Locators для модального окна/диалога
+    MODAL_OK_BUTTON = [
+        (By.XPATH, "//*[@text='ОК' or @text='OK']"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'ОК')]"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'OK')]"),
+        (By.XPATH, "//*[@resource-id='android:id/button1']"),  # Стандартная кнопка OK в Android диалогах
+    ]
+    
     def __init__(self, driver):
         super().__init__(driver)
         self.page_identifier = self.LOGIN_BUTTON
     
-    def is_page_loaded(self):
+    def is_page_loaded(self, timeout=None):
         """Проверяет, загрузилась ли страница входа"""
+        if timeout is not None:
+            return self.is_displayed_multiple(self.LOGIN_BUTTON, timeout=timeout)
         return self.is_displayed_multiple(self.LOGIN_BUTTON)
+    
+    def is_page_loaded_fast(self, timeout=1):
+        """Быстрая проверка страницы входа с коротким таймаутом"""
+        # Используем только первый (основной) локатор для быстрой проверки
+        try:
+            return self.is_displayed(self.LOGIN_BUTTON[0], timeout=timeout)
+        except:
+            return False
     
     def enter_email(self, email):
         """Вводит email"""
@@ -82,8 +100,11 @@ class SignInPage(BasePage):
     
     def click_register_button(self):
         """Кликает на кнопку регистрации"""
+        # Делаем скриншот перед кликом для диагностики
+        self.take_screenshot('before_click_register')
         self.click_multiple(self.REGISTER_BUTTON)
-        time.sleep(2)
+        # Даем время на загрузку страницы регистрации
+        time.sleep(2)  # Уменьшено с 3 до 2, так как проверка делается в тесте с таймаутом
         # Возвращаем объект страницы регистрации
         from pages.registration_page import RegistrationPage
         return RegistrationPage(self.driver)
@@ -92,6 +113,22 @@ class SignInPage(BasePage):
         """Кликает на кнопку 'Забыли пароль'"""
         self.click_multiple(self.FORGOT_PASSWORD_BUTTON)
         return self
+    
+    def close_modal_dialog(self):
+        """Закрывает модальное окно/диалог, нажимая кнопку 'ОК'"""
+        try:
+            # Пытаемся найти и кликнуть кнопку ОК
+            self.click_multiple(self.MODAL_OK_BUTTON, timeout=2)
+            time.sleep(0.5)
+            return True
+        except Exception:
+            # Если кнопка ОК не найдена, пытаемся закрыть через системную кнопку "Назад"
+            try:
+                self.driver.back()
+                time.sleep(0.5)
+                return True
+            except Exception:
+                return False
     
     def login(self, email, password):
         """Выполняет полный процесс входа"""
@@ -108,4 +145,90 @@ class SignInPage(BasePage):
             return self.get_text(error_locator)
         except Exception:
             return None
+    
+    @staticmethod
+    def ensure_sign_in_page(driver):
+        """Проверяет текущее состояние и переходит на страницу входа, если пользователь залогинен"""
+        from pages.sign_in_page import SignInPage
+        from pages.main_page import MainPage
+        from pages.profile_page import ProfilePage
+        from pages.profile_setup_page import ProfileSetupPage
+        
+        sign_in_page = SignInPage(driver)
+        
+        # Проверяем, не находимся ли мы уже на странице входа
+        if sign_in_page.is_page_loaded(timeout=3):
+            return sign_in_page
+        
+        # Проверяем различные возможные состояния
+        
+        # Вариант 1: На экране настройки профиля (выбор пола) - используем кнопку выхода
+        try:
+            profile_setup_page = ProfileSetupPage(driver)
+            if profile_setup_page.is_page_loaded(timeout=3):
+                # Используем кнопку выхода для возврата на страницу входа
+                print("On profile setup screen, logging out to return to sign in page...")
+                sign_in_page = profile_setup_page.logout()
+                if sign_in_page.is_page_loaded(timeout=10):
+                    return sign_in_page
+        except Exception as e:
+            print(f"Warning: Could not logout from profile setup screen: {e}")
+            # Fallback: используем reset приложения
+            try:
+                print("Falling back to app reset...")
+                driver.reset()
+                time.sleep(5)
+                sign_in_page = SignInPage(driver)
+                if sign_in_page.is_page_loaded(timeout=10):
+                    return sign_in_page
+            except Exception as reset_error:
+                print(f"Warning: Could not reset app: {reset_error}")
+                pass
+        
+        # Вариант 2: На главном экране
+        try:
+            main_page = MainPage(driver)
+            if main_page.is_page_loaded(timeout=3):
+                # Переходим в профиль для логаута
+                main_page.navigate_to_profile()
+                time.sleep(2)
+        except:
+            pass
+        
+        # Вариант 3: На экране профиля - пытаемся сделать логаут
+        try:
+            profile_page = ProfilePage(driver)
+            if profile_page.is_page_loaded(timeout=3):
+                profile_page.scroll_to_logout()
+                profile_page.click_logout()
+                time.sleep(2)
+                sign_in_page = SignInPage(driver)
+                if sign_in_page.is_page_loaded(timeout=3):
+                    return sign_in_page
+        except:
+            pass
+        
+        # Если не удалось сделать логаут через UI, используем системную кнопку назад несколько раз
+        try:
+            for _ in range(10):
+                driver.back()
+                time.sleep(1)
+                sign_in_page = SignInPage(driver)
+                if sign_in_page.is_page_loaded(timeout=2):
+                    return sign_in_page
+        except:
+            pass
+        
+        # Проверяем, что мы на странице входа
+        sign_in_page = SignInPage(driver)
+        if not sign_in_page.is_page_loaded(timeout=3):
+            # Если все еще не на странице входа, перезапускаем приложение
+            try:
+                driver.reset()
+                time.sleep(3)
+                sign_in_page = SignInPage(driver)
+            except:
+                pass
+        
+        return sign_in_page
 

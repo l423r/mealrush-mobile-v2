@@ -374,8 +374,18 @@ pytest --lf
 # Запуск в режиме отладки
 pytest --pdb
 
-# Запуск с остановкой при первой ошибке
+# Запуск с остановкой при первой ошибке (стандартный способ)
 pytest -x
+# или
+pytest --exitfirst
+
+# Запуск с остановкой при первой ошибке (кастомная опция)
+pytest --stop-on-first-failure
+
+# Запуск до конца (по умолчанию, все тесты выполняются)
+pytest
+# или явно указать
+pytest --continue-on-failure
 
 # Запуск с кешем pytest
 pytest --cache-clear
@@ -383,6 +393,32 @@ pytest --cache-clear
 # Показать доступные устройства
 adb devices -l  # Android
 xcrun simctl list devices  # iOS
+```
+
+### Управление остановкой тестов
+
+По умолчанию pytest выполняет все тесты, даже если некоторые из них падают. Однако вы можете настроить остановку при падении:
+
+**Остановка при первом падении:**
+```bash
+# Стандартный способ pytest
+pytest tests/test_authentication.py -x
+
+# Или с кастомной опцией
+pytest tests/test_authentication.py --stop-on-first-failure
+
+# Подробный вывод
+pytest tests/test_authentication.py -v --stop-on-first-failure
+```
+
+**Продолжить выполнение всех тестов (по умолчанию):**
+```bash
+pytest tests/test_authentication.py -v
+```
+
+**Остановка после N падений:**
+```bash
+pytest tests/test_authentication.py --maxfail=3  # Остановится после 3 падений
 ```
 
 ## Дополнительные ресурсы

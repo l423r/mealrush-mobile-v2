@@ -78,20 +78,16 @@ const RegistrationScreen: React.FC = () => {
 
       await profileStore.createProfile(profileData);
 
-      // Login after successful registration
-      await authStore.login({
-        email: data.email,
-        password: data.password,
-      });
-
+      // Note: authStore.register() already performs automatic login
       // Navigation will be handled by AppNavigator
-    } catch {
-      uiStore.showSnackbar(
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
         authStore.error ||
-          profileStore.error ||
-          'Не удалось зарегистрироваться',
-        'error'
-      );
+        profileStore.error ||
+        'Не удалось зарегистрироваться';
+      uiStore.showSnackbar(errorMessage, 'error');
     }
   };
 

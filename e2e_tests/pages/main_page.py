@@ -30,8 +30,10 @@ class MainPage(BasePage):
         super().__init__(driver)
         self.page_identifier = self.ADD_MEAL_BUTTON
     
-    def is_page_loaded(self):
+    def is_page_loaded(self, timeout=None):
         """Проверяет, загрузилась ли главная страница"""
+        if timeout is not None:
+            return self.is_displayed(self.ADD_MEAL_BUTTON, timeout=timeout)
         return self.is_displayed(self.ADD_MEAL_BUTTON)
     
     def click_add_meal_button(self):

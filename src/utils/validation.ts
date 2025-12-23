@@ -28,6 +28,7 @@ export const registerSchema = yup.object().shape({
   name: yup
     .string()
     .min(2, 'Имя должно содержать минимум 2 символа')
+    .max(255, 'Имя не должно превышать 255 символов')
     .required('Имя обязательно'),
 });
 

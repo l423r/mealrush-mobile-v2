@@ -9,17 +9,24 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { ProfileSetupStackParamList } from '../../types/navigation.types';
+import { Ionicons } from '@expo/vector-icons';
+import { observer } from 'mobx-react-lite';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
+import AlertDialog from '../../components/common/AlertDialog';
+import { useStores } from '../../stores';
+import { useAlert } from '../../hooks/useAlert';
 
 type GetGenderScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
   'GetGender'
 >;
 
-const GetGenderScreen: React.FC = () => {
+const GetGenderScreen: React.FC = observer(() => {
   const navigation = useNavigation<GetGenderScreenNavigationProp>();
+  const { authStore } = useStores();
+  const { alertState, showConfirm, hideAlert } = useAlert();
   const [selectedGender, setSelectedGender] = useState<
     'MALE' | 'FEMALE' | null
   >(null);
@@ -35,9 +42,31 @@ const GetGenderScreen: React.FC = () => {
     navigation.goBack();
   };
 
+  const handleLogout = () => {
+    showConfirm('Выход', 'Вы уверены, что хотите выйти из аккаунта?', async () => {
+      await authStore.logout();
+    });
+  };
+
   return (
     <View style={styles.container}>
-      <Header title="Выберите пол" showBackButton onBackPress={handleBack} />
+      <Header
+        title="Выберите пол"
+        showBackButton
+        onBackPress={handleBack}
+        rightComponent={
+          <TouchableOpacity
+            onPress={handleLogout}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            style={styles.logoutButton}
+            testID="profile_setup_logout_button"
+            accessibilityLabel="profile_setup_logout_button"
+            accessible={true}
+          >
+            <Ionicons name="log-out-outline" size={24} color={colors.text.primary} />
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.header}>
@@ -89,9 +118,23 @@ const GetGenderScreen: React.FC = () => {
       <View style={styles.footer}>
         <Button title="Далее" onPress={handleNext} disabled={!selectedGender} />
       </View>
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertState.visible}
+        title={alertState.title}
+        message={alertState.message}
+        type={alertState.type}
+        confirmText={alertState.confirmText}
+        cancelText={alertState.cancelText}
+        showCancel={alertState.showCancel}
+        onConfirm={alertState.onConfirm}
+        onCancel={alertState.onCancel}
+        onDismiss={hideAlert}
+      />
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -151,6 +194,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
+  },
+  logoutButton: {
+    padding: spacing.xs,
   },
 });
 

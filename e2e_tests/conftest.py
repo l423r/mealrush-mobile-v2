@@ -4,6 +4,7 @@ Pytest configuration and fixtures
 import pytest
 import os
 import sys
+from datetime import datetime
 from dotenv import load_dotenv
 
 # Добавляем текущую директорию в PYTHONPATH
@@ -17,7 +18,13 @@ if os.path.exists(env_file):
 from appium import webdriver
 from appium.options.android import UiAutomator2Options
 from appium.options.ios import XCUITestOptions
-from config.appium_config import APPIUM_SERVER_URL, ANDROID_CAPABILITIES, IOS_CAPABILITIES, TEST_TIMEOUT
+from config.appium_config import APPIUM_SERVER_URL, ANDROID_CAPABILITIES, IOS_CAPABILITIES, TEST_TIMEOUT, SCREENSHOT_DIR
+
+# Создаем папку для текущей сессии тестов с временной меткой
+SESSION_TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
+SESSION_SCREENSHOT_DIR = os.path.join(SCREENSHOT_DIR, f"test_session_{SESSION_TIMESTAMP}")
+os.makedirs(SESSION_SCREENSHOT_DIR, exist_ok=True)
+print(f"Test session screenshots will be saved to: {SESSION_SCREENSHOT_DIR}")
 
 
 @pytest.fixture(scope='session')
@@ -68,15 +75,42 @@ def driver():
 
 
 @pytest.fixture(scope='function')
-def setup_test_environment(driver):
+def setup_test_environment(driver, request):
     """Настройка окружения для каждого теста"""
+    # Получаем имя теста для создания подпапки
+    test_name = request.node.name
+    # Очищаем имя теста от недопустимых символов для имени папки
+    test_name_clean = "".join(c for c in test_name if c.isalnum() or c in ('_', '-')).rstrip()
+    
+    # Создаем подпапку для текущего теста
+    test_screenshot_dir = os.path.join(SESSION_SCREENSHOT_DIR, test_name_clean)
+    os.makedirs(test_screenshot_dir, exist_ok=True)
+    
+    # Сбрасываем счетчик скриншотов для этого теста
+    from utilities.base_page import BasePage
+    BasePage._screenshot_counter[test_screenshot_dir] = 0
+    
+    # Устанавливаем директорию теста в thread-local storage
+    BasePage.set_test_dir(test_screenshot_dir)
+    
+    # Сохраняем путь к директории теста в request для доступа из тестов
+    request.node.test_screenshot_dir = test_screenshot_dir
+    
     # Делаем скриншот начала теста
-    driver.save_screenshot('screenshots/test_start.png')
+    base_page = BasePage(driver)
+    base_page.take_screenshot('test_start')
     
     yield
     
-    # Делаем скриншот конца теста
-    driver.save_screenshot('screenshots/test_end.png')
+    # Делаем скриншот конца теста (с обработкой ошибок, так как приложение могло упасть)
+    try:
+        base_page.take_screenshot('test_end')
+    except Exception as e:
+        print(f"Warning: Could not take end screenshot for test {test_name}: {e}")
+        # Не прерываем выполнение из-за ошибки скриншота
+    
+    # Очищаем thread-local storage после теста
+    BasePage.set_test_dir(None)
 
 
 @pytest.fixture(scope='function')
@@ -84,10 +118,15 @@ def test_user():
     """Возвращает тестового пользователя"""
     import random
     import string
+    import time
     
-    # Генерируем случайные данные для теста
-    random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
-    email = f"test_{random_string}@example.com"
+    # Генерируем уникальные данные для теста
+    # Используем timestamp для гарантированной уникальности
+    timestamp = int(time.time() * 1000)  # миллисекунды
+    random_string = ''.join(random.choices(string.ascii_lowercase + string.digits, k=8))
+    # Комбинируем timestamp и случайную строку для максимальной уникальности
+    unique_id = f"{timestamp}_{random_string}"
+    email = f"test_{unique_id}@example.com"
     password = "Test123456"
     name = f"Test User {random_string}"
     
@@ -110,14 +149,32 @@ def pytest_runtest_makereport(item, call):
             # Получаем driver из фикстуры
             driver = item.funcargs.get('driver')
             if driver:
-                screenshot_name = f"failure_{item.name}"
-                driver.save_screenshot(f'screenshots/{screenshot_name}.png')
-                print(f"\nScreenshot saved: screenshots/{screenshot_name}.png")
+                # Получаем директорию теста из атрибута
+                test_screenshot_dir = getattr(item, 'test_screenshot_dir', SESSION_SCREENSHOT_DIR)
+                from utilities.base_page import BasePage
+                base_page = BasePage(driver)
+                base_page.take_screenshot('test_failure', test_dir=test_screenshot_dir)
         except Exception as e:
             print(f"Failed to take screenshot: {e}")
 
 
 # Pytest configuration
+def pytest_addoption(parser):
+    """Добавление кастомных опций командной строки"""
+    parser.addoption(
+        "--stop-on-first-failure",
+        action="store_true",
+        default=False,
+        help="Остановить выполнение тестов при первом падении (аналог -x/--exitfirst)"
+    )
+    parser.addoption(
+        "--continue-on-failure",
+        action="store_true",
+        default=False,
+        help="Продолжить выполнение тестов даже при падениях (по умолчанию)"
+    )
+
+
 def pytest_configure(config):
     """Конфигурация pytest"""
     config.addinivalue_line(
@@ -129,4 +186,8 @@ def pytest_configure(config):
     config.addinivalue_line(
         "markers", "integration: marks tests as integration tests"
     )
+    
+    # Автоматически применяем --exitfirst если указан --stop-on-first-failure
+    if config.getoption("--stop-on-first-failure"):
+        config.option.exitfirst = True
 

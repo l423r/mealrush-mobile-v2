@@ -51,12 +51,13 @@ const SimpleRegistrationScreen: React.FC = () => {
 
       // Navigation will be handled by AppNavigator
       // If user doesn't have profile, they'll be redirected to ProfileSetup
-    } catch (error) {
-      console.error('Registration error:', error);
-      uiStore.showSnackbar(
-        authStore.error || 'Не удалось зарегистрироваться',
-        'error'
-      );
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.message ||
+        authStore.error ||
+        'Не удалось зарегистрироваться';
+      uiStore.showSnackbar(errorMessage, 'error');
     }
   };
 

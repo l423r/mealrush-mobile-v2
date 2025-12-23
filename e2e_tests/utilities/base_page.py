@@ -4,6 +4,7 @@
 import os
 import sys
 import time
+import threading
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
@@ -19,28 +20,49 @@ from config.appium_config import EXPLICIT_WAIT, IMPLICIT_WAIT, SCREENSHOT_DIR, g
 class BasePage:
     """Базовый класс для всех страниц"""
     
+    # Классовая переменная для счетчика скриншотов
+    _screenshot_counter = {}
+    # Thread-local storage для хранения текущей директории теста
+    _local = threading.local()
+    
     def __init__(self, driver):
         self.driver = driver
         self.wait = WebDriverWait(driver, EXPLICIT_WAIT)
         self.driver.implicitly_wait(IMPLICIT_WAIT)
     
+    @classmethod
+    def set_test_dir(cls, test_dir):
+        """Устанавливает директорию для скриншотов текущего теста"""
+        cls._local.test_dir = test_dir
+    
+    @classmethod
+    def get_test_dir(cls):
+        """Получает директорию для скриншотов текущего теста"""
+        return getattr(cls._local, 'test_dir', None)
+    
     def find_element(self, locator, timeout=EXPLICIT_WAIT):
-        """Находит элемент с явным ожиданием"""
+        """Находит элемент с явным ожиданием
+        
+        Args:
+            locator: Кортеж (by_type, value) или список кортежей
+            timeout: Таймаут ожидания
+        """
         try:
+            # Если передан список локаторов, используем find_element_multiple
+            if isinstance(locator, list):
+                return self.find_element_multiple(locator, timeout)
+            
+            # Ожидаем кортеж (by_type, value)
             by_type, value = locator
-            if isinstance(by_type, str):
-                # Для Appium By
-                element = WebDriverWait(self.driver, timeout).until(
-                    EC.presence_of_element_located((by_type, value))
-                )
-            else:
-                # Для стандартных Selenium By
-                element = WebDriverWait(self.driver, timeout).until(
-                    EC.presence_of_element_located(locator)
-                )
+            # Используем locator напрямую - WebDriverWait правильно обработает и AppiumBy, и стандартный By
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located(locator)
+            )
             return element
         except TimeoutException:
-            self.take_screenshot(f"element_not_found_{locator[1]}")
+            # Безопасно получаем значение для скриншота
+            value_str = locator[1] if isinstance(locator, (tuple, list)) and len(locator) > 1 else "unknown"
+            self.take_screenshot(f"element_not_found_{value_str}")
             raise
     
     def find_elements(self, locator, timeout=EXPLICIT_WAIT):
@@ -114,9 +136,11 @@ class BasePage:
         if isinstance(locators, tuple):
             return self.is_displayed(locators, timeout)
         
+        # Используем меньший timeout для каждого локатора, но не больше общего timeout
+        single_timeout = min(2, timeout / len(locators)) if locators else 2
         for locator in locators:
             try:
-                if self.is_displayed(locator, timeout=2):
+                if self.is_displayed(locator, timeout=single_timeout):
                     return True
             except:
                 continue
@@ -160,14 +184,46 @@ class BasePage:
         """Тап по координатам"""
         self.driver.tap([(x, y)], 500)
     
-    def take_screenshot(self, name=None):
-        """Делает скриншот"""
+    def take_screenshot(self, name=None, test_dir=None):
+        """Делает скриншот с нумерацией
+        
+        Args:
+            name: Имя скриншота (без расширения)
+            test_dir: Директория теста (если None, используется из thread-local или SCREENSHOT_DIR)
+        """
+        # Используем переданную директорию, или из thread-local, или общую
+        if test_dir is None:
+            test_dir = BasePage.get_test_dir()
+        screenshot_base_dir = test_dir if test_dir else SCREENSHOT_DIR
+        
+        # Получаем или инициализируем счетчик для текущего теста
+        test_key = screenshot_base_dir
+        if test_key not in BasePage._screenshot_counter:
+            BasePage._screenshot_counter[test_key] = 0
+        
+        # Увеличиваем счетчик
+        BasePage._screenshot_counter[test_key] += 1
+        counter = BasePage._screenshot_counter[test_key]
+        
+        # Формируем имя файла с нумерацией
         if name is None:
-            name = f"screenshot_{get_timestamp()}"
-        screenshot_path = os.path.join(SCREENSHOT_DIR, f"{name}.png")
-        self.driver.save_screenshot(screenshot_path)
-        print(f"Screenshot saved: {screenshot_path}")
-        return screenshot_path
+            name = f"screenshot_{counter:02d}"
+        else:
+            name = f"{counter:02d}_{name}"
+        
+        screenshot_path = os.path.join(screenshot_base_dir, f"{name}.png")
+        
+        # Создаем директорию если не существует
+        os.makedirs(screenshot_base_dir, exist_ok=True)
+        
+        try:
+            self.driver.save_screenshot(screenshot_path)
+            print(f"Screenshot saved: {screenshot_path}")
+            return screenshot_path
+        except Exception as e:
+            # Если не удалось сделать скриншот (например, приложение упало), логируем, но не прерываем выполнение
+            print(f"Warning: Could not take screenshot '{name}': {e}")
+            return None
     
     def wait_for_activity(self, activity_name, timeout=EXPLICIT_WAIT):
         """Ожидает появления активности (Android)"""
