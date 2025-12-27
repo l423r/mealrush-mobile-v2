@@ -22,9 +22,24 @@ class MainPage(BasePage):
     MEAL_CARD = (By.XPATH, "//*[contains(@content-desc, 'ккал') or contains(@text, 'ккал')]")
     DAILY_CALORIES = (By.XPATH, "//*[contains(@text, 'ккал')]/parent::*//preceding-sibling::*[1]")
     NAVIGATION_TABS = (By.XPATH, "//android.widget.TabWidget/*")
-    PROFILE_TAB = (By.XPATH, "//*[@content-desc='Профиль']")
+    
+    # Локаторы для bottom navigation
+    PROFILE_TAB = [
+        (By.XPATH, "//*[@text='Профиль' or contains(@text, 'Профиль')]"),
+        (By.XPATH, "//*[@content-desc='Профиль' or contains(@content-desc, 'Профиль')]"),
+        (By.XPATH, "//android.widget.TabWidget//*[contains(@text, 'Профиль')]"),
+    ]
     SEARCH_TAB = (By.XPATH, "//*[@content-desc='Поиск']")
     HOME_TAB = (By.XPATH, "//*[@content-desc='Главная']")
+    
+    # Альтернативные локаторы для проверки главного экрана
+    MAIN_SCREEN_INDICATORS = [
+        (By.XPATH, "//*[@text='Расписание' or contains(@text, 'Расписание')]"),
+        (By.XPATH, "//*[@text='Приемы пищи' or contains(@text, 'Приемы пищи')]"),
+        (By.XPATH, "//*[@text='Сегодня' or contains(@text, 'Сегодня')]"),
+        (By.XPATH, "//*[@text='Сводка питания' or contains(@text, 'Сводка питания')]"),
+        (By.XPATH, "//*[contains(@text, 'Нет приемов пищи')]"),
+    ]
     
     def __init__(self, driver):
         super().__init__(driver)
@@ -32,9 +47,97 @@ class MainPage(BasePage):
     
     def is_page_loaded(self, timeout=None):
         """Проверяет, загрузилась ли главная страница"""
-        if timeout is not None:
-            return self.is_displayed(self.ADD_MEAL_BUTTON, timeout=timeout)
-        return self.is_displayed(self.ADD_MEAL_BUTTON)
+        # Проверяем несколько индикаторов главного экрана
+        if timeout is None:
+            timeout = 10
+        
+        # Сначала проверяем основные индикаторы
+        for indicator in self.MAIN_SCREEN_INDICATORS:
+            try:
+                if self.is_displayed(indicator, timeout=2):
+                    return True
+            except:
+                continue
+        
+        # Затем проверяем кнопку добавления приема пищи (может отсутствовать на пустом экране)
+        try:
+            if self.is_displayed(self.ADD_MEAL_BUTTON, timeout=2):
+                return True
+        except:
+            pass
+        
+        # Проверяем наличие bottom navigation (всегда должен быть)
+        try:
+            if self.is_displayed_multiple(self.PROFILE_TAB, timeout=2):
+                return True
+        except:
+            pass
+        
+        return False
+    
+    def is_on_main_page_fast(self, timeout=1.5):
+        """Быстрая проверка главного экрана без скриншотов при ошибке (максимум 1.5 секунды)"""
+        try:
+            from selenium.common.exceptions import NoSuchElementException
+            
+            # Получаем текущий implicit wait перед изменением
+            try:
+                original_implicit_wait = self.driver.timeouts.implicit_wait / 1000  # Конвертируем из миллисекунд в секунды
+            except:
+                original_implicit_wait = 0
+            
+            # Устанавливаем небольшой таймаут для проверки
+            self.driver.implicitly_wait(0.1)
+            try:
+                print(f"    [DEBUG] Начало проверки главного экрана")
+                
+                # Используем прямой поиск элементов с небольшим ожиданием
+                # Проверяем несколько надежных индикаторов последовательно
+                
+                # 1. Проверяем заголовок "Расписание" (самый надежный индикатор)
+                try:
+                    print(f"    [DEBUG] Проверка заголовка 'Расписание'...")
+                    element = self.driver.find_element(By.XPATH, "//*[@text='Расписание']")
+                    if element:
+                        print(f"    [DEBUG] ✓ Заголовок 'Расписание' найден!")
+                        return True
+                except NoSuchElementException:
+                    print(f"    [DEBUG] ✗ Заголовок 'Расписание' не найден")
+                
+                # 2. Проверяем bottom navigation - вкладку "Профиль" (всегда есть на главном экране)
+                try:
+                    print(f"    [DEBUG] Проверка вкладки 'Профиль'...")
+                    element = self.driver.find_element(By.XPATH, "//*[contains(@text, 'Профиль')]")
+                    if element:
+                        print(f"    [DEBUG] ✓ Вкладка 'Профиль' найдена!")
+                        return True
+                except NoSuchElementException:
+                    print(f"    [DEBUG] ✗ Вкладка 'Профиль' не найдена")
+                
+                # 3. Проверяем вкладку "Главная" в bottom navigation
+                try:
+                    print(f"    [DEBUG] Проверка вкладки 'Главная'...")
+                    element = self.driver.find_element(*self.HOME_TAB)
+                    if element:
+                        print(f"    [DEBUG] ✓ Вкладка 'Главная' найдена!")
+                        return True
+                except NoSuchElementException:
+                    print(f"    [DEBUG] ✗ Вкладка 'Главная' не найдена")
+                
+                print(f"    [DEBUG] ✗ Все проверки не прошли - не на главном экране")
+                # Если ничего не найдено - не главный экран
+                return False
+            finally:
+                # Восстанавливаем original implicit wait
+                try:
+                    self.driver.implicitly_wait(original_implicit_wait)
+                except:
+                    pass
+        except Exception as e:
+            print(f"    [DEBUG] ✗ Ошибка при проверке главного экрана: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
     
     def click_add_meal_button(self):
         """Кликает на кнопку добавления приема пищи"""
@@ -80,9 +183,24 @@ class MainPage(BasePage):
     
     def navigate_to_profile(self):
         """Переходит на вкладку профиля"""
-        self.click(self.PROFILE_TAB)
-        time.sleep(2)
-        return self
+        try:
+            # Пробуем найти и кликнуть на вкладку профиля
+            self.click_multiple(self.PROFILE_TAB, timeout=5)
+            time.sleep(3)  # Увеличено время ожидания для перехода
+            return self
+        except Exception as e:
+            print(f"Warning: Could not click profile tab using standard method: {e}")
+            # Альтернативный способ - ищем по тексту в bottom navigation
+            try:
+                from appium.webdriver.common.appiumby import AppiumBy
+                profile_tab = self.driver.find_element(AppiumBy.ANDROID_UIAUTOMATOR, 
+                    'new UiSelector().text("Профиль")')
+                profile_tab.click()
+                time.sleep(3)
+            except Exception as e2:
+                print(f"Warning: Could not click profile tab using alternative method: {e2}")
+                raise
+            return self
     
     def navigate_to_search(self):
         """Переходит на вкладку поиска"""

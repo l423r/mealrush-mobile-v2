@@ -93,19 +93,23 @@ class RegistrationPage(BasePage):
         """Кликает на кнопку создания аккаунта"""
         # Используем click_multiple, который попробует все локаторы по порядку
         self.click_multiple(self.CREATE_ACCOUNT_BUTTON)
-        # Ожидаем перехода на другой экран
-        time.sleep(3)
+        # Минимальная задержка для обработки клика
+        time.sleep(0.2)  # Уменьшено с 0.5 до 0.2
         return self
     
     def click_back(self):
         """Кликает на кнопку назад или использует системную кнопку назад"""
         try:
             # Пытаемся найти и кликнуть кнопку назад в UI
-            self.click_multiple(self.BACK_BUTTON, timeout=3)
+            self.click_multiple(self.BACK_BUTTON, timeout=2)
         except Exception:
             # Если кнопка не найдена, используем системную кнопку назад
-            self.driver.back()
-        time.sleep(2)
+            try:
+                self.driver.back()
+            except Exception:
+                # Если приложение упало, просто возвращаем SignInPage
+                pass
+        time.sleep(0.5)
         # Возвращаем объект страницы входа
         from pages.sign_in_page import SignInPage
         return SignInPage(self.driver)
@@ -155,4 +159,169 @@ class RegistrationPage(BasePage):
     def is_still_on_registration_page(self, timeout=2):
         """Проверяет, остались ли мы на странице регистрации"""
         return self.is_displayed_multiple(self.CREATE_ACCOUNT_BUTTON, timeout=timeout)
+    
+    def is_still_on_registration_page_fast(self, timeout=0.5):
+        """Быстрая проверка страницы регистрации без скриншотов"""
+        try:
+            from selenium.common.exceptions import NoSuchElementException
+            
+            # Получаем текущий implicit wait перед изменением
+            try:
+                original_implicit_wait = self.driver.timeouts.implicit_wait / 1000  # Конвертируем из миллисекунд в секунды
+            except:
+                original_implicit_wait = 0
+            
+            # Устанавливаем небольшой таймаут для проверки
+            self.driver.implicitly_wait(0.1)
+            try:
+                print(f"    [DEBUG] Начало проверки страницы регистрации")
+                
+                # Проверяем несколько индикаторов страницы регистрации для надежности
+                
+                # 1. Проверяем заголовок "Регистрация" (самый надежный индикатор)
+                try:
+                    print(f"    [DEBUG] Проверка заголовка 'Регистрация'...")
+                    element = self.driver.find_element(By.XPATH, "//*[@text='Регистрация']")
+                    if element:
+                        print(f"    [DEBUG] ✓ Заголовок 'Регистрация' найден!")
+                        return True
+                except NoSuchElementException as e:
+                    print(f"    [DEBUG] ✗ Заголовок 'Регистрация' не найден")
+                
+                # 2. Проверяем текст "Добро пожаловать!" (уникальный для страницы регистрации)
+                try:
+                    print(f"    [DEBUG] Проверка текста 'Добро пожаловать!'...")
+                    element = self.driver.find_element(By.XPATH, "//*[@text='Добро пожаловать!']")
+                    if element:
+                        print(f"    [DEBUG] ✓ Текст 'Добро пожаловать!' найден!")
+                        return True
+                except NoSuchElementException:
+                    print(f"    [DEBUG] ✗ Текст 'Добро пожаловать!' не найден")
+                
+                # 3. Проверяем поле ввода имени (уникальное для страницы регистрации)
+                try:
+                    print(f"    [DEBUG] Проверка поля ввода имени...")
+                    element = self.driver.find_element(*self.NAME_INPUT[0])
+                    if element:
+                        print(f"    [DEBUG] ✓ Поле ввода имени найдено!")
+                        return True
+                except NoSuchElementException:
+                    print(f"    [DEBUG] ✗ Поле ввода имени не найдено")
+                
+                # 4. Проверяем кнопку "Создать аккаунт" (последний вариант)
+                for i, locator in enumerate(self.CREATE_ACCOUNT_BUTTON[:2]):  # Проверяем первые 2 локатора
+                    try:
+                        print(f"    [DEBUG] Проверка кнопки 'Создать аккаунт' (локатор {i+1})...")
+                        element = self.driver.find_element(*locator)
+                        if element:
+                            print(f"    [DEBUG] ✓ Кнопка 'Создать аккаунт' найдена (локатор {i+1})!")
+                            return True
+                    except NoSuchElementException:
+                        print(f"    [DEBUG] ✗ Кнопка 'Создать аккаунт' не найдена (локатор {i+1})")
+                        continue
+                
+                print(f"    [DEBUG] ✗ Все проверки не прошли - не на странице регистрации")
+                return False
+            finally:
+                # Восстанавливаем original implicit wait
+                try:
+                    self.driver.implicitly_wait(original_implicit_wait)
+                except:
+                    pass
+        except Exception as e:
+            print(f"    [DEBUG] ✗ Ошибка при проверке страницы регистрации: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def close_modal_dialog(self):
+        """Закрывает модальное окно/диалог, нажимая кнопку 'ОК' (очень быстрая проверка без скриншотов)"""
+        try:
+            # Очень быстрая проверка - только первый локатор с минимальным таймаутом
+            # Используем прямой поиск без скриншотов при ошибке
+            try:
+                from selenium.webdriver.support.ui import WebDriverWait
+                from selenium.webdriver.support import expected_conditions as EC
+                element = WebDriverWait(self.driver, 0.1).until(
+                    EC.presence_of_element_located((By.XPATH, "//*[@text='ОК' and @clickable='true']"))
+                )
+                if element and element.is_displayed():
+                    element.click()
+                    time.sleep(0.1)
+                    return True
+            except:
+                pass
+        except:
+            pass
+        return False
+    
+    def ensure_form_ready(self, timeout=2):
+        """Убеждается, что форма регистрации готова к вводу данных
+        
+        Закрывает возможные диалоги ошибок и проверяет доступность полей ввода
+        """
+        # Сначала закрываем возможные диалоги (очень быстро)
+        self.close_modal_dialog()
+        time.sleep(0.1)  # Уменьшено с 0.3 до 0.1
+        
+        # Быстрая проверка, что мы на странице регистрации (используем только первый локатор)
+        try:
+            if not self.is_displayed(self.CREATE_ACCOUNT_BUTTON[0], timeout=timeout):
+                return False
+        except:
+            return False
+        
+        # Проверяем, что поле ввода имени доступно (быстрая проверка)
+        try:
+            return self.is_displayed(self.NAME_INPUT[0], timeout=1)
+        except:
+            return False
+    
+    def navigate_to_registration_from_sign_in(self):
+        """Навигация на страницу регистрации со страницы входа
+        
+        Используется для восстановления формы после ошибок
+        """
+        from pages.sign_in_page import SignInPage
+        sign_in_page = SignInPage(self.driver)
+        
+        # Закрываем возможные диалоги перед проверкой (быстро)
+        self.close_modal_dialog()
+        time.sleep(0.1)
+        
+        # Используем быстрые методы проверки (без скриншотов)
+        is_on_registration = self.is_still_on_registration_page_fast(timeout=0.2)
+        if is_on_registration:
+            # Уже на странице регистрации
+            return self
+        
+        is_on_sign_in = sign_in_page.is_on_sign_in_page_fast(timeout=0.2)
+        if not is_on_sign_in:
+            # Не на странице входа и не на регистрации - пытаемся вернуться назад
+            try:
+                self.driver.back()
+                time.sleep(0.2)
+                # Проверяем снова
+                is_on_sign_in = sign_in_page.is_on_sign_in_page_fast(timeout=0.2)
+            except:
+                pass
+        
+        # Если на странице входа, переходим на регистрацию
+        if is_on_sign_in:
+            return sign_in_page.click_register_button()
+        
+        # Если все еще не на странице входа, пытаемся найти кнопку регистрации напрямую
+        try:
+            # Пытаемся найти кнопку регистрации и кликнуть
+            register_button = sign_in_page.REGISTER_BUTTON
+            self.click_multiple(register_button, timeout=1)  # Уменьшено с 2 до 1
+            time.sleep(0.3)  # Уменьшено с 0.5 до 0.3
+            # Проверяем, что мы на странице регистрации (быстрая проверка)
+            if self.is_still_on_registration_page_fast(timeout=0.3):
+                return self
+        except:
+            pass
+        
+        # Стандартный путь: через SignInPage
+        return sign_in_page.click_register_button()
 

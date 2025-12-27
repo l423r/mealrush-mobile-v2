@@ -128,8 +128,17 @@ class BasePage:
     def send_keys_multiple(self, locators, text, timeout=EXPLICIT_WAIT):
         """Вводит текст используя несколько локаторов"""
         element = self.find_element_multiple(locators, timeout)
-        element.clear()
-        element.send_keys(text)
+        # Быстрая очистка поля - используем set_value для Appium (быстрее чем clear())
+        try:
+            # Для Appium используем set_value - это быстрее чем clear() + send_keys()
+            element.set_value(text)
+        except:
+            # Fallback на обычный способ, но с минимальными задержками
+            try:
+                element.clear()
+            except:
+                pass
+            element.send_keys(text)
     
     def is_displayed_multiple(self, locators, timeout=EXPLICIT_WAIT):
         """Проверяет видимость элемента используя несколько локаторов"""

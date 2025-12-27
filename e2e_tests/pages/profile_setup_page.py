@@ -62,6 +62,54 @@ class ProfileSetupPage(BasePage):
             return self.is_displayed_multiple(self.GENDER_SELECTION_TITLE, timeout=timeout)
         return self.is_displayed_multiple(self.GENDER_SELECTION_TITLE)
     
+    def is_on_profile_setup_page_fast(self, timeout=0.3):
+        """Быстрая проверка экрана настройки профиля без скриншотов"""
+        try:
+            from selenium.common.exceptions import NoSuchElementException
+            
+            # Получаем текущий implicit wait перед изменением
+            try:
+                original_implicit_wait = self.driver.timeouts.implicit_wait / 1000  # Конвертируем из миллисекунд в секунды
+            except:
+                original_implicit_wait = 0
+            
+            # Устанавливаем небольшой таймаут для проверки
+            self.driver.implicitly_wait(0.1)
+            try:
+                # Проверяем заголовок "Выберите пол" или текст "Какой у вас пол?"
+                for locator in self.GENDER_SELECTION_TITLE:
+                    try:
+                        element = self.driver.find_element(*locator)
+                        if element:
+                            return True
+                    except NoSuchElementException:
+                        continue
+                
+                # Проверяем кнопки выбора пола
+                try:
+                    element = self.driver.find_element(*self.MALE_BUTTON[0])
+                    if element:
+                        return True
+                except NoSuchElementException:
+                    pass
+                
+                try:
+                    element = self.driver.find_element(*self.FEMALE_BUTTON[0])
+                    if element:
+                        return True
+                except NoSuchElementException:
+                    pass
+                
+                return False
+            finally:
+                # Восстанавливаем original implicit wait
+                try:
+                    self.driver.implicitly_wait(original_implicit_wait)
+                except:
+                    pass
+        except Exception as e:
+            return False
+    
     def select_gender(self, gender='male'):
         """Выбирает пол: 'male' или 'female'"""
         if gender.lower() == 'male' or gender.lower() == 'мужской':

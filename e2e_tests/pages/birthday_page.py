@@ -1,0 +1,89 @@
+"""
+Page Object для экрана ввода даты рождения (GetBirthday)
+"""
+import os
+import sys
+import time
+from selenium.webdriver.common.by import By
+
+# Добавляем родительскую директорию в PYTHONPATH
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from utilities.base_page import BasePage
+
+
+class BirthdayPage(BasePage):
+    """Класс для работы с экраном ввода даты рождения"""
+    
+    # Locators
+    BIRTHDAY_SCREEN_TITLE = [
+        (By.XPATH, "//*[@text='Дата рождения' or contains(@text, 'Дата рождения')]"),
+        (By.XPATH, "//*[contains(@text, 'Когда вы родились')]")
+    ]
+    
+    SELECT_DATE_BUTTON = [
+        (By.XPATH, "//*[@text='Выбрать дату' or contains(@text, 'Выбрать дату')]"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'Выбрать')]")
+    ]
+    
+    # Для Android DatePicker
+    DATE_PICKER_OK = [
+        (By.ID, "android:id/button1"),  # OK button в DatePicker
+        (By.XPATH, "//*[@text='OK' or @text='Готово']")
+    ]
+    
+    NEXT_BUTTON = [
+        (By.XPATH, "//*[@text='Далее' or contains(@text, 'Далее')]"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'Далее')]")
+    ]
+    
+    BACK_BUTTON = [
+        (By.XPATH, "//*[@text='←']"),
+        (By.XPATH, "//android.widget.TextView[@text='←']/..")
+    ]
+    
+    def __init__(self, driver):
+        super().__init__(driver)
+    
+    def is_page_loaded(self, timeout=None):
+        """Проверяет, загрузилась ли страница ввода даты рождения"""
+        if timeout is not None:
+            return self.is_displayed_multiple(self.BIRTHDAY_SCREEN_TITLE, timeout=timeout)
+        return self.is_displayed_multiple(self.BIRTHDAY_SCREEN_TITLE)
+    
+    def select_date(self, year_offset=25):
+        """Выбирает дату рождения (по умолчанию 25 лет назад)"""
+        try:
+            # Кликаем на кнопку выбора даты
+            self.click_multiple(self.SELECT_DATE_BUTTON)
+            time.sleep(1)
+            
+            # Для Android DatePicker - используем системный DatePicker
+            # По умолчанию дата уже установлена на 25 лет назад, просто подтверждаем
+            try:
+                ok_button = self.find_element_multiple(self.DATE_PICKER_OK, timeout=3)
+                ok_button.click()
+                time.sleep(1)
+            except Exception:
+                # Если DatePicker не появился или уже закрыт, продолжаем
+                pass
+        except Exception as e:
+            print(f"Warning: Could not select date: {e}")
+            # Если не удалось выбрать дату, продолжаем (дата по умолчанию уже установлена)
+        return self
+    
+    def click_next(self):
+        """Кликает на кнопку 'Далее'"""
+        self.click_multiple(self.NEXT_BUTTON)
+        time.sleep(2)
+        return self
+    
+    def click_back(self):
+        """Кликает на кнопку назад"""
+        try:
+            self.click_multiple(self.BACK_BUTTON, timeout=3)
+        except Exception:
+            self.driver.back()
+        time.sleep(2)
+        return self
+

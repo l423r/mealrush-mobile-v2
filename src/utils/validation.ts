@@ -16,10 +16,21 @@ export const registerSchema = yup.object().shape({
   email: yup
     .string()
     .email('Введите корректный email')
+    .test(
+      'no-double-dot',
+      'Введите корректный email',
+      (value) => {
+        if (!value) return true; // Пропускаем, если значение пустое (required обработает это)
+        const localPart = value.split('@')[0];
+        // Проверяем, что в локальной части нет двойной точки
+        return !localPart.includes('..');
+      }
+    )
     .required('Email обязателен'),
   password: yup
     .string()
     .min(8, 'Пароль должен содержать минимум 8 символов')
+    .max(128, 'Пароль не должен превышать 128 символов')
     .required('Пароль обязателен'),
   confirmPassword: yup
     .string()

@@ -33,3 +33,4 @@
 3. Проверьте процессы: `tasklist | findstr python` (Windows) или `ps aux | grep pytest` (Linux/Mac)
 4. Убейте процесс вручную если нужно
 
+

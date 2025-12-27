@@ -62,6 +62,48 @@ class SignInPage(BasePage):
         super().__init__(driver)
         self.page_identifier = self.LOGIN_BUTTON
     
+    def is_on_sign_in_page_fast(self, timeout=0.3):
+        """Быстрая проверка страницы входа без скриншотов при ошибке"""
+        try:
+            from selenium.common.exceptions import NoSuchElementException
+            
+            # Получаем текущий implicit wait перед изменением
+            try:
+                original_implicit_wait = self.driver.timeouts.implicit_wait / 1000  # Конвертируем из миллисекунд в секунды
+            except:
+                original_implicit_wait = 0
+            
+            # Устанавливаем небольшой таймаут для проверки
+            self.driver.implicitly_wait(0.1)
+            try:
+                print(f"    [DEBUG] Начало проверки страницы входа")
+                
+                # Проверяем несколько локаторов для надежности
+                for i, locator in enumerate(self.LOGIN_BUTTON[:2]):  # Проверяем первые 2 локатора
+                    try:
+                        print(f"    [DEBUG] Проверка кнопки 'Войти' (локатор {i+1})...")
+                        element = self.driver.find_element(*locator)
+                        if element:
+                            print(f"    [DEBUG] ✓ Кнопка 'Войти' найдена (локатор {i+1})!")
+                            return True
+                    except NoSuchElementException:
+                        print(f"    [DEBUG] ✗ Кнопка 'Войти' не найдена (локатор {i+1})")
+                        continue
+                
+                print(f"    [DEBUG] ✗ Все проверки не прошли - не на странице входа")
+                return False
+            finally:
+                # Восстанавливаем original implicit wait
+                try:
+                    self.driver.implicitly_wait(original_implicit_wait)
+                except:
+                    pass
+        except Exception as e:
+            print(f"    [DEBUG] ✗ Ошибка при проверке страницы входа: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
     def is_page_loaded(self, timeout=None):
         """Проверяет, загрузилась ли страница входа"""
         if timeout is not None:
