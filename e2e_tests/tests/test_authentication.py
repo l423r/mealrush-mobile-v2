@@ -70,15 +70,31 @@ class TestAuthentication:
         test_start = time.time()
         with timer_step("Вход с неверными учетными данными"):
             sign_in_page = SignInPage(driver)
-            sign_in_page.login("invalid@example.com", "wrongpassword")
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
+            sign_in_page.enter_email("invalid@example.com")
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
+            sign_in_page.enter_password("wrongpassword")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
+            sign_in_page.click_login_button()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка входа нажата (заняло {time.time() - step_start:.2f}с)")
             
             # Проверяем, что мы остались на странице входа или получили ошибку
-            time.sleep(1.5)  # Уменьшено с 2 до 1.5
+            time.sleep(1.5)
+            step_start = time.time()
             try:
                 sign_in_page.take_screenshot('invalid_login')
             except Exception as e:
                 print(f"Warning: Could not take screenshot after invalid login: {e}")
-            assert sign_in_page.is_displayed_multiple(sign_in_page.LOGIN_BUTTON), \
+            
+            is_still_on_sign_in = sign_in_page.is_displayed_multiple(sign_in_page.LOGIN_BUTTON)
+            print(f"  [{time.strftime('%H:%M:%S')}] Проверка страницы входа завершена (заняло {time.time() - step_start:.2f}с, результат: {is_still_on_sign_in})")
+            assert is_still_on_sign_in, \
                 "Должен остаться на странице входа при неверных учетных данных"
         print(f"\n[TEST] Тест завершен. Общее время: {time.time() - test_start:.2f}с")
     
@@ -93,11 +109,26 @@ class TestAuthentication:
             registration_page = sign_in_page.click_register_button()
         
         with timer_step("Заполнение формы регистрации"):
-            registration_page.register(
-                test_user['name'],
-                test_user['email'],
-                test_user['password']
-            )
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
+            registration_page.enter_name(test_user['name'])
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
+            registration_page.enter_email(test_user['email'])
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
+            registration_page.enter_password(test_user['password'])
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
+            registration_page.enter_confirm_password(test_user['password'])
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
+            registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
         
         with timer_step("Ожидание завершения регистрации"):
             # После регистрации должны попасть на главный экран или экран настройки профиля
@@ -298,13 +329,27 @@ class TestAuthentication:
             assert page_loaded, "Страница регистрации не загрузилась"
         
         with timer_step("Заполнение формы регистрации с дубликатом email"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(TEST_USER_EMAIL)  # Используем существующий email
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
         
         with timer_step("Отправка формы регистрации"):
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             # Делаем скриншот СРАЗУ после клика, пока ошибка еще отображается
             time.sleep(0.5)  # Минимальная задержка для появления ошибки
             registration_page.take_screenshot('after_registration')
@@ -379,10 +424,22 @@ class TestAuthentication:
             assert registration_page.is_page_loaded(), "Страница регистрации не загрузилась"
         
         with timer_step("Тест 1: Валидация короткого пароля"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email("test@example.com")
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("short")  # Слишком короткий пароль
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("short")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('short_password_entered')
             registration_page.click_create_account()
             time.sleep(1.5)  # Уменьшено с 2 до 1.5
@@ -391,10 +448,22 @@ class TestAuthentication:
                 "Должны остаться на странице регистрации при коротком пароле"
         
         with timer_step("Тест 2: Валидация невалидного email"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email("invalid-email")  # Невалидный email
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("ValidPass123")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("ValidPass123")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('invalid_email_entered')
             registration_page.click_create_account()
             time.sleep(1.5)  # Уменьшено с 2 до 1.5
@@ -441,10 +510,23 @@ class TestAuthentication:
             import string
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Password123")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("DifferentPass123")  # Несовпадающий пароль
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('password_mismatch_entered')
         
         with timer_step("Отправка формы и проверка валидации"):
@@ -861,11 +943,23 @@ class TestAuthentication:
         
         # Тест 1: Пустое имя
         with timer_step("Тест 1: Валидация пустого имени"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             # Очищаем все поля и заполняем все кроме имени
             registration_page.enter_name("")  # Пустое имя
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (пустое) (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email("test@example.com")
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('empty_name_entered')
             # Проверяем, что кнопка неактивна или есть ошибка
             try:
@@ -878,11 +972,23 @@ class TestAuthentication:
         
         # Тест 2: Пустой email
         with timer_step("Тест 2: Валидация пустого email"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             # Очищаем и заполняем все кроме email
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email("")  # Пустой email
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (пустой) (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('empty_email_entered')
             try:
                 create_button = registration_page.find_element_multiple(registration_page.CREATE_ACCOUNT_BUTTON)
@@ -893,11 +999,23 @@ class TestAuthentication:
         
         # Тест 3: Пустой пароль
         with timer_step("Тест 3: Валидация пустого пароля"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             # Очищаем и заполняем все кроме пароля
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email("test@example.com")
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("")  # Пустой пароль
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (пустой) (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("")  # Пустое подтверждение
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (пустое) (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('empty_password_entered')
             try:
                 create_button = registration_page.find_element_multiple(registration_page.CREATE_ACCOUNT_BUTTON)
@@ -908,11 +1026,23 @@ class TestAuthentication:
         
         # Тест 4: Пустое подтверждение пароля
         with timer_step("Тест 4: Валидация пустого подтверждения пароля"):
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             # Очищаем и заполняем все кроме подтверждения пароля
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email("test@example.com")
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test123456")
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("")  # Пустое подтверждение
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (пустое) (заняло {time.time() - step_start:.2f}с)")
             registration_page.take_screenshot('empty_confirm_password_entered')
             try:
                 create_button = registration_page.find_element_multiple(registration_page.CREATE_ACCOUNT_BUTTON)
@@ -1177,12 +1307,29 @@ class TestAuthentication:
         with timer_step("Тест 1: Пароль из 7 символов (невалидно)"):
             random_string = ''.join(random.choices(string.ascii_lowercase, k=5))
             email = f"test_{random_string}@example.com"
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test123")  # 7 символов
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("Test123")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_7_chars')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(1.5)
             registration_page.take_screenshot('password_7_chars_error')
             
@@ -1208,12 +1355,29 @@ class TestAuthentication:
             
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test1234")  # 8 символов
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("Test1234")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_8_chars')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(2)
             
             # Проверяем, перешли ли на экран настройки профиля (валидация прошла успешно)
@@ -1250,12 +1414,29 @@ class TestAuthentication:
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
             long_password = "A" * 32 + "1" * 32  # 64 символа (реалистичный длинный пароль)
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password(long_password)
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password(long_password)
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_64_chars')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(2)
             
             # Проверяем, перешли ли на экран настройки профиля (валидация прошла успешно)
@@ -1290,12 +1471,29 @@ class TestAuthentication:
             
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("12345678")  # Только цифры, 8 символов
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("12345678")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_only_digits')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(2)
             
             # Проверяем, перешли ли на экран настройки профиля (валидация прошла успешно)
@@ -1330,12 +1528,29 @@ class TestAuthentication:
             
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("TestTest")  # Только буквы, 8 символов
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("TestTest")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_only_letters')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(2)
             
             # Проверяем, перешли ли на экран настройки профиля (валидация прошла успешно)
@@ -1370,12 +1585,29 @@ class TestAuthentication:
             
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password("Test@123#")  # Со специальными символами
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password("Test@123#")
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_special_chars')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(2)
             
             # Проверяем, перешли ли на экран настройки профиля (валидация прошла успешно)
@@ -1411,12 +1643,29 @@ class TestAuthentication:
             random_string = ''.join(random.choices(string.ascii_lowercase, k=6))
             email = f"test_{random_string}@example.com"
             too_long_password = "A" * 129  # 129 символов (превышает максимум 128)
+            
+            step_start = time.time()
+            print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
             registration_page.enter_name("Test User")
+            print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_email(email)
+            print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_password(too_long_password)
+            print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
+            
+            step_start = time.time()
             registration_page.enter_confirm_password(too_long_password)
+            print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
+            
             registration_page.take_screenshot('password_129_chars')
+            
+            step_start = time.time()
             registration_page.click_create_account()
+            print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
             time.sleep(1.5)
             
             # Проверяем, что остались на странице регистрации (валидация сработала)
