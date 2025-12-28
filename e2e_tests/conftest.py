@@ -109,6 +109,14 @@ def setup_test_environment(driver, request):
         print(f"Warning: Could not take end screenshot for test {test_name}: {e}")
         # Не прерываем выполнение из-за ошибки скриншота
     
+    # Очищаем созданных тестовых пользователей после теста
+    try:
+        from utilities.user_cleanup import UserCleanup
+        UserCleanup.cleanup_all_users()
+    except Exception as e:
+        print(f"Warning: Could not cleanup test users after test {test_name}: {e}")
+        # Не прерываем выполнение из-за ошибки очистки
+    
     # Очищаем thread-local storage после теста
     BasePage.set_test_dir(None)
 

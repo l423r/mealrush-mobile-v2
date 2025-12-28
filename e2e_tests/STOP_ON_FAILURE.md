@@ -113,3 +113,6 @@ pytest tests/test_authentication.py --stop-on-first-failure -m smoke
 - Используйте `Ctrl+C` для принудительной остановки в любой момент
 
 
+
+
+

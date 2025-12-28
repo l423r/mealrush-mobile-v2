@@ -200,7 +200,7 @@ class MainPage(BasePage):
             except Exception as e2:
                 print(f"Warning: Could not click profile tab using alternative method: {e2}")
                 raise
-            return self
+        return self
     
     def navigate_to_search(self):
         """Переходит на вкладку поиска"""
