@@ -1473,9 +1473,8 @@ class TestAuthentication:
                 # Регистрируем пользователя для последующего удаления
                 try:
                     from utilities.user_cleanup import UserCleanup
-                    # Используем пароль, который был введен в тесте
-                    test_password = "Test1234"  # Пароль для теста 8 символов
-                    UserCleanup.register_user(email, test_password)
+                    # Используем пароль, который был введен в тесте (64 символа)
+                    UserCleanup.register_user(email, long_password)
                 except Exception as e:
                     print(f"Warning: Could not register user for cleanup: {e}")
                 # Возвращаемся на страницу регистрации для следующего теста
