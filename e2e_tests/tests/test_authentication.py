@@ -626,9 +626,9 @@ class TestAuthentication:
                 if target_selection_page.is_page_loaded(timeout=3):  # Уменьшено с 5 до 3
                     target_selection_page.take_screenshot('03_target_selection_screen')
                     print(f"[{time.strftime('%H:%M:%S')}] Landed on target selection screen")
-                            target_selection_page.select_target('save')
+                    target_selection_page.select_target('save')
                     target_selection_page.take_screenshot('04_target_selected')
-                            target_selection_page.click_next()
+                    target_selection_page.click_next()
                     time.sleep(2)  # Уменьшено с 3 до 2
                 else:
                     print("Warning: Target selection screen not loaded, continuing...")
@@ -712,14 +712,14 @@ class TestAuthentication:
 
                 # Проверяем, что мы попали на главный экран (профиль создан)
                 if main_page.is_page_loaded(timeout=5):  # Уменьшено с 8 до 5
-                            profile_created = True
+                    profile_created = True
                     main_page.take_screenshot('16_profile_created_main_screen')
                     print("Profile created successfully - landed on main screen")
                 elif profile_page.is_page_loaded(timeout=2):  # Уменьшено с 3 до 2
-                        profile_created = True
+                    profile_created = True
                     profile_page.take_screenshot('16_profile_created_profile_screen')
                     print("Profile created successfully - landed on profile screen")
-                    else:
+                else:
                     # Делаем скриншот текущего состояния
                     driver.save_screenshot('screenshots/16_after_profile_creation_unknown.png')
                     profile_created = True  # Считаем успешным, если прошли все экраны
@@ -758,7 +758,7 @@ class TestAuthentication:
                 main_page.take_screenshot('17_before_logout_from_main')
                 
                 # Переходим в профиль через bottom navigation
-                    main_page.navigate_to_profile()
+                main_page.navigate_to_profile()
                 time.sleep(1)  # Уменьшено с 1.5 до 1
                 
                 # Не проверяем загрузку профиля - сразу работаем с ним (экран обязательный)
@@ -766,12 +766,12 @@ class TestAuthentication:
                 print(f"[{time.strftime('%H:%M:%S')}] Successfully navigated to profile screen")
                 
                 # Кликаем на кнопку выхода (метод сам прокрутит и обработает диалог подтверждения)
-                    profile_page.click_logout()
+                profile_page.click_logout()
                 time.sleep(1)  # Уменьшено с 1.5 до 1
                 
                 # Проверяем, что мы на странице входа (быстрая проверка)
                 if sign_in_page.is_page_loaded(timeout=2):  # Уменьшено с 3 до 2
-                        logout_successful = True
+                    logout_successful = True
                     sign_in_page.take_screenshot('19_after_logout_from_main')
                     print(f"[{time.strftime('%H:%M:%S')}] Successfully logged out from main screen")
                 else:
@@ -931,9 +931,9 @@ class TestAuthentication:
                 # Проверяем, что мы на странице входа (быстрая проверка)
                 if sign_in_page.is_page_loaded(timeout=2):  # Уменьшено с 5 до 2
                     final_logout_successful = True
-                sign_in_page.take_screenshot('after_final_logout')
+                    sign_in_page.take_screenshot('after_final_logout')
                     print(f"[{time.strftime('%H:%M:%S')}] Successfully returned to sign in page after login")
-            else:
+                else:
                     final_logout_successful = False
                     print("Warning: Not on sign in page after logout")
             except Exception as e:
@@ -1171,24 +1171,24 @@ class TestAuthentication:
                     step_start = time.time()
                     print(f"  [{time.strftime('%H:%M:%S')}] Начало ввода данных")
                     
-                registration_page.enter_name("Test User")
+                    registration_page.enter_name("Test User")
                     print(f"  [{time.strftime('%H:%M:%S')}] Имя введено (заняло {time.time() - step_start:.2f}с)")
                     step_start = time.time()
                     
-                registration_page.enter_email(email)
+                    registration_page.enter_email(email)
                     print(f"  [{time.strftime('%H:%M:%S')}] Email введен (заняло {time.time() - step_start:.2f}с)")
                     step_start = time.time()
                     
-                registration_page.enter_password("Test123456")
+                    registration_page.enter_password("Test123456")
                     print(f"  [{time.strftime('%H:%M:%S')}] Пароль введен (заняло {time.time() - step_start:.2f}с)")
                     step_start = time.time()
                     
-                registration_page.enter_confirm_password("Test123456")
+                    registration_page.enter_confirm_password("Test123456")
                     print(f"  [{time.strftime('%H:%M:%S')}] Подтверждение пароля введено (заняло {time.time() - step_start:.2f}с)")
                     step_start = time.time()
                 
-                # Пытаемся отправить форму
-                registration_page.click_create_account()
+                    # Пытаемся отправить форму
+                    registration_page.click_create_account()
                     print(f"  [{time.strftime('%H:%M:%S')}] Кнопка создания аккаунта нажата (заняло {time.time() - step_start:.2f}с)")
                     step_start = time.time()
                     time.sleep(0.1)  # Уменьшено с 0.2 до 0.1
@@ -1231,9 +1231,9 @@ class TestAuthentication:
 
                         if is_on_registration:
                             # Остались на странице регистрации - валидация сработала
-                    validation_passed += 1
-                    print(f"✓ Валидация сработала для: {email} ({description})")
-                else:
+                            validation_passed += 1
+                            print(f"✓ Валидация сработала для: {email} ({description})")
+                        else:
                             # Не на странице регистрации и не на главном - проверяем страницу входа
                             # Используем быстрый метод без скриншотов
                             sign_in_page_check = SignInPage(driver)
@@ -1281,7 +1281,7 @@ class TestAuthentication:
         
         with timer_step("Возврат на страницу входа"):
             try:
-            sign_in_page = registration_page.click_back()
+                sign_in_page = registration_page.click_back()
                 # Не проверяем загрузку страницы, если приложение могло упасть
                 try:
                     sign_in_page.is_page_loaded(timeout=2)
@@ -1302,7 +1302,7 @@ class TestAuthentication:
             else:
                 pytest.fail(f"Приложение упало слишком рано. Валидация прошла только для {validation_passed} тестов")
         else:
-        assert validation_passed >= len(invalid_emails) * 0.7, \
+            assert validation_passed >= len(invalid_emails) * 0.7, \
             f"Валидация email работает некорректно. Прошло только {validation_passed}/{len(invalid_emails)} тестов"
         
         print(f"\n[TEST] Тест завершен. Валидация прошла для {validation_passed}/{len(invalid_emails)} невалидных email. "
@@ -1547,7 +1547,7 @@ class TestAuthentication:
                 registration_page = sign_in_page.click_register_button()
                 time.sleep(1)
             elif registration_page.is_still_on_registration_page_fast(timeout=1):
-            registration_page.take_screenshot('password_only_digits_result')
+                registration_page.take_screenshot('password_only_digits_result')
                 print("⚠ Password only digits: still on registration page (may fail for other reasons)")
             else:
                 print("⚠ Password only digits: unknown screen state")
@@ -1610,7 +1610,7 @@ class TestAuthentication:
                 registration_page = sign_in_page.click_register_button()
                 time.sleep(1)
             elif registration_page.is_still_on_registration_page_fast(timeout=1):
-            registration_page.take_screenshot('password_only_letters_result')
+                registration_page.take_screenshot('password_only_letters_result')
                 print("⚠ Password only letters: still on registration page (may fail for other reasons)")
             else:
                 print("⚠ Password only letters: unknown screen state")
@@ -1673,7 +1673,7 @@ class TestAuthentication:
                 registration_page = sign_in_page.click_register_button()
                 time.sleep(1)
             elif registration_page.is_still_on_registration_page_fast(timeout=1):
-            registration_page.take_screenshot('password_special_chars_result')
+                registration_page.take_screenshot('password_special_chars_result')
                 print("⚠ Password with special chars: still on registration page (may fail for other reasons)")
             else:
                 print("⚠ Password with special chars: unknown screen state")

@@ -89,13 +89,13 @@ class ProfilePage(BasePage):
             time.sleep(0.3)  # Уменьшено с 0.5 до 0.3 - минимальная задержка для появления диалога
             
             # Подтверждаем выход в диалоге (быстрая проверка)
-        try:
+            try:
                 if self.is_displayed_multiple(self.LOGOUT_DIALOG_TITLE, timeout=0.3):  # Уменьшено с 0.5 до 0.3
                     self.click_multiple(self.LOGOUT_CONFIRM_BUTTON, timeout=1)  # Уменьшено с 1.5 до 1
                     time.sleep(0.3)  # Уменьшено с 0.5 до 0.3
-        except Exception:
+            except Exception:
                 # Диалог может быть уже обработан или иметь другой формат
-            pass
+                pass
         except Exception as e:
             print(f"Warning: Could not click logout button: {e}")
             raise

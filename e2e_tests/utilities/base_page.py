@@ -135,7 +135,7 @@ class BasePage:
         except:
             # Fallback на обычный способ, но с минимальными задержками
             try:
-        element.clear()
+                element.clear()
             except:
                 pass
         element.send_keys(text)

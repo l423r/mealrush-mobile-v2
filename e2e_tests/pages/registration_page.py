@@ -105,7 +105,7 @@ class RegistrationPage(BasePage):
         except Exception:
             # Если кнопка не найдена, используем системную кнопку назад
             try:
-            self.driver.back()
+                self.driver.back()
             except Exception:
                 # Если приложение упало, просто возвращаем SignInPage
                 pass
