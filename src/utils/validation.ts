@@ -79,7 +79,20 @@ export const userProfileSchema = yup.object().shape({
     .string()
     .oneOf(['MALE', 'FEMALE'], 'Выберите пол')
     .required('Пол обязателен'),
-  birthday: yup.string().required('Дата рождения обязательна'),
+  birthday: yup
+    .string()
+    .required('Дата рождения обязательна')
+    .test(
+      'valid-birthday',
+      'Дата рождения должна быть в прошлом и не раньше 1900-01-01',
+      (value) => {
+        if (!value) return true; // required will handle empty
+        const birthday = new Date(value);
+        const today = new Date();
+        const minDate = new Date('1900-01-01');
+        return birthday <= today && birthday >= minDate;
+      }
+    ),
   targetWeightType: yup
     .string()
     .oneOf(['LOSE', 'SAVE', 'GAIN'], 'Выберите цель')
