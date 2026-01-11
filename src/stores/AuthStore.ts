@@ -4,14 +4,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../api/services/auth.service';
 import type RootStore from './RootStore';
 import type { User, LoginRequest, RegisterRequest, OAuthProvider } from '../types/api.types';
-import { saveToken, deleteToken, getToken } from '../api/axios.config';
+import { saveToken, saveTokens, deleteTokens, getToken, getRefreshToken } from '../api/axios.config';
+import { translateErrorMessage, getDefaultErrorMessage } from '../utils/errorMessages';
 
 class AuthStore {
   rootStore: RootStore;
 
   // State
   user: User | null = null;
-  token: string | null = null;
+  token: string | null = null; // Access token (short-lived: 15 minutes)
+  refreshToken: string | null = null; // Refresh token (long-lived: 90 days)
   isAuthenticated: boolean = false;
   loading: boolean = false;
   error: string | null = null;
@@ -23,7 +25,7 @@ class AuthStore {
 
     makePersistable(this, {
       name: 'AuthStore',
-      properties: ['token', 'user', 'isAuthenticated'],
+      properties: ['user', 'isAuthenticated'], // Security: Tokens are stored ONLY in SecureStore, not AsyncStorage
       storage: AsyncStorage,
     });
   }
@@ -36,16 +38,30 @@ class AuthStore {
     try {
       const response = await authService.login(credentials);
 
-      console.log('Login response:', JSON.stringify(response.data, null, 2));
+      if (__DEV__) {
+        // Security: Never log token values
+        const safeResponse = { ...response.data, jwtToken: '[REDACTED]' };
+        console.log('Login response:', JSON.stringify(safeResponse, null, 2));
+      }
 
       runInAction(() => {
         this.token = String(response.data.jwtToken);
+        this.refreshToken = response.data.refreshToken ? String(response.data.refreshToken) : null;
         this.user = response.data.user;
         this.isAuthenticated = true;
         this.error = null;
       });
 
-      await saveToken(String(response.data.jwtToken));
+      // Save both access token and refresh token securely
+      if (response.data.refreshToken) {
+        await saveTokens(String(response.data.jwtToken), String(response.data.refreshToken));
+      } else {
+        // Fallback: if refresh token is missing, only save access token (should not happen)
+        await saveToken(String(response.data.jwtToken));
+        if (__DEV__) {
+          console.warn('[AuthStore] Login response missing refresh token');
+        }
+      }
 
       // User is already in login response, no need to call getUser separately
       // But keeping it for consistency with old flow (can be removed in future)
@@ -66,7 +82,9 @@ class AuthStore {
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
-        console.log('error' + error);
+        if (__DEV__) {
+          console.error('Login error:', error.response?.data || error.message);
+        }
 
         this.error = error.response?.data?.message || 'Ошибка входа';
       });
@@ -95,7 +113,9 @@ class AuthStore {
     } catch (error: any) {
       runInAction(() => {
         this.loading = false;
-        this.error = error.response?.data?.message || 'Ошибка регистрации';
+        // Translate backend error message to Russian
+        const backendMessage = error.response?.data?.message;
+        this.error = translateErrorMessage(backendMessage) || getDefaultErrorMessage('register');
       });
       throw error;
     }
@@ -114,12 +134,22 @@ class AuthStore {
 
       runInAction(() => {
         this.token = response.data.jwtToken;
+        this.refreshToken = response.data.refreshToken ? String(response.data.refreshToken) : null;
         this.user = response.data.user;
         this.isAuthenticated = true;
         this.error = null;
       });
 
-      await saveToken(response.data.jwtToken);
+      // Save both access token and refresh token securely
+      if (response.data.refreshToken) {
+        await saveTokens(response.data.jwtToken, String(response.data.refreshToken));
+      } else {
+        // Fallback: if refresh token is missing, only save access token (should not happen)
+        await saveToken(response.data.jwtToken);
+        if (__DEV__) {
+          console.warn('[AuthStore] OAuth response missing refresh token');
+        }
+      }
 
       // Check if user has profile
       await this.rootStore.profileStore.checkProfile();
@@ -133,14 +163,19 @@ class AuthStore {
         this.loading = false;
       });
     } catch (error: any) {
-      let errorMessage = 'Ошибка OAuth авторизации';
-
-      if (error.response?.status === 409) {
-        errorMessage = error.response.data.message || 'Email уже зарегистрирован с другим провайдером';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Не удалось проверить токен. Попробуйте еще раз';
-      } else if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
+      // Translate backend error message to Russian
+      const backendMessage = error.response?.data?.message;
+      let errorMessage = translateErrorMessage(backendMessage);
+      
+      // Fallback to status-specific messages if translation not found
+      if (!errorMessage) {
+        if (error.response?.status === 409) {
+          errorMessage = 'Email уже зарегистрирован с другим провайдером';
+        } else if (error.response?.status === 401) {
+          errorMessage = 'Не удалось проверить токен. Попробуйте еще раз';
+        } else {
+          errorMessage = 'Ошибка OAuth авторизации';
+        }
       }
 
       runInAction(() => {
@@ -192,14 +227,39 @@ class AuthStore {
   }
 
   async logout() {
+    try {
+      // Revoke refresh tokens on server (best practice: invalidate all sessions)
+      // Only call logout API if we have a valid access token
+      if (this.token) {
+        try {
+          await authService.logout();
+          if (__DEV__) {
+            console.log('[AuthStore] Logout API called successfully');
+          }
+        } catch (error: any) {
+          // If logout API fails (e.g., token expired), continue with local logout
+          if (__DEV__) {
+            console.warn('[AuthStore] Logout API failed, continuing with local logout:', error.message);
+          }
+        }
+      }
+    } catch (error) {
+      // Continue with local logout even if API call fails
+      if (__DEV__) {
+        console.warn('[AuthStore] Error during logout API call:', error);
+      }
+    }
+
     runInAction(() => {
       this.user = null;
       this.token = null;
+      this.refreshToken = null;
       this.isAuthenticated = false;
       this.error = null;
     });
 
-    await deleteToken();
+    // Clear all tokens from SecureStore (security: invalidate all sessions)
+    await deleteTokens();
 
     // Reset all stores
     this.rootStore.reset();
@@ -210,16 +270,19 @@ class AuthStore {
       this.initializing = true;
     });
 
-    // Load token from SecureStore
+    // Load tokens from SecureStore
     const storedToken = await getToken();
+    const storedRefreshToken = await getRefreshToken();
 
     if (__DEV__) {
-      console.log('[checkAuth] Token exists:', !!storedToken);
+      console.log('[checkAuth] Access token exists:', !!storedToken);
+      console.log('[checkAuth] Refresh token exists:', !!storedRefreshToken);
     }
 
     if (storedToken) {
       runInAction(() => {
         this.token = storedToken;
+        this.refreshToken = storedRefreshToken;
       });
 
       try {
@@ -237,14 +300,21 @@ class AuthStore {
           throw new Error('User data not available after getUser()');
         }
         
-        // Проверяем, что токен все еще существует (не был удален interceptor'ом)
+        // Проверяем, что токены все еще существуют (не были удалены interceptor'ом)
         const tokenStillExists = await getToken();
-        if (!tokenStillExists) {
+        const refreshTokenStillExists = await getRefreshToken();
+        if (!tokenStillExists || !refreshTokenStillExists) {
           if (__DEV__) {
-            console.log('[checkAuth] Token was deleted during authentication check');
+            console.log('[checkAuth] Tokens were deleted during authentication check');
           }
-          throw new Error('Token was deleted during authentication check');
+          throw new Error('Tokens were deleted during authentication check');
         }
+        
+        // Update state with tokens from SecureStore (they might have been refreshed by interceptor)
+        runInAction(() => {
+          this.token = tokenStillExists;
+          this.refreshToken = refreshTokenStillExists;
+        });
         
         // Вызываем checkProfile() ТОЛЬКО если getUser() успешен и токен валиден
         if (__DEV__) {
@@ -294,9 +364,77 @@ class AuthStore {
     this.error = null;
   }
 
+  async requestPasswordReset(email: string) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      await authService.resetPassword(email);
+      // Always return success (security: prevents email enumeration)
+      runInAction(() => {
+        this.loading = false;
+        this.error = null;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        // Translate backend error message to Russian
+        const backendMessage = error.response?.data?.message;
+        this.error = translateErrorMessage(backendMessage) || getDefaultErrorMessage('resetPassword');
+      });
+      throw error;
+    }
+  }
+
+  async validateResetToken(token: string): Promise<boolean> {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      const response = await authService.validateResetToken(token);
+      runInAction(() => {
+        this.loading = false;
+        this.error = null;
+      });
+      // Token is valid if response status is 200
+      return response.status === 200;
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        // Translate backend error message to Russian
+        const backendMessage = error.response?.data?.message;
+        this.error = translateErrorMessage(backendMessage) || 'Токен недействителен или истек';
+      });
+      // Token is invalid if we get an error
+      return false;
+    }
+  }
+
+  async completePasswordReset(token: string, newPassword: string) {
+    this.loading = true;
+    this.error = null;
+
+    try {
+      await authService.completePasswordReset(token, newPassword);
+      runInAction(() => {
+        this.loading = false;
+        this.error = null;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.loading = false;
+        // Translate backend error message to Russian
+        const backendMessage = error.response?.data?.message;
+        this.error = translateErrorMessage(backendMessage) || getDefaultErrorMessage('completePasswordReset');
+      });
+      throw error;
+    }
+  }
+
   reset() {
     this.user = null;
     this.token = null;
+    this.refreshToken = null;
     this.isAuthenticated = false;
     this.loading = false;
     this.error = null;

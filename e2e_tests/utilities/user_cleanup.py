@@ -10,7 +10,8 @@ from config.appium_config import TEST_USER_EMAIL
 # По умолчанию используем тот же URL, что и в мобильном приложении
 # Можно переопределить через переменную окружения BACKEND_API_URL
 # Формат: http://host:port/my-food (с /my-food в конце)
-BACKEND_API_URL = os.getenv('BACKEND_API_URL', 'http://88.210.20.137:8083/my-food')
+# BACKEND_API_URL = os.getenv('BACKEND_API_URL', 'http://88.210.20.137:8083/my-food')
+BACKEND_API_URL = os.getenv('BACKEND_API_URL', 'http://localhost:8083/my-food')
 AUTH_ENDPOINT = f"{BACKEND_API_URL}/auth/token"
 PROFILE_DELETE_ENDPOINT = f"{BACKEND_API_URL}/user-profile"
 USER_DELETE_ENDPOINT = f"{BACKEND_API_URL}/auth/user"  # Для удаления пользователя (если существует)

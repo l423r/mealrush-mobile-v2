@@ -11,6 +11,8 @@ import GetBirthdayScreen from '../screens/auth/GetBirthdayScreen';
 import GetActivityScreen from '../screens/auth/GetActivityScreen';
 import RegistrationScreen from '../screens/auth/RegistrationScreen';
 import SimpleRegistrationScreen from '../screens/auth/SimpleRegistrationScreen';
+import PasswordResetRequestScreen from '../screens/auth/PasswordResetRequestScreen';
+import PasswordResetScreen from '../screens/auth/PasswordResetScreen';
 
 const Stack = createNativeStackNavigator<AuthStackParamList>();
 
@@ -23,6 +25,11 @@ const AuthNavigator: React.FC = () => {
       }}
     >
       <Stack.Screen name="SignIn" component={SignInScreen} />
+      <Stack.Screen
+        name="PasswordResetRequest"
+        component={PasswordResetRequestScreen}
+      />
+      <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
       <Stack.Screen
         name="SimpleRegistration"
         component={SimpleRegistrationScreen}

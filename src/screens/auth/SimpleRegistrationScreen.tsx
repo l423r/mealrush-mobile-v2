@@ -18,6 +18,7 @@ import { useStores } from '../../stores';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
+import { translateErrorMessage, getDefaultErrorMessage } from '../../utils/errorMessages';
 
 type SimpleRegistrationScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -52,11 +53,11 @@ const SimpleRegistrationScreen: React.FC = () => {
       // Navigation will be handled by AppNavigator
       // If user doesn't have profile, they'll be redirected to ProfileSetup
     } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        authStore.error ||
-        'Не удалось зарегистрироваться';
+      // Translate backend error message to Russian
+      const errorMessage = authStore.error ||
+        translateErrorMessage(error?.response?.data?.message) ||
+        translateErrorMessage(error?.message) ||
+        getDefaultErrorMessage('register');
       uiStore.showSnackbar(errorMessage, 'error');
     }
   };

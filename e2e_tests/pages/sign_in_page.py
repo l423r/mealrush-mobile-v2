@@ -152,9 +152,11 @@ class SignInPage(BasePage):
         return RegistrationPage(self.driver)
     
     def click_forgot_password(self):
-        """Кликает на кнопку 'Забыли пароль'"""
+        """Кликает на кнопку 'Забыли пароль' и возвращает PasswordResetRequestPage"""
+        from pages.password_reset_page import PasswordResetRequestPage
         self.click_multiple(self.FORGOT_PASSWORD_BUTTON)
-        return self
+        time.sleep(1)  # Ожидание навигации
+        return PasswordResetRequestPage(self.driver)
     
     def close_modal_dialog(self):
         """Закрывает модальное окно/диалог, нажимая кнопку 'ОК'"""

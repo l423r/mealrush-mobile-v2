@@ -12,6 +12,25 @@ export const loginSchema = yup.object().shape({
     .required('Пароль обязателен'),
 });
 
+export const passwordResetRequestSchema = yup.object().shape({
+  email: yup
+    .string()
+    .email('Введите корректный email')
+    .required('Email обязателен'),
+});
+
+export const passwordResetSchema = yup.object().shape({
+  password: yup
+    .string()
+    .min(8, 'Пароль должен содержать минимум 8 символов')
+    .max(128, 'Пароль не должен превышать 128 символов')
+    .required('Пароль обязателен'),
+  confirmPassword: yup
+    .string()
+    .oneOf([yup.ref('password')], 'Пароли должны совпадать')
+    .required('Подтверждение пароля обязательно'),
+});
+
 export const registerSchema = yup.object().shape({
   email: yup
     .string()

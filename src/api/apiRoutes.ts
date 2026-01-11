@@ -10,8 +10,8 @@ const getBaseURL = () => {
         // Use localhost for iOS Simulator
         // Use local IP for physical devices connected via USB
         // For USB-connected devices, use your computer's IP in the local network
-        // return 'http://localhost:8083/my-food';
-        return 'http://88.210.20.137:8083/my-food';
+        return 'http://localhost:8083/my-food';
+        // return 'http://88.210.20.137:8083/my-food';
     } else {
         // Production
         return 'http://88.210.20.137:8083/my-food';
@@ -24,9 +24,13 @@ export const ApiRoutes = {
     // Auth
     Auth: {
         Login: '/auth/token',
+        Refresh: '/auth/refresh',
+        Logout: '/auth/logout',
         Register: '/auth/user',
         User: '/auth/user',
         ResetPassword: '/auth/reset-password',
+        ValidateResetToken: '/auth/reset-password/validate',
+        CompletePasswordReset: '/auth/reset-password/complete',
         OAuth: '/auth/oauth',
     },
 

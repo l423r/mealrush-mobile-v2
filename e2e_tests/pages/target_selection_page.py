@@ -1,5 +1,5 @@
 """
-Page Object для экрана выбора цели (GetTarget)
+Page Object для экрана выбора цели (Target Selection)
 """
 import os
 import sys
@@ -16,24 +16,26 @@ class TargetSelectionPage(BasePage):
     """Класс для работы с экраном выбора цели"""
     
     # Locators
-    TARGET_SELECTION_TITLE = [
+    TARGET_SCREEN_TITLE = [
         (By.XPATH, "//*[@text='Выберите цель' or contains(@text, 'Выберите цель')]"),
-        (By.XPATH, "//*[contains(@text, 'Какую цель вы преследуете')]")
+        (By.XPATH, "//*[contains(@text, 'Какую цель вы хотите достичь')]"),
+        (By.XPATH, "//*[contains(@text, 'Цель')]")
     ]
     
-    LOSE_WEIGHT_OPTION = [
-        (By.XPATH, "//*[@text='Сбросить вес' or contains(@text, 'Сбросить вес')]"),
-        (By.XPATH, "//*[contains(@text, 'Создать дефицит калорий')]")
+    # Варианты целей
+    SAVE_WEIGHT = [
+        (By.XPATH, "//*[contains(@text, 'Сохранить вес') or contains(@text, 'Поддержать вес')]"),
+        (By.XPATH, "//*[contains(@text, 'Сохранить')]")
     ]
     
-    SAVE_WEIGHT_OPTION = [
-        (By.XPATH, "//*[@text='Сохранить вес' or contains(@text, 'Сохранить вес')]"),
-        (By.XPATH, "//*[contains(@text, 'Поддерживать текущий вес')]")
+    LOSE_WEIGHT = [
+        (By.XPATH, "//*[contains(@text, 'Похудеть') or contains(@text, 'Сбросить вес')]"),
+        (By.XPATH, "//*[contains(@text, 'Похудеть')]")
     ]
     
-    GAIN_WEIGHT_OPTION = [
-        (By.XPATH, "//*[@text='Набрать вес' or contains(@text, 'Набрать вес')]"),
-        (By.XPATH, "//*[contains(@text, 'Создать профицит калорий')]")
+    GAIN_WEIGHT = [
+        (By.XPATH, "//*[contains(@text, 'Набрать вес') or contains(@text, 'Поправиться')]"),
+        (By.XPATH, "//*[contains(@text, 'Набрать')]")
     ]
     
     NEXT_BUTTON = [
@@ -46,30 +48,29 @@ class TargetSelectionPage(BasePage):
         (By.XPATH, "//android.widget.TextView[@text='←']/..")
     ]
     
-    # Locators для кнопки выхода (в правом верхнем углу Header)
-    LOGOUT_BUTTON = [
-        (By.XPATH, "//*[@content-desc='profile_setup_logout_button']"),
-        (By.XPATH, "//*[contains(@content-desc, 'logout')]")
-    ]
-    
     def __init__(self, driver):
         super().__init__(driver)
     
     def is_page_loaded(self, timeout=None):
         """Проверяет, загрузилась ли страница выбора цели"""
         if timeout is not None:
-            return self.is_displayed_multiple(self.TARGET_SELECTION_TITLE, timeout=timeout)
-        return self.is_displayed_multiple(self.TARGET_SELECTION_TITLE)
+            return self.is_displayed_multiple(self.TARGET_SCREEN_TITLE, timeout=timeout)
+        return self.is_displayed_multiple(self.TARGET_SCREEN_TITLE)
     
     def select_target(self, target='save'):
-        """Выбирает цель: 'lose', 'save' или 'gain'"""
-        if target.lower() == 'lose' or target.lower() == 'сбросить':
-            self.click_multiple(self.LOSE_WEIGHT_OPTION)
-        elif target.lower() == 'gain' or target.lower() == 'набрать':
-            self.click_multiple(self.GAIN_WEIGHT_OPTION)
+        """Выбирает цель: 'save', 'lose', 'gain'"""
+        target = target.lower()
+        
+        if target == 'save' or target == 'maintain':
+            self.click_multiple(self.SAVE_WEIGHT)
+        elif target == 'lose' or target == 'lose_weight':
+            self.click_multiple(self.LOSE_WEIGHT)
+        elif target == 'gain' or target == 'gain_weight':
+            self.click_multiple(self.GAIN_WEIGHT)
         else:
             # По умолчанию выбираем "Сохранить вес"
-            self.click_multiple(self.SAVE_WEIGHT_OPTION)
+            self.click_multiple(self.SAVE_WEIGHT)
+        
         time.sleep(1)
         return self
     
@@ -87,17 +88,3 @@ class TargetSelectionPage(BasePage):
             self.driver.back()
         time.sleep(2)
         return self
-    
-    def click_logout_button(self):
-        """Кликает на кнопку выхода из аккаунта (если есть)"""
-        try:
-            self.click_multiple(self.LOGOUT_BUTTON, timeout=2)
-            time.sleep(1)
-            return True
-        except Exception:
-            return False
-
-
-
-
-

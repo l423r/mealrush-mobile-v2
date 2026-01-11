@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { observer } from 'mobx-react-lite';
 import { useStores } from '../stores';
@@ -11,6 +11,23 @@ import Loading from '../components/common/Loading';
 import Snackbar from '../components/common/Snackbar';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
+
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: ['foodapp://', 'https://'],
+  config: {
+    screens: {
+      Auth: {
+        screens: {
+          PasswordReset: {
+            // React Navigation automatically parses query parameters
+            // Format: foodapp://reset-password?token=xxx or https://.../reset-password?token=xxx
+            path: 'reset-password',
+          },
+        },
+      },
+    },
+  },
+};
 
 const AppNavigator: React.FC = observer(() => {
   const { authStore, profileStore } = useStores();
@@ -43,7 +60,7 @@ const AppNavigator: React.FC = observer(() => {
 
   return (
     <>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator
           screenOptions={{
             headerShown: false,

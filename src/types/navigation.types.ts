@@ -20,6 +20,10 @@ export type RootStackParamList = {
 // Auth Stack
 export type AuthStackParamList = {
   SignIn: undefined;
+  PasswordResetRequest: undefined;
+  PasswordReset: {
+    token?: string;
+  };
   SimpleRegistration: undefined;
   GetGender: undefined;
   GetTarget: {

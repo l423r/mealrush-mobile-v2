@@ -36,10 +36,18 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface RefreshTokenRequest {
+  refreshToken: string;
+  deviceInfo?: string; // Optional: device identifier for security
+  ipAddress?: string; // Optional: IP address for security monitoring
+}
+
 export interface LoginResponse {
-  jwtToken: string;
+  jwtToken: string; // Access token (short-lived: 15 minutes)
+  refreshToken: string; // Refresh token (long-lived: 90 days)
   tokenType: string;
-  expiresIn: number;
+  expiresIn: number; // Access token expiration in seconds
+  refreshExpiresIn: number; // Refresh token expiration in seconds
   user: User;
 }
 
@@ -59,9 +67,11 @@ export interface OAuthRequest {
 }
 
 export interface OAuthResponse {
-  jwtToken: string;
+  jwtToken: string; // Access token (short-lived: 15 minutes)
+  refreshToken: string; // Refresh token (long-lived: 90 days)
   tokenType: string;
-  expiresIn: number;
+  expiresIn: number; // Access token expiration in seconds
+  refreshExpiresIn: number; // Refresh token expiration in seconds
   user: User;
 }
 

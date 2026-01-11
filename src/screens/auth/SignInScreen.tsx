@@ -25,6 +25,7 @@ import Input from '../../components/common/Input';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
 import { signInWithGoogle, signInWithApple } from '../../utils/oauthUtils';
+import { translateErrorMessage, getDefaultErrorMessage } from '../../utils/errorMessages';
 
 type SignInScreenNavigationProp = NativeStackNavigationProp<
   AuthStackParamList,
@@ -51,12 +52,15 @@ const SignInScreen: React.FC = observer(() => {
     try {
       await authStore.login(data);
       // Navigation will be handled by AppNavigator based on auth state
-    } catch (error) {
-      console.error('Login error:', error);
-      uiStore.showSnackbar(
-        authStore.error || 'Не удалось войти в систему',
-        'error'
-      );
+    } catch (error: any) {
+      if (__DEV__) {
+        console.error('Login error:', error);
+      }
+      // Use translated error from AuthStore or translate directly if needed
+      const errorMessage = authStore.error || 
+        translateErrorMessage(error?.response?.data?.message) || 
+        getDefaultErrorMessage('login');
+      uiStore.showSnackbar(errorMessage, 'error');
     }
   };
 
@@ -65,10 +69,7 @@ const SignInScreen: React.FC = observer(() => {
   };
 
   const handleForgotPassword = () => {
-    showInfo(
-      'Восстановление пароля',
-      'Функция восстановления пароля будет доступна в следующей версии'
-    );
+    navigation.navigate('PasswordResetRequest');
   };
 
   const handleGoogleSignIn = async () => {
