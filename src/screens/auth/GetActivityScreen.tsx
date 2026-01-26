@@ -13,6 +13,9 @@ import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
+import OnboardingProgressIndicator from '../../components/common/OnboardingProgressIndicator';
+import { observer } from 'mobx-react-lite';
+import { useStores } from '../../stores';
 
 type GetActivityScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
@@ -23,12 +26,14 @@ type GetActivityScreenRouteProp = RouteProp<
   'GetActivity'
 >;
 
-const GetActivityScreen: React.FC = () => {
+const GetActivityScreen: React.FC = observer(() => {
   const navigation = useNavigation<GetActivityScreenNavigationProp>();
   const route = useRoute<GetActivityScreenRouteProp>();
+  const { profileStore } = useStores();
   const [selectedActivity, setSelectedActivity] = useState<
     'FIRST' | 'SECOND' | 'THIRD' | 'FOURTH' | 'FIFTH' | null
   >(null);
+
 
   const activities = [
     {
@@ -70,6 +75,7 @@ const GetActivityScreen: React.FC = () => {
 
   const handleNext = () => {
     if (selectedActivity) {
+      // Note: Onboarding progress will be updated after profile creation in CompleteProfileScreen
       navigation.navigate('CompleteProfile', {
         gender: route.params?.gender,
         target: route.params?.target,
@@ -94,12 +100,13 @@ const GetActivityScreen: React.FC = () => {
         onBackPress={handleBack}
       />
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <View style={styles.content}>
+        <OnboardingProgressIndicator currentScreen="GetActivity" />
         <View style={styles.header}>
           <Text style={styles.emoji}>🏃‍♂️</Text>
-          <Text style={styles.title}>Какой у вас уровень активности?</Text>
+          <Text style={styles.title}>Уровень активности</Text>
           <Text style={styles.subtitle}>
-            Это поможет точно рассчитать вашу дневную норму калорий
+            Для точного расчета калорий
           </Text>
         </View>
 
@@ -126,7 +133,7 @@ const GetActivityScreen: React.FC = () => {
                     {activity.title}
                   </Text>
                   <Text style={styles.optionMultiplier}>
-                    Коэффициент: {activity.multiplier}
+                    ×{activity.multiplier}
                   </Text>
                 </View>
               </View>
@@ -142,7 +149,7 @@ const GetActivityScreen: React.FC = () => {
             </TouchableOpacity>
           ))}
         </View>
-      </ScrollView>
+      </View>
 
       <View style={styles.footer}>
         <Button
@@ -153,7 +160,7 @@ const GetActivityScreen: React.FC = () => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -161,37 +168,37 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.default,
   },
   content: {
-    flexGrow: 1,
+    flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.md,
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.lg,
   },
   emoji: {
-    fontSize: 64,
-    marginBottom: spacing.md,
+    fontSize: 32,
+    marginBottom: spacing.xs,
   },
   title: {
-    ...typography.h2,
+    ...typography.h3,
     color: colors.text.primary,
     textAlign: 'center',
-    marginBottom: spacing.md,
+    marginBottom: spacing.xs,
   },
   subtitle: {
-    ...typography.body1,
+    ...typography.body2,
     color: colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 24,
+    lineHeight: 18,
   },
   options: {
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   option: {
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    padding: spacing.lg,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     borderWidth: 2,
     borderColor: colors.border.light,
   },
@@ -202,28 +209,31 @@ const styles = StyleSheet.create({
   optionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   optionEmoji: {
-    fontSize: 32,
-    marginRight: spacing.md,
+    fontSize: 20,
+    marginRight: spacing.sm,
   },
   optionTextContainer: {
     flex: 1,
   },
   optionTitle: {
-    ...typography.h5,
+    ...typography.bodyMedium,
     color: colors.text.primary,
-    marginBottom: spacing.xs,
+    marginBottom: 2,
+    fontWeight: '500',
   },
   optionMultiplier: {
     ...typography.caption,
     color: colors.text.secondary,
+    fontSize: 12,
   },
   optionDescription: {
-    ...typography.body2,
+    ...typography.caption,
     color: colors.text.secondary,
-    lineHeight: 20,
+    lineHeight: 16,
+    fontSize: 12,
   },
   selectedOptionText: {
     color: colors.primary,

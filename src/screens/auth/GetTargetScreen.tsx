@@ -13,6 +13,9 @@ import type { ProfileSetupStackParamList } from '../../types/navigation.types';
 import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
+import OnboardingProgressIndicator from '../../components/common/OnboardingProgressIndicator';
+import { observer } from 'mobx-react-lite';
+import { useStores } from '../../stores';
 
 type GetTargetScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
@@ -23,12 +26,14 @@ type GetTargetScreenRouteProp = RouteProp<
   'GetTarget'
 >;
 
-const GetTargetScreen: React.FC = () => {
+const GetTargetScreen: React.FC = observer(() => {
   const navigation = useNavigation<GetTargetScreenNavigationProp>();
   const route = useRoute<GetTargetScreenRouteProp>();
+  const { profileStore } = useStores();
   const [selectedTarget, setSelectedTarget] = useState<
     'LOSE' | 'SAVE' | 'GAIN' | null
   >(null);
+
 
   const handleNext = () => {
     if (selectedTarget) {
@@ -69,6 +74,8 @@ const GetTargetScreen: React.FC = () => {
       <Header title="Выберите цель" showBackButton onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Onboarding Progress Indicator */}
+        <OnboardingProgressIndicator currentScreen="GetTarget" />
         <View style={styles.header}>
           <Text style={styles.title}>Какую цель вы преследуете?</Text>
           <Text style={styles.subtitle}>
@@ -114,7 +121,7 @@ const GetTargetScreen: React.FC = () => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -128,7 +135,7 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: spacing.xxxl,
+    marginBottom: spacing.lg,
   },
   title: {
     ...typography.h2,
@@ -147,8 +154,8 @@ const styles = StyleSheet.create({
   },
   option: {
     backgroundColor: colors.background.paper,
-    borderRadius: borderRadius.lg,
-    padding: spacing.xl,
+    borderRadius: borderRadius.md,
+    padding: spacing.md,
     alignItems: 'center',
     borderWidth: 2,
     borderColor: colors.border.light,
@@ -158,19 +165,19 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary + '10',
   },
   optionEmoji: {
-    fontSize: 48,
-    marginBottom: spacing.md,
+    fontSize: 28,
+    marginBottom: spacing.xs,
   },
   optionTitle: {
-    ...typography.h4,
+    ...typography.h6,
     color: colors.text.primary,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   optionDescription: {
-    ...typography.body2,
+    ...typography.caption,
     color: colors.text.secondary,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
   },
   selectedOptionText: {
     color: colors.primary,

@@ -36,6 +36,7 @@ export const ApiRoutes = {
 
     // User Profile
     UserProfile: '/user-profile',
+    UserProfileOnboardingStatus: '/user-profile/onboarding-status',
 
     // Products
     Product: {

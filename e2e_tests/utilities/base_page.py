@@ -101,22 +101,38 @@ class BasePage:
         except TimeoutException:
             return False
     
+    def find_element_silent(self, locator, timeout=EXPLICIT_WAIT):
+        """Находит элемент без создания скриншотов при ошибке (для внутреннего использования)"""
+        try:
+            by_type, value = locator
+            element = WebDriverWait(self.driver, timeout).until(
+                EC.presence_of_element_located(locator)
+            )
+            return element
+        except TimeoutException:
+            # Не создаем скриншот - это промежуточная попытка
+            raise
+    
     def find_element_multiple(self, locators, timeout=EXPLICIT_WAIT):
         """Пытается найти элемент используя несколько локаторов (fallback)"""
         if isinstance(locators, tuple):
             # Один локатор - используем обычный метод
             return self.find_element(locators, timeout)
         
-        # Множество локаторов - пробуем каждый
+        # Множество локаторов - пробуем каждый без скриншотов
         last_exception = None
         for locator in locators:
             try:
-                return self.find_element(locator, timeout=2)
+                # Используем silent версию для промежуточных попыток
+                return self.find_element_silent(locator, timeout=1)
             except Exception as e:
                 last_exception = e
                 continue
         
-        # Если ни один не сработал, выбрасываем последнюю ошибку
+        # Если ни один не сработал, создаем скриншот только для финальной ошибки
+        if last_exception:
+            value_str = locators[0][1] if locators and len(locators[0]) > 1 else "unknown"
+            self.take_screenshot(f"element_not_found_{value_str}")
         raise last_exception
     
     def click_multiple(self, locators, timeout=EXPLICIT_WAIT):
@@ -139,6 +155,44 @@ class BasePage:
             except:
                 pass
         element.send_keys(text)
+    
+    def clear_and_type(self, locator, text, timeout=EXPLICIT_WAIT):
+        """Очищает поле и вводит текст (для единичных локаторов)"""
+        element = self.find_element(locator, timeout)
+        
+        # Прокручиваем к элементу, если он не виден
+        try:
+            # Пробуем прокрутить к элементу через UiScrollable (для Android)
+            from appium.webdriver.common.appiumby import AppiumBy
+            if not element.is_displayed():
+                # Если элемент не виден, пытаемся прокрутить
+                try:
+                    self.driver.execute_script('mobile: scroll', {
+                        'element': element,
+                        'direction': 'down'
+                    })
+                    time.sleep(0.3)
+                except:
+                    pass
+        except:
+            pass
+        
+        # Очищаем поле и вводим текст
+        try:
+            # Для Appium используем set_value - это быстрее и надежнее
+            element.set_value(text)
+            time.sleep(0.2)
+        except:
+            # Fallback на обычный способ
+            try:
+                element.clear()
+                time.sleep(0.1)
+            except:
+                pass
+            element.send_keys(text)
+            time.sleep(0.2)
+        
+        return self
     
     def is_displayed_multiple(self, locators, timeout=EXPLICIT_WAIT):
         """Проверяет видимость элемента используя несколько локаторов"""

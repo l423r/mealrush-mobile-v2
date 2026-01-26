@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { profileService } from '../api/services/profile.service';
 import type RootStore from './RootStore';
 import type {
+  OnboardingStatusResponse,
+  UpdateOnboardingStatusRequest,
   UserProfile,
   UserProfileCreate,
   UserProfileUpdate,
@@ -22,6 +24,10 @@ class ProfileStore {
   loading: boolean = false;
   checkingProfile: boolean = false; // Флаг проверки профиля при инициализации
   error: string | null = null;
+  
+  // Onboarding state
+  onboardingStatus: OnboardingStatusResponse | null = null;
+  onboardingLoading: boolean = false;
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -46,8 +52,17 @@ class ProfileStore {
   }
 
   get recommendedCalories(): number | null {
-    if (!this.profile || !this.age) return null;
-
+    // Use recommendedCalories from API response (calculated by backend)
+    // Fallback to client-side calculation only if API didn't provide it
+    if (!this.profile) return null;
+    
+    if (this.profile.recommendedCalories != null) {
+      return this.profile.recommendedCalories;
+    }
+    
+    // Fallback: calculate locally if API didn't provide it (shouldn't happen in normal flow)
+    if (!this.age) return null;
+    
     return calculateRecommendedCalories(
       this.profile.weight,
       this.profile.height,
@@ -188,6 +203,74 @@ class ProfileStore {
     this.loading = false;
     this.checkingProfile = false;
     this.error = null;
+    this.onboardingStatus = null;
+    this.onboardingLoading = false;
+  }
+
+  // Onboarding methods
+
+  async getOnboardingStatus() {
+    this.onboardingLoading = true;
+    this.error = null;
+
+    try {
+      const response = await profileService.getOnboardingStatus();
+
+      runInAction(() => {
+        this.onboardingStatus = response.data;
+        this.onboardingLoading = false;
+        this.error = null;
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.onboardingLoading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка загрузки статуса онбординга';
+      });
+      throw error;
+    }
+  }
+
+  async updateOnboardingProgress(stepId: string, completed: boolean) {
+    this.onboardingLoading = true;
+    this.error = null;
+
+    try {
+      const request: UpdateOnboardingStatusRequest = {
+        stepId,
+        completed,
+      };
+
+      const response = await profileService.updateOnboardingStatus(request);
+
+      runInAction(() => {
+        this.onboardingStatus = response.data;
+        this.onboardingLoading = false;
+        this.error = null;
+        
+        // Update profile if it exists
+        if (this.profile) {
+          this.profile.onboardingCompleted = response.data.onboardingCompleted;
+          this.profile.onboardingStepsCompleted = response.data.stepsCompleted;
+          // Note: onboardingSkipped field exists in API but is no longer used (skip functionality removed)
+          this.profile.onboardingStartedAt = response.data.onboardingStartedAt || undefined;
+          this.profile.onboardingCompletedAt = response.data.onboardingCompletedAt || undefined;
+        }
+      });
+    } catch (error: any) {
+      runInAction(() => {
+        this.onboardingLoading = false;
+        this.error =
+          error.response?.data?.message || 'Ошибка обновления прогресса онбординга';
+      });
+      throw error;
+    }
+  }
+
+  async completeOnboarding() {
+    // Mark all required steps as completed
+    await this.updateOnboardingProgress('physicalParameters', true);
+    await this.updateOnboardingProgress('nutritionGoals', true);
   }
 }
 

@@ -116,7 +116,7 @@ export const userProfileSchema = yup.object().shape({
     .number()
     .min(800, 'Калорийность должна быть не менее 800 ккал')
     .max(5000, 'Калорийность должна быть не более 5000 ккал')
-    .required('Калорийность обязательна'),
+    .optional(), // Optional - backend will calculate automatically if not provided
   timezone: yup
     .string()
     .required('Часовой пояс обязателен')

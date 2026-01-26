@@ -9,6 +9,9 @@ import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import { calculateAge } from '../../utils/calculations';
+import OnboardingProgressIndicator from '../../components/common/OnboardingProgressIndicator';
+import { observer } from 'mobx-react-lite';
+import { useStores } from '../../stores';
 
 type GetBirthdayScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
@@ -19,9 +22,11 @@ type GetBirthdayScreenRouteProp = RouteProp<
   'GetBirthday'
 >;
 
-const GetBirthdayScreen: React.FC = () => {
+const GetBirthdayScreen: React.FC = observer(() => {
   const navigation = useNavigation<GetBirthdayScreenNavigationProp>();
   const route = useRoute<GetBirthdayScreenRouteProp>();
+  const { profileStore } = useStores();
+
 
   const [birthday, setBirthday] = useState<Date>(() => {
     // Default to 25 years ago
@@ -78,6 +83,7 @@ const GetBirthdayScreen: React.FC = () => {
       <Header title="Дата рождения" showBackButton onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
+        <OnboardingProgressIndicator currentScreen="GetBirthday" />
         <View style={styles.header}>
           <Text style={styles.emoji}>🎂</Text>
           <Text style={styles.title}>Когда вы родились?</Text>
@@ -132,7 +138,7 @@ const GetBirthdayScreen: React.FC = () => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

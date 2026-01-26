@@ -124,6 +124,11 @@ export interface UserProfile {
   timezone: string;
   bmi?: number;
   recommendedCalories?: number;
+  onboardingCompleted?: boolean;
+  onboardingStepsCompleted?: string[];
+  onboardingSkipped?: boolean;
+  onboardingStartedAt?: string;
+  onboardingCompletedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -150,6 +155,21 @@ export interface UserProfileUpdate {
   physicalActivityLevel?: PhysicalActivityLevel;
   dayLimitCal?: number;
   timezone?: string;
+}
+
+// Onboarding types
+export interface OnboardingStatusResponse {
+  onboardingCompleted: boolean;
+  stepsCompleted: string[];
+  currentStep: string | null;
+  onboardingSkipped: boolean;
+  onboardingStartedAt: string | null;
+  onboardingCompletedAt: string | null;
+}
+
+export interface UpdateOnboardingStatusRequest {
+  stepId: string;
+  completed: boolean;
 }
 
 // Product types

@@ -37,6 +37,15 @@ const AppNavigator: React.FC = observer(() => {
     authStore.checkAuth();
   }, [authStore]);
 
+  useEffect(() => {
+    // Load onboarding status if profile exists
+    if (authStore.isAuthenticated && profileStore.profile && !profileStore.onboardingStatus) {
+      profileStore.getOnboardingStatus().catch((error) => {
+        console.error('Error loading onboarding status:', error);
+      });
+    }
+  }, [authStore.isAuthenticated, profileStore.profile]);
+
   // Показываем загрузку, пока проверяется авторизация или профиль
   if (authStore.initializing || authStore.loading || profileStore.checkingProfile) {
     return <Loading message="Загрузка..." />;
@@ -47,14 +56,20 @@ const AppNavigator: React.FC = observer(() => {
       return <Stack.Screen name="Auth" component={AuthNavigator} />;
     }
 
-    // Экран настройки профиля показываем только если профиль действительно отсутствует
-    if (profileStore.needsProfileSetup) {
+    // Экран настройки профиля показываем если:
+    // 1. Профиль отсутствует (needsProfileSetup)
+    // 2. ИЛИ onboarding не завершен
+    const needsOnboarding = 
+      profileStore.needsProfileSetup ||
+      (profileStore.profile && !profileStore.profile.onboardingCompleted);
+
+    if (needsOnboarding) {
       return (
         <Stack.Screen name="ProfileSetup" component={ProfileSetupNavigator} />
       );
     }
 
-    // Показываем главный экран, если профиль настроен
+    // Показываем главный экран, если профиль настроен и onboarding завершен
     return <Stack.Screen name="Main" component={MainNavigator} />;
   };
 

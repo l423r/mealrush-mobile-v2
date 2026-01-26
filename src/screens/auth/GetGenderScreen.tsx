@@ -15,6 +15,7 @@ import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import AlertDialog from '../../components/common/AlertDialog';
+import OnboardingProgressIndicator from '../../components/common/OnboardingProgressIndicator';
 import { useStores } from '../../stores';
 import { useAlert } from '../../hooks/useAlert';
 
@@ -31,9 +32,11 @@ const GetGenderScreen: React.FC = observer(() => {
     'MALE' | 'FEMALE' | null
   >(null);
 
+
   const handleNext = () => {
     if (selectedGender) {
       // Store gender in navigation params or global state
+      // Note: Onboarding progress will be updated after profile creation in CompleteProfileScreen
       navigation.navigate('GetTarget', { gender: selectedGender });
     }
   };
@@ -69,6 +72,8 @@ const GetGenderScreen: React.FC = observer(() => {
       />
 
       <ScrollView contentContainerStyle={styles.content}>
+        {/* Onboarding Progress Indicator */}
+        <OnboardingProgressIndicator currentScreen="GetGender" />
         <View style={styles.header}>
           <Text style={styles.title}>Какой у вас пол?</Text>
           <Text style={styles.subtitle}>
@@ -116,7 +121,12 @@ const GetGenderScreen: React.FC = observer(() => {
       </ScrollView>
 
       <View style={styles.footer}>
-        <Button title="Далее" onPress={handleNext} disabled={!selectedGender} />
+        <Button
+          title="Далее"
+          onPress={handleNext}
+          disabled={!selectedGender}
+          style={styles.nextButton}
+        />
       </View>
 
       {/* Alert Dialog */}
@@ -194,6 +204,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background.paper,
     borderTopWidth: 1,
     borderTopColor: colors.border.light,
+  },
+  nextButton: {
+    width: '100%',
   },
   logoutButton: {
     padding: spacing.xs,

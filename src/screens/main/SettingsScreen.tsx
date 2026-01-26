@@ -24,8 +24,13 @@ type SettingsScreenNavigationProp = NativeStackNavigationProp<
 
 const SettingsScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsScreenNavigationProp>();
-  const { authStore } = useStores();
+  const { authStore, profileStore } = useStores();
   const { alertState, showConfirm, hideAlert } = useAlert();
+
+  // Check if onboarding needs to be completed
+  const needsOnboardingCompletion = 
+    profileStore.profile && 
+    !profileStore.profile.onboardingCompleted;
 
   const handleBack = () => {
     navigation.goBack();
@@ -47,6 +52,12 @@ const SettingsScreen: React.FC = observer(() => {
     navigation.navigate('SettingsDeleteAccount');
   };
 
+  const handleCompleteOnboardingPress = () => {
+    // Navigate to ProfileSetup to complete onboarding
+    // The AppNavigator will handle showing ProfileSetup when onboarding is incomplete
+    navigation.getParent()?.navigate('ProfileSetup' as never);
+  };
+
   const handleLogout = () => {
     showConfirm('Выход', 'Вы уверены, что хотите выйти из аккаунта?', async () => {
       await authStore.logout();
@@ -54,6 +65,16 @@ const SettingsScreen: React.FC = observer(() => {
   };
 
   const settingsOptions = [
+    ...(needsOnboardingCompletion
+      ? [
+          {
+            title: 'Завершить настройку профиля',
+            onPress: handleCompleteOnboardingPress,
+            icon: '✨',
+            showArrow: true,
+          },
+        ]
+      : []),
     {
       title: 'Изменить имя',
       onPress: handleNamePress,

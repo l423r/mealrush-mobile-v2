@@ -105,6 +105,16 @@ const CompleteProfileScreen: React.FC = () => {
 
       await profileStore.createProfile(profileData);
 
+      // Mark onboarding steps as completed
+      try {
+        await profileStore.updateOnboardingProgress('physicalParameters', true);
+        await profileStore.updateOnboardingProgress('nutritionGoals', true);
+        await profileStore.completeOnboarding();
+      } catch (error) {
+        console.error('Error completing onboarding:', error);
+        // Don't fail profile creation if onboarding completion fails
+      }
+
       // Profile created successfully, navigation will be handled by AppNavigator
       // The user will be redirected to Main screen automatically
     } catch (error: any) {

@@ -17,6 +17,9 @@ import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
+import OnboardingProgressIndicator from '../../components/common/OnboardingProgressIndicator';
+import { observer } from 'mobx-react-lite';
+import { useStores } from '../../stores';
 
 type GetHeightScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
@@ -35,10 +38,12 @@ const heightSchema = yup.object().shape({
     .required('Введите ваш рост'),
 });
 
-const GetHeightScreen: React.FC = () => {
+const GetHeightScreen: React.FC = observer(() => {
   const navigation = useNavigation<GetHeightScreenNavigationProp>();
   const route = useRoute<GetHeightScreenRouteProp>();
+  const { profileStore } = useStores();
   const [unit, setUnit] = useState<'cm' | 'ft'>('cm');
+
 
   const {
     control,
@@ -102,6 +107,7 @@ const GetHeightScreen: React.FC = () => {
       <Header title="Ваш рост" showBackButton onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
+        <OnboardingProgressIndicator currentScreen="GetHeight" />
         <View style={styles.header}>
           <Text style={styles.emoji}>📏</Text>
           <Text style={styles.title}>Какой у вас рост?</Text>
@@ -180,7 +186,7 @@ const GetHeightScreen: React.FC = () => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

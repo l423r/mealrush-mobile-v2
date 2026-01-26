@@ -17,6 +17,9 @@ import { colors, typography, spacing, borderRadius } from '../../theme';
 import Button from '../../components/common/Button';
 import Header from '../../components/common/Header';
 import Input from '../../components/common/Input';
+import OnboardingProgressIndicator from '../../components/common/OnboardingProgressIndicator';
+import { observer } from 'mobx-react-lite';
+import { useStores } from '../../stores';
 
 type GetWeightScreenNavigationProp = NativeStackNavigationProp<
   ProfileSetupStackParamList,
@@ -35,10 +38,12 @@ const weightSchema = yup.object().shape({
     .required('Введите ваш вес'),
 });
 
-const GetWeightScreen: React.FC = () => {
+const GetWeightScreen: React.FC = observer(() => {
   const navigation = useNavigation<GetWeightScreenNavigationProp>();
   const route = useRoute<GetWeightScreenRouteProp>();
+  const { profileStore } = useStores();
   const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
+
 
   const {
     control,
@@ -90,6 +95,7 @@ const GetWeightScreen: React.FC = () => {
       <Header title="Ваш вес" showBackButton onBackPress={handleBack} />
 
       <ScrollView contentContainerStyle={styles.content}>
+        <OnboardingProgressIndicator currentScreen="GetWeight" />
         <View style={styles.header}>
           <Text style={styles.title}>Какой у вас текущий вес?</Text>
           <Text style={styles.subtitle}>
@@ -148,7 +154,7 @@ const GetWeightScreen: React.FC = () => {
       </View>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
