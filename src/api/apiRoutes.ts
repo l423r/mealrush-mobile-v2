@@ -125,6 +125,14 @@ export const ApiRoutes = {
         RequestDecline: (id: number) => `/friends/requests/${id}/decline`,
         Permissions: (friendId: number) => `/friends/${friendId}/permissions`,
     },
+
+    // Account Management
+    Account: {
+        Base: '/api/v1/account',
+        Email: '/api/v1/account/email',
+        EmailVerify: '/api/v1/account/email/verify',
+        OAuth: '/api/v1/account/oauth',
+    },
 } as const;
 
 // Timeouts

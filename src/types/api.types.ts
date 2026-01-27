@@ -172,6 +172,17 @@ export interface UpdateOnboardingStatusRequest {
   completed: boolean;
 }
 
+// Account Management types
+export interface AccountResponse {
+  email: string;
+  createdAt: string;
+  oauthProviders: string[] | null;
+}
+
+export interface DeleteAccountRequest {
+  confirmation: boolean;
+}
+
 // Product types
 export interface ProductCategory {
   id: string;

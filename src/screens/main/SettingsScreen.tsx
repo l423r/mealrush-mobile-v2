@@ -48,6 +48,10 @@ const SettingsScreen: React.FC = observer(() => {
     navigation.navigate('SettingsPassword');
   };
 
+  const handleAccountPress = () => {
+    navigation.navigate('Account');
+  };
+
   const handleDeleteAccountPress = () => {
     navigation.navigate('SettingsDeleteAccount');
   };
@@ -76,9 +80,15 @@ const SettingsScreen: React.FC = observer(() => {
         ]
       : []),
     {
+      title: 'Аккаунт',
+      onPress: handleAccountPress,
+      icon: '👤',
+      showArrow: true,
+    },
+    {
       title: 'Изменить имя',
       onPress: handleNamePress,
-      icon: '👤',
+      icon: '✏️',
       showArrow: true,
     },
     {

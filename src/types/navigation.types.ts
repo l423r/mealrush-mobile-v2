@@ -176,6 +176,7 @@ export type MainStackParamList = {
   ProfileEdit: undefined;
   Weight: undefined;
   Settings: undefined;
+  Account: undefined;
   SettingsName: undefined;
   SettingsEmail: undefined;
   SettingsPassword: undefined;

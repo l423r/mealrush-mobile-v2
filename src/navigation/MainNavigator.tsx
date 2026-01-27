@@ -14,6 +14,7 @@ import AudioAnalysisScreen from '../screens/main/AudioAnalysisScreen';
 import ProfileEditScreen from '../screens/main/ProfileEditScreen';
 import WeightScreen from '../screens/main/WeightScreen';
 import SettingsScreen from '../screens/main/SettingsScreen';
+import AccountScreen from '../screens/main/AccountScreen';
 import SettingsNameScreen from '../screens/main/SettingsNameScreen';
 import SettingsEmailScreen from '../screens/main/SettingsEmailScreen';
 import SettingsPasswordScreen from '../screens/main/SettingsPasswordScreen';
@@ -48,6 +49,7 @@ const MainNavigator: React.FC = () => {
       <Stack.Screen name="ProfileEdit" component={ProfileEditScreen} />
       <Stack.Screen name="Weight" component={WeightScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="Account" component={AccountScreen} />
       <Stack.Screen name="SettingsName" component={SettingsNameScreen} />
       <Stack.Screen name="SettingsEmail" component={SettingsEmailScreen} />
       <Stack.Screen

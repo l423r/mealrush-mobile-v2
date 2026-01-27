@@ -11,6 +11,7 @@ import NotificationStore from './NotificationStore';
 import MealTemplateStore from './MealTemplateStore';
 import DietChatStore from './DietChatStore';
 import FriendsStore from './FriendsStore';
+import AccountStore from './AccountStore';
 
 class RootStore {
   authStore: AuthStore;
@@ -25,6 +26,7 @@ class RootStore {
   mealTemplateStore: MealTemplateStore;
   dietChatStore: DietChatStore;
   friendsStore: FriendsStore;
+  accountStore: AccountStore;
 
   constructor() {
     this.authStore = new AuthStore(this);
@@ -39,6 +41,7 @@ class RootStore {
     this.mealTemplateStore = new MealTemplateStore(this);
     this.dietChatStore = new DietChatStore(this);
     this.friendsStore = new FriendsStore(this);
+    this.accountStore = new AccountStore(this);
 
     makeAutoObservable(this);
   }
@@ -57,6 +60,7 @@ class RootStore {
     this.mealTemplateStore.reset();
     this.dietChatStore.reset();
     this.friendsStore.reset();
+    this.accountStore.reset();
   }
 }
 

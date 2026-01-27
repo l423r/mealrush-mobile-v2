@@ -18,7 +18,7 @@ type SettingsDeleteAccountScreenNavigationProp = NativeStackNavigationProp<
 
 const SettingsDeleteAccountScreen: React.FC = observer(() => {
   const navigation = useNavigation<SettingsDeleteAccountScreenNavigationProp>();
-  const { authStore, uiStore } = useStores();
+  const { authStore, uiStore, accountStore } = useStores();
   const { alertState, showAlert, hideAlert } = useAlert();
 
   const handleBack = () => {
@@ -35,28 +35,38 @@ const SettingsDeleteAccountScreen: React.FC = observer(() => {
         cancelText: 'Отмена',
       },
       () => {
-        // Второе подтверждение
-        showAlert(
-          {
-            title: 'Последнее предупреждение',
-            message: 'Это действие необратимо. Все ваши данные будут удалены навсегда.',
-            type: 'error',
-            confirmText: 'Да, удалить',
-            cancelText: 'Отмена',
-          },
-          async () => {
-            try {
-              // TODO: Implement account deletion API
-              await authStore.logout();
-              uiStore.showSnackbar(
-                'Аккаунт был успешно удален',
-                'success'
-              );
-            } catch {
-              uiStore.showSnackbar('Не удалось удалить аккаунт', 'error');
-            }
-          }
-        );
+        // Закрываем первый диалог явно перед показом второго
+        hideAlert();
+        // Используем requestAnimationFrame для гарантии, что первый диалог закрылся
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            // Второе подтверждение
+            showAlert(
+              {
+                title: 'Последнее предупреждение',
+                message: 'Это действие необратимо. Все ваши данные будут удалены навсегда.',
+                type: 'error',
+                confirmText: 'Да, удалить',
+                cancelText: 'Отмена',
+              },
+              async () => {
+                try {
+                  await accountStore.deleteAccount(true);
+                  await authStore.logout();
+                  uiStore.showSnackbar(
+                    'Аккаунт был успешно удален',
+                    'success'
+                  );
+                } catch (error: any) {
+                  uiStore.showSnackbar(
+                    error?.response?.data?.message || 'Не удалось удалить аккаунт',
+                    'error'
+                  );
+                }
+              }
+            );
+          }, 100);
+        });
       }
     );
   };
