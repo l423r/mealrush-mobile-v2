@@ -106,7 +106,8 @@ export type MealType =
   | 'LUNCH'
   | 'DINNER'
   | 'SUPPER'
-  | 'LATE_SUPPER';
+  | 'LATE_SUPPER'
+  | 'SNACK';
 
 export type AnalysisMode = 'SIMPLE' | 'DETAILED' | 'AUTO';
 

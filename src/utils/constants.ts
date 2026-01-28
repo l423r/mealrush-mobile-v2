@@ -73,6 +73,7 @@ export const MEAL_TYPES = [
   { value: 'DINNER', label: 'Ужин' },
   { value: 'SUPPER', label: 'Полдник' },
   { value: 'LATE_SUPPER', label: 'Поздний ужин' },
+  { value: 'SNACK', label: 'Перекус' },
 ] as const;
 
 // Gender options
