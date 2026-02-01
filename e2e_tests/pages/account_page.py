@@ -62,6 +62,11 @@ class AccountPage(BasePage):
         (By.XPATH, "//*[contains(@text, 'Ошибка')]"),
     ]
     
+    DELETE_ACCOUNT_BUTTON = [
+        (By.XPATH, "//*[@text='Удалить аккаунт' or contains(@text, 'Удалить аккаунт')]"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'Удалить')]"),
+    ]
+    
     def __init__(self, driver):
         super().__init__(driver)
         self.page_identifier = self.ACCOUNT_SCREEN_TITLE
@@ -162,6 +167,37 @@ class AccountPage(BasePage):
             return None
         except:
             return None
+    
+    def click_delete_account(self):
+        """Кликает на кнопку удаления аккаунта"""
+        # Прокручиваем до кнопки, если нужно
+        self.scroll_to_element(self.DELETE_ACCOUNT_BUTTON)
+        self.click_multiple(self.DELETE_ACCOUNT_BUTTON)
+        time.sleep(2)  # Ожидание перехода на экран удаления аккаунта
+        return self
+    
+    def scroll_to_element(self, locators, max_scrolls=5):
+        """Прокручивает до элемента, если он не виден"""
+        try:
+            if self.is_displayed_multiple(locators, timeout=1):
+                return
+        except:
+            pass
+        
+        # Прокручиваем вниз
+        size = self.driver.get_window_size()
+        start_x = size['width'] / 2
+        start_y = size['height'] * 0.7
+        end_y = size['height'] * 0.3
+        
+        for _ in range(max_scrolls):
+            try:
+                if self.is_displayed_multiple(locators, timeout=0.5):
+                    return
+            except:
+                pass
+            self.driver.swipe(start_x, start_y, start_x, end_y, 300)
+            time.sleep(0.3)
     
     def click_back(self):
         """Кликает на кнопку назад"""

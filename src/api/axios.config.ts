@@ -208,10 +208,16 @@ apiClient.interceptors.response.use(
           }
         } else {
           // Refresh token is invalid/expired - clear all tokens
+          // This can happen when:
+          // 1. Refresh token expired
+          // 2. User was deleted (refresh token removed from DB) - COMMON IN TESTS
+          // 3. Refresh token was revoked
           if (__DEV__) {
-            console.log('[Interceptor] Refresh failed, clearing tokens');
+            console.log('[Interceptor] Refresh failed, clearing tokens - user may have been deleted');
           }
           await deleteTokens();
+          // Don't retry the request - it will fail anyway without valid tokens
+          // The error will be thrown below and handled by the calling code
         }
       } else {
         // For auth endpoints with 401, just clear tokens (no refresh attempt)
@@ -316,8 +322,19 @@ async function refreshAccessToken(): Promise<string | null> {
         console.error('[Interceptor] Token refresh failed:', refreshError.response?.status || refreshError.message);
       }
       
-      // Refresh token is invalid/expired - clear all tokens and logout
+      // Refresh token is invalid/expired - clear all tokens
+      // This happens when:
+      // 1. Refresh token expired
+      // 2. User was deleted (refresh token removed from DB)
+      // 3. Refresh token was revoked
       await deleteTokens();
+      
+      // Note: AuthStore will detect missing tokens on next checkAuth() call
+      // The app should handle re-authentication flow
+      if (__DEV__) {
+        console.log('[Interceptor] Tokens cleared due to invalid refresh token - user may have been deleted');
+      }
+      
       return null;
     } finally {
       isRefreshing = false;

@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "808861089757",
+    "project_id": "mealrush-b4d1f",
+    "storage_bucket": "mealrush-b4d1f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:808861089757:android:9230a640aaa3d4a96cc034",
+        "android_client_info": {
+          "package_name": "com.l423r.FoodApp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "808861089757-m436gdg6tr4n04nla83oo7le565mt7m0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD-JUqWRTIKHA8UacJuDqbm6UqH-Ofray4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "808861089757-m436gdg6tr4n04nla83oo7le565mt7m0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "808861089757-1pgu9k50hpf9gg3kqsp36v3q7serv1jh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.l423r.FoodApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

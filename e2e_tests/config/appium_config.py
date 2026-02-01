@@ -94,6 +94,9 @@ TEST_TIMEOUT = 30  # секунды
 IMPLICIT_WAIT = 10  # секунды
 EXPLICIT_WAIT = 20  # секунды
 
+# Debug Configuration
+DETAILED_ELEMENT_LOGGING = os.getenv('DETAILED_ELEMENT_LOGGING', 'false').lower() == 'true'  # Включить детальное логирование поиска элементов
+
 # Screenshot Configuration
 SCREENSHOT_DIR = 'screenshots'
 SCREENSHOT_ON_FAILURE = True

@@ -244,6 +244,7 @@ export interface Meal {
   dateTime: string;
   createdAt: string;
   updatedAt?: string;
+  elements?: MealElement[]; // Опциональное поле для элементов
 }
 
 export interface MealCreate {

@@ -30,6 +30,10 @@ class MealStore {
   analyzingAudio: boolean = false;
   audioAnalysisError: string | null = null;
 
+  // Deduplication maps for active requests
+  private activeMealsRequests: Map<string, Promise<void>> = new Map();
+  private activeCaloriesRequests: Map<string, Promise<void>> = new Map();
+
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
     makeAutoObservable(this);
@@ -109,7 +113,17 @@ class MealStore {
   async loadMealsForDate(date: Date, targetUserId?: number) {
     this.selectedDate = date;
 
-    await withAsync(
+    // Create unique key for request deduplication
+    const requestKey = `${formatDateForAPI(date)}_${targetUserId || 'self'}`;
+    
+    // Check if there's already an active request with the same parameters
+    const existingRequest = this.activeMealsRequests.get(requestKey);
+    if (existingRequest) {
+      return existingRequest;
+    }
+
+    // Create new request
+    const requestPromise = withAsync(
       this,
       async () => {
         const dateString = formatDateForAPI(date);
@@ -117,40 +131,94 @@ class MealStore {
 
         runInAction(() => {
           this.meals = response.data || [];
+          
+          // Если элементы пришли вместе с приемами пищи, сохранить их
+          if (response.data) {
+            response.data.forEach((meal) => {
+              if (meal.elements) {
+                this.mealElements[meal.id] = meal.elements;
+              }
+            });
+          }
         });
-
-        // Load meal elements for each meal
-        await Promise.all(
-          this.meals.map((meal) => this.loadMealElements(meal.id, targetUserId))
-        );
       },
       'Ошибка загрузки приемов пищи'
-    );
+    ).finally(() => {
+      // Remove from active requests when done
+      this.activeMealsRequests.delete(requestKey);
+    });
+
+    // Store the request
+    this.activeMealsRequests.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }
 
   async loadCaloriesForRange(startDate: Date, endDate: Date, targetUserId?: number) {
-    try {
-      const startDateStr = formatDateForAPI(startDate);
-      const endDateStr = formatDateForAPI(endDate);
-
-      const response = await nutritionService.getTrend({
-        startDate: startDateStr,
-        endDate: endDateStr,
-        metric: 'CALORIES',
-        ...(targetUserId && { targetUserId }),
-      });
-
-      runInAction(() => {
-        const caloriesMap: Record<string, number> = {};
-        response.dailyValues.forEach((point) => {
-          caloriesMap[point.date] = Math.round(point.value);
-        });
-        // Merge with existing data to avoid clearing other dates if we load partial ranges
-        this.caloriesByDate = { ...this.caloriesByDate, ...caloriesMap };
-      });
-    } catch (error) {
-      console.error('Error loading calories for range:', error);
+    // Create unique key for request deduplication
+    const startDateStr = formatDateForAPI(startDate);
+    const endDateStr = formatDateForAPI(endDate);
+    const requestKey = `${startDateStr}_${endDateStr}_${targetUserId || 'self'}`;
+    
+    // Check if there's already an active request with the same parameters
+    const existingRequest = this.activeCaloriesRequests.get(requestKey);
+    if (existingRequest) {
+      return existingRequest;
     }
+
+    // Create new request
+    const requestPromise = (async () => {
+      try {
+        const response = await nutritionService.getTrend({
+          startDate: startDateStr,
+          endDate: endDateStr,
+          metric: 'CALORIES',
+          ...(targetUserId && { targetUserId }),
+        });
+
+        runInAction(() => {
+          // Создаем карту калорий из ответа
+          const caloriesMap: Record<string, number> = {};
+          const datesInResponse = new Set<string>();
+          
+          response.dailyValues.forEach((point) => {
+            caloriesMap[point.date] = Math.round(point.value);
+            datesInResponse.add(point.date);
+          });
+          
+          // Генерируем все даты в запрошенном диапазоне
+          const allDatesInRange: string[] = [];
+          const currentDate = new Date(startDate);
+          while (currentDate <= endDate) {
+            allDatesInRange.push(formatDateForAPI(new Date(currentDate)));
+            currentDate.setDate(currentDate.getDate() + 1);
+          }
+          
+          // Удаляем даты из диапазона, которых нет в ответе (значит калорий нет)
+          const updatedCaloriesByDate = { ...this.caloriesByDate };
+          allDatesInRange.forEach((dateStr) => {
+            if (!datesInResponse.has(dateStr)) {
+              // Если дата в диапазоне, но нет в ответе - удаляем её
+              delete updatedCaloriesByDate[dateStr];
+            }
+          });
+          
+          // Обновляем значения из ответа и сохраняем данные вне диапазона
+          this.caloriesByDate = { ...updatedCaloriesByDate, ...caloriesMap };
+        });
+      } catch (error) {
+        console.error('Error loading calories for range:', error);
+        throw error;
+      } finally {
+        // Remove from active requests when done
+        this.activeCaloriesRequests.delete(requestKey);
+      }
+    })();
+
+    // Store the request
+    this.activeCaloriesRequests.set(requestKey, requestPromise);
+    
+    return requestPromise;
   }
 
   async loadMealElements(mealId: number, targetUserId?: number) {
@@ -161,6 +229,11 @@ class MealStore {
         this.mealElements[mealId] = response.data.content;
       });
     } catch (error: any) {
+      // Если meal был удален (404), это нормально - не показываем ошибку
+      if (error.response?.status === 404) {
+        console.log(`Meal ${mealId} not found, skipping element load`);
+        return;
+      }
       console.error('Error loading meal elements:', error);
     }
   }
@@ -241,11 +314,31 @@ class MealStore {
     return withAsync(
       this,
       async () => {
+        // Сохраняем дату meal перед удалением для обновления калорий
+        const mealToDelete = this.meals.find(m => m.id === mealId);
+        const mealDate = mealToDelete ? new Date(mealToDelete.dateTime) : null;
+        
         await mealService.deleteMeal(mealId);
         runInAction(() => {
           this.meals = this.meals.filter((m) => m.id !== mealId);
           delete this.mealElements[mealId];
         });
+        
+        // Перезагружаем калории с сервера (кэш на бекенде инвалидируется автоматически)
+        if (mealDate) {
+          // Перезагружаем калории для диапазона (7 дней назад, 7 дней вперед от даты meal)
+          const startDate = new Date(mealDate);
+          startDate.setDate(mealDate.getDate() - 7);
+          const endDate = new Date(mealDate);
+          endDate.setDate(mealDate.getDate() + 7);
+          
+          // Загружаем калории асинхронно, не блокируя удаление
+          const targetUserId = this.rootStore.friendsStore.selectedFriend?.friendId;
+          this.loadCaloriesForRange(startDate, endDate, targetUserId)
+            .catch(error => {
+              console.error('Error reloading calories after meal deletion:', error);
+            });
+        }
       },
       'Ошибка удаления приема пищи'
     );
@@ -255,14 +348,46 @@ class MealStore {
     return withAsync(
       this,
       async () => {
+        // Находим meal и элемент перед удалением для обновления калорий
+        let mealId: number | null = null;
+        let mealDate: Date | null = null;
+        for (const id in this.mealElements) {
+          const elements = this.mealElements[parseInt(id)];
+          const element = elements.find((el) => el.id === elementId);
+          if (element) {
+            mealId = parseInt(id, 10);
+            const meal = this.meals.find((m) => m.id === mealId);
+            if (meal) {
+              mealDate = new Date(meal.dateTime);
+            }
+            break;
+          }
+        }
+        
         await mealService.deleteMealElement(elementId);
         runInAction(() => {
-          Object.keys(this.mealElements).forEach((mealId) => {
-            this.mealElements[parseInt(mealId)] = this.mealElements[
-              parseInt(mealId)
+          Object.keys(this.mealElements).forEach((id) => {
+            this.mealElements[parseInt(id)] = this.mealElements[
+              parseInt(id)
             ].filter((e) => e.id !== elementId);
           });
         });
+        
+        // Перезагружаем калории с сервера (кэш на бекенде инвалидируется автоматически)
+        if (mealDate) {
+          // Перезагружаем калории для диапазона (7 дней назад, 7 дней вперед от даты meal)
+          const startDate = new Date(mealDate);
+          startDate.setDate(mealDate.getDate() - 7);
+          const endDate = new Date(mealDate);
+          endDate.setDate(mealDate.getDate() + 7);
+          
+          // Загружаем калории асинхронно, не блокируя удаление
+          const targetUserId = this.rootStore.friendsStore.selectedFriend?.friendId;
+          this.loadCaloriesForRange(startDate, endDate, targetUserId)
+            .catch(error => {
+              console.error('Error reloading calories after meal element deletion:', error);
+            });
+        }
       },
       'Ошибка удаления элемента приема пищи'
     );

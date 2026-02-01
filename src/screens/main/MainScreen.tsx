@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -17,7 +17,7 @@ import {
 } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { observer } from 'mobx-react-lite';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
 import { useStores } from '../../stores';
@@ -62,6 +62,11 @@ const MainScreen: React.FC = observer(() => {
 
   const userTimezone = profileStore.profile?.timezone || 'UTC';
   const targetUserId = friendsStore.selectedFriend?.friendId;
+  
+  // Track last load time and parameters for deduplication
+  const lastLoadTimeRef = useRef<number>(0);
+  const lastLoadParamsRef = useRef<{ date: string; targetUserId?: number } | null>(null);
+  const MIN_LOAD_INTERVAL_MS = 1000; // Minimum 1 second between loads
 
   // Load friends on mount
   React.useEffect(() => {
@@ -80,6 +85,13 @@ const MainScreen: React.FC = observer(() => {
       endDate.setDate(today.getDate() + 7);
 
       await mealStore.loadCaloriesForRange(startDate, endDate, targetUserId);
+      
+      // Update last load tracking
+      lastLoadTimeRef.current = Date.now();
+      lastLoadParamsRef.current = {
+        date: mealStore.selectedDate.toISOString(),
+        targetUserId,
+      };
     } catch (error: any) {
       console.error('Error loading meals:', error);
       // Handle 403 Forbidden error
@@ -88,16 +100,25 @@ const MainScreen: React.FC = observer(() => {
         friendsStore.selectFriend(null);
       }
     }
-  }, [mealStore, targetUserId]);
+  }, [targetUserId, mealStore.selectedDate]);
 
+  // Combined effect for initial load and when date/friend changes
   useEffect(() => {
-    loadData();
-  }, [loadData]);
-
-  useEffect(() => {
-    // Reload data when friend selection changes
-    loadData();
-  }, [friendsStore.selectedFriend]);
+    const currentParams = {
+      date: mealStore.selectedDate.toISOString(),
+      targetUserId,
+    };
+    
+    // Check if we need to reload
+    const needsReload = 
+      !lastLoadParamsRef.current ||
+      lastLoadParamsRef.current.date !== currentParams.date ||
+      lastLoadParamsRef.current.targetUserId !== currentParams.targetUserId;
+    
+    if (needsReload) {
+      loadData();
+    }
+  }, [mealStore.selectedDate, targetUserId, loadData]);
 
   useEffect(() => {
     // Сбрасываем предыдущий результат при смене даты
@@ -105,6 +126,29 @@ const MainScreen: React.FC = observer(() => {
     setAnalysisError(null);
     setAnalysisUpdatedAt(null);
   }, [mealStore.selectedDate]);
+
+  // Перезагружаем данные при возврате на экран (например, после удаления meal)
+  useFocusEffect(
+    React.useCallback(() => {
+      const now = Date.now();
+      const timeSinceLastLoad = now - lastLoadTimeRef.current;
+      const currentParams = {
+        date: mealStore.selectedDate.toISOString(),
+        targetUserId,
+      };
+      
+      // Only reload if enough time has passed or parameters changed
+      const shouldReload = 
+        timeSinceLastLoad > MIN_LOAD_INTERVAL_MS ||
+        !lastLoadParamsRef.current ||
+        lastLoadParamsRef.current.date !== currentParams.date ||
+        lastLoadParamsRef.current.targetUserId !== currentParams.targetUserId;
+      
+      if (shouldReload) {
+        loadData();
+      }
+    }, [loadData, mealStore.selectedDate, targetUserId])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);

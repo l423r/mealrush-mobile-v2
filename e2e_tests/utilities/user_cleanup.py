@@ -47,6 +47,17 @@ class UserCleanup:
         return list(cls._created_users)
     
     @classmethod
+    def get_user_password(cls, email: str) -> str | None:
+        """Возвращает пароль пользователя по email"""
+        return cls._user_passwords.get(email)
+    
+    @classmethod
+    def unregister_user(cls, email: str):
+        """Удаляет пользователя из списка зарегистрированных"""
+        cls._created_users.discard(email)
+        cls._user_passwords.pop(email, None)
+    
+    @classmethod
     def clear_registered_users(cls):
         """Очищает список зарегистрированных пользователей"""
         cls._created_users.clear()

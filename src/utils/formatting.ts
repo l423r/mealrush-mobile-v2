@@ -101,6 +101,7 @@ export const formatMealType = (mealType: string): string => {
     DINNER: 'Ужин',
     SUPPER: 'Полдник',
     LATE_SUPPER: 'Поздний ужин',
+    SNACK: 'Перекус',
   };
   return mealTypes[mealType] || mealType;
 };

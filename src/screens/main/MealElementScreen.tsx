@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import type { MainStackParamList } from '../../types/navigation.types';
 import type { Product, MealElement, Meal, ProductCreate, MealTemplateElement } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { colors, typography, spacing, borderRadius } from '../../theme';
-import { formatCalories, formatWeight, formatMealType } from '../../utils/formatting';
+import { formatCalories, formatWeight, formatMealType, formatDate } from '../../utils/formatting';
 import { recalculateNutrients } from '../../utils/calculations';
 import Header from '../../components/common/Header';
 import Button from '../../components/common/Button';
@@ -57,7 +57,7 @@ const mealElementSchema = yup.object().shape({
 const MealElementScreen: React.FC = observer(() => {
   const navigation = useNavigation<MealElementScreenNavigationProp>();
   const route = useRoute<MealElementScreenRouteProp>();
-  const { mealStore, uiStore, productStore, mealTemplateStore, friendsStore } = useStores();
+  const { mealStore, uiStore, productStore, mealTemplateStore, friendsStore, profileStore } = useStores();
 
   const item = route.params?.item;
   const templateId = route.params?.templateId;
@@ -68,9 +68,17 @@ const MealElementScreen: React.FC = observer(() => {
   const isTemplateElement = !!templateId || (!!item && 'templateId' in item);
 
   const [mealType, setMealType] = useState<
-    'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER'
+    'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SUPPER' | 'LATE_SUPPER' | 'SNACK'
   >('BREAKFAST');
-  const [mealTime] = useState(new Date());
+  const [mealTime] = useState(() => {
+    const dateParam = route.params?.date;
+    if (dateParam) {
+      const [year, month, day] = dateParam.split('-').map(Number);
+      const now = new Date();
+      return new Date(year, month - 1, day, now.getHours(), now.getMinutes());
+    }
+    return new Date();
+  });
   const [isCalculating, setIsCalculating] = useState(false);
   const [showMealTypeConfirmDialog, setShowMealTypeConfirmDialog] = useState(false);
   const [existingMealForConfirm, setExistingMealForConfirm] = useState<Meal | null>(null);
@@ -110,6 +118,13 @@ const MealElementScreen: React.FC = observer(() => {
   const watchedProteins = watch('proteins');
   const watchedFats = watch('fats');
   const watchedCarbohydrates = watch('carbohydrates');
+
+  // Мемоизируем mealTime для диалога
+  const memoizedMealTime = useMemo(() => {
+    return existingMealForConfirm 
+      ? new Date(existingMealForConfirm.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
+      : '';
+  }, [existingMealForConfirm]);
 
   // Debug: log when dialog visibility changes
   useEffect(() => {
@@ -231,9 +246,15 @@ const MealElementScreen: React.FC = observer(() => {
         if (!mealId) {
           console.log('🔎 [MealElementScreen] mealId не передан, проверяем существующие приемы пищи');
           
-          // Check if there's an existing meal of the same type
-          const existingMeals = mealStore.getMealsByTypeForDate(mealType);
-          console.log('  - Результат getMealsByTypeForDate:', existingMeals);
+          // Check if there's an existing meal of the same type for the selected date
+          const existingMeals = mealStore.meals
+            .filter((meal) => {
+              // Сравниваем по дате из mealTime, а не selectedDate
+              const mealDate = new Date(meal.dateTime);
+              return mealDate.toDateString() === mealTime.toDateString() && meal.mealType === mealType;
+            })
+            .sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
+          console.log('  - Результат фильтрации по дате:', existingMeals);
           console.log('  - Количество найденных приемов:', existingMeals.length);
           
           if (existingMeals.length > 0) {
@@ -461,10 +482,11 @@ const MealElementScreen: React.FC = observer(() => {
   };
 
   const getTitle = () => {
+    const dateLabel = mealTime.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' });
     if (readOnly) return 'Просмотр';
     if (isEditing) return 'Редактирование';
-    if (isFromSearch) return 'Добавление';
-    return 'Создание';
+    if (isFromSearch) return `Добавление - ${dateLabel}`;
+    return `Создание - ${dateLabel}`;
   };
 
   return (
@@ -617,7 +639,7 @@ const MealElementScreen: React.FC = observer(() => {
             {/* Правая часть: Тип приема пищи (вертикально) */}
             {!isEditing && !route.params?.mealId && !readOnly && (
               <View style={styles.mealTypeVertical}>
-                {['BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER'].map(
+                {['BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER', 'SNACK'].map(
                   (type) => (
                     <TouchableOpacity
                       key={type}
@@ -651,12 +673,45 @@ const MealElementScreen: React.FC = observer(() => {
             </Text>
           </View>
         </View>
+
+        {/* Информация о дне и калориях - компактная строка */}
+        {!isTemplateElement && (
+          <View style={styles.dayInfoCard}>
+            <Text style={styles.dayInfoCompact}>
+              <Text style={styles.dayInfoDateCompact}>
+                {formatDate(mealTime, 'dd.MM')} {' '}
+              </Text>
+              <Text style={styles.caloriesCurrent}>
+                {Math.round(mealStore.dailyCalories)}
+              </Text>
+              {watchedCalories > 0 && (
+                <>
+                  <Text style={styles.caloriesOperator}>+</Text>
+                  <Text style={styles.caloriesAdding}>
+                    {Math.round(watchedCalories)}
+                  </Text>
+                  <Text style={styles.caloriesOperator}>=</Text>
+                  <Text style={styles.caloriesTotal}>
+                    {Math.round(mealStore.dailyCalories + watchedCalories)}
+                  </Text>
+                </>
+              )}
+              {(profileStore.profile?.dayLimitCal || profileStore.recommendedCalories) && (
+                <Text style={styles.caloriesLimitCompact}>
+                  {' / '}
+                  {profileStore.profile?.dayLimitCal || profileStore.recommendedCalories || 0}
+                </Text>
+              )}
+            </Text>
+          </View>
+        )}
         </ScrollView>
       </KeyboardAvoidingView>
 
       {!readOnly && (
         <View style={styles.footer}>
           <Button
+            testID="add_meal_element_button"
             title={isEditing ? 'Сохранить изменения' : 'Добавить блюдо'}
             onPress={handleSubmit(onSubmit)}
             disabled={!isValid || mealStore.loading}
@@ -682,7 +737,7 @@ const MealElementScreen: React.FC = observer(() => {
         onCreateNew={handleCreateNewMeal}
         onCancel={handleCancelDialog}
         mealTypeName={formatMealType(mealType)}
-        mealTime={existingMealForConfirm ? new Date(existingMealForConfirm.dateTime).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}
+        mealTime={memoizedMealTime}
       />
 
       <ImageViewer
@@ -868,6 +923,52 @@ const styles = StyleSheet.create({
   },
   secondaryButton: {
     marginTop: spacing.sm,
+  },
+  dayInfoCard: {
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.sm,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.background.paper,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: colors.border.light,
+  },
+  dayInfoCompact: {
+    ...typography.body1,
+    color: colors.text.primary,
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  dayInfoDateCompact: {
+    ...typography.body1,
+    color: colors.text.secondary,
+    fontWeight: '500',
+  },
+  caloriesCurrent: {
+    ...typography.body1,
+    color: colors.text.primary,
+    fontWeight: '600',
+  },
+  caloriesAdding: {
+    ...typography.body1,
+    color: colors.primary,
+    fontWeight: '600',
+  },
+  caloriesOperator: {
+    ...typography.body1,
+    color: colors.text.secondary,
+    marginHorizontal: spacing.xs,
+  },
+  caloriesTotal: {
+    ...typography.body1,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  caloriesLimitCompact: {
+    ...typography.body2,
+    color: colors.text.secondary,
+    fontWeight: '400',
   },
 });
 

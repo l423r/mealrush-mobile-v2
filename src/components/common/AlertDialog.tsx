@@ -122,6 +122,8 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
                     </TouchableOpacity>
                   )}
                   <TouchableOpacity
+                    testID="alert_confirm_button"
+                    accessibilityLabel={confirmText}
                     style={[
                       styles.button,
                       styles.confirmButton,

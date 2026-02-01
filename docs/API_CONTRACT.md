@@ -1031,7 +1031,9 @@ Headers: Authorization: Bearer {token}
 /meal/findByDate?date=2024-10-21
 ```
 
-**Примечание:** Возвращает список БЕЗ пагинации (обычно за день мало приемов пищи)
+**Примечание:** 
+- Возвращает список БЕЗ пагинации (обычно за день мало приемов пищи)
+- **Включает элементы приемов пищи** в одном запросе для оптимизации (избегает N+1 запросов)
 
 **Response (200 OK):**
 ```json
@@ -1041,14 +1043,42 @@ Headers: Authorization: Bearer {token}
     "userId": 1,
     "mealType": "BREAKFAST",
     "name": null,
-    "dateTime": "2024-10-20T08:30:00"
+    "dateTime": "2024-10-20T08:30:00",
+    "createdAt": "2024-10-20T08:00:00Z",
+    "updatedAt": "2024-10-20T08:00:00Z",
+    "elements": [
+      {
+        "id": 1,
+        "mealId": 1,
+        "parentProductId": 123,
+        "name": "Гречка отварная",
+        "proteins": 6.3,
+        "fats": 1.65,
+        "carbohydrates": 31.95,
+        "calories": 165.0,
+        "quantity": "150",
+        "measurementType": "GRAM",
+        "code": null,
+        "imageUrl": "http://minio.example.com/mealrush-images/images/b2c3d4e5.jpg",
+        "defaultProteins": 4.2,
+        "defaultFats": 1.1,
+        "defaultCarbohydrates": 21.3,
+        "defaultCalories": 110.0,
+        "defaultQuantity": "100",
+        "createdAt": "2024-10-20T08:05:00Z",
+        "updatedAt": "2024-10-20T08:05:00Z"
+      }
+    ]
   },
   {
     "id": 2,
     "userId": 1,
     "mealType": "LUNCH",
     "name": null,
-    "dateTime": "2024-10-20T13:00:00"
+    "dateTime": "2024-10-20T13:00:00",
+    "createdAt": "2024-10-20T12:30:00Z",
+    "updatedAt": "2024-10-20T12:30:00Z",
+    "elements": []
   }
 ]
 ```

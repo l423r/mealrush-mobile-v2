@@ -60,11 +60,20 @@ const MealScreen: React.FC = observer(() => {
   const [showTemplateNameDialog, setShowTemplateNameDialog] = useState(false);
 
   useEffect(() => {
-    if (!elements.length) {
+    // Проверяем, что meal все еще существует
+    const mealExists = mealStore.meals.some(m => m.id === meal.id);
+    if (!mealExists) {
+      // Meal был удален, не загружаем элементы
+      return;
+    }
+    
+    // Элементы уже должны быть в store после loadMealsForDate
+    // Загружаем только если их действительно нет (редкий случай)
+    if (!elements.length && !mealStore.mealElements[meal.id]) {
       const targetUserId = friendsStore.selectedFriend?.friendId;
       mealStore.loadMealElements(meal.id, targetUserId);
     }
-  }, [elements.length, mealStore, meal.id, friendsStore.selectedFriend]);
+  }, [elements.length, mealStore, meal.id, friendsStore.selectedFriend, mealStore.meals]);
 
   useEffect(() => {
     if (showCopyDialog) {

@@ -555,6 +555,8 @@ const SearchScreen: React.FC = observer(() => {
         {/* Search Input */}
         <View style={styles.searchContainer}>
           <TextInput
+            testID="search_input"
+            accessibilityLabel="Поиск продуктов"
             style={styles.searchInput}
             placeholder="Поиск продуктов..."
             placeholderTextColor={colors.text.secondary}
@@ -626,31 +628,37 @@ const SearchScreen: React.FC = observer(() => {
           showsHorizontalScrollIndicator={false}
           style={styles.quickActionsContainer}
           contentContainerStyle={styles.quickActionsContent}
+          testID="quick_actions_container"
         >
           <QuickActionCard
             icon="qr-code-outline"
             label="Сканер"
             onPress={handleScannerPress}
+            testID="quick_action_scanner"
           />
           <QuickActionCard
             icon="camera-outline"
             label="Фото"
             onPress={handlePhotoAnalysisPress}
+            testID="quick_action_photo"
           />
           <QuickActionCard
             icon="text-outline"
             label="Текст"
             onPress={handleTextAnalysisPress}
+            testID="quick_action_text"
           />
           <QuickActionCard
             icon="mic-outline"
             label="Голос"
             onPress={handleAudioAnalysisPress}
+            testID="quick_action_audio"
           />
           <QuickActionCard
             icon="add-circle-outline"
             label="Создать"
             onPress={handleCreateProductPress}
+            testID="quick_action_create"
           />
         </ScrollView>
 

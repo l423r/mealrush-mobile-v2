@@ -33,11 +33,6 @@ const MealTypeConfirmDialog: React.FC<MealTypeConfirmDialogProps> = ({
   mealTypeName,
   mealTime,
 }) => {
-  console.log('🎨 [MealTypeConfirmDialog] Render');
-  console.log('  - visible:', visible);
-  console.log('  - mealTypeName:', mealTypeName);
-  console.log('  - mealTime:', mealTime);
-
   return (
     <Modal
       visible={visible}
@@ -207,5 +202,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default MealTypeConfirmDialog;
+export default React.memo(MealTypeConfirmDialog);
 

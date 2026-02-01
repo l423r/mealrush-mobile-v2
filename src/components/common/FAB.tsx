@@ -27,6 +27,8 @@ const FAB: React.FC<FABProps> = ({ onAddMeal }) => {
     return (
         <View style={styles.container}>
             <TouchableOpacity
+                testID="add_meal_fab"
+                accessibilityLabel="Добавить прием пищи"
                 activeOpacity={0.9}
                 onPress={() => {
                     triggerHaptic('selection');

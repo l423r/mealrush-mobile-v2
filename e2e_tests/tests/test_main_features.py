@@ -125,7 +125,7 @@ class TestSearchFunctionality:
         search_page = SearchPage(driver)
         
         # Ищем продукт
-        search_page.search_product("яблоко")
+        search_page.search_product("яб")
         search_page.take_screenshot('search_results_apple')
         
         # Проверяем, что результаты появились
