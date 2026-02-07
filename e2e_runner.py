@@ -170,6 +170,8 @@ class TestDiscovery:
         'test_account.py',
         'test_main_features.py',
         'test_meal_creation.py',
+        'test_add_products_to_meal.py',
+        'test_update_product_quantities_in_meal.py',
         'test_onboarding_flow.py',
         'test_simple_login.py',
         'test_element_finding.py',
@@ -185,6 +187,8 @@ class TestDiscovery:
         'TestMealCreation': 'Создание приемов пищи',
         'TestMealCreationViaAI': 'Создание приемов пищи через AI',
         'TestMealCreationValidation': 'Валидация создания приемов пищи',
+        'TestAddProductsToMeal': 'Добавление продуктов в прием пищи',
+        'TestUpdateProductQuantities': 'Обновление количества продуктов в приеме пищи',
         'TestOnboardingFlow': 'Онбординг новых пользователей',
         'TestSimpleLogin': 'Простой вход',
     }
@@ -228,7 +232,28 @@ class TestDiscovery:
             class_tests: Dict[str, List[TestCase]] = {}
             
             for i, line in enumerate(lines):
+                # Ищем методы тестов: поддерживаем как однострочные, так и многострочные определения
+                # Паттерн 1: однострочное определение def test_XX_xxx(self, ...)
                 match = re.match(r'\s*def\s+(test_\d+_\w+)\s*\(\s*self', line)
+                
+                # Паттерн 2: многострочное определение def test_XX_xxx(\n    self, ...)
+                if not match:
+                    match = re.match(r'\s*def\s+(test_\d+_\w+)\s*\(', line)
+                    # Если нашли начало метода, проверяем следующие строки на наличие self
+                    if match and i + 1 < len(lines):
+                        # Проверяем до 3 следующих строк (на случай пустых строк)
+                        found_self = False
+                        for j in range(i + 1, min(i + 4, len(lines))):
+                            next_line = lines[j].strip()
+                            if next_line.startswith('self'):
+                                found_self = True
+                                break
+                            if next_line and not next_line.startswith('#'):
+                                # Если есть непустая строка, но не self, это не наш случай
+                                break
+                        if not found_self:
+                            match = None
+                
                 if match:
                     method_name = match.group(1)
                     class_name = get_class_for_line(i)

@@ -475,6 +475,9 @@ const MealScreen: React.FC = observer(() => {
       {/* Floating Action Button */}
       <View style={styles.fabContainer}>
         <TouchableOpacity
+          testID="meal_add_product_fab"
+          accessibilityLabel="Добавить продукт"
+          accessibilityRole="button"
           style={[styles.fab, shadows.lg]}
           onPress={handleAddElement}
           activeOpacity={0.8}

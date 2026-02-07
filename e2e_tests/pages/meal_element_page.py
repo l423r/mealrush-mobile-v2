@@ -474,79 +474,38 @@ class MealElementPage(BasePage):
             raise
         
         # Оптимизированное ожидание модального окна - проверяем быстрее
-        # Используем короткие таймауты для каждой проверки (0.2s вместо 3s)
+        # Сокращено время проверки: если модальное окно не появилось за 0.5s, его нет
         dialog_check_start = t.time()
         dialog_visible = False
-        max_attempts = 10  # Максимум 1 секунда (10 * 0.1)
-        max_check_time = 1.0  # Максимальное время проверки модального окна (1 секунда)
+        max_check_time = 0.5  # Сокращено с 1.0s до 0.5s (модальное окно появляется быстро или не появляется)
+        max_attempts = 5  # Максимум 0.5 секунды (5 * 0.1)
         
-        print(f"[CLICK_ADD] Начинаем проверку модального окна (макс. {max_check_time}s)...")
-        
+        # Быстрая проверка: пробуем только 2 раза с короткими таймаутами
         for attempt in range(max_attempts):
-            # Проверяем общий таймаут ПЕРЕД каждой проверкой
             elapsed = t.time() - dialog_check_start
             if elapsed > max_check_time:
-                print(f"[CLICK_ADD] Таймаут проверки модального окна ({max_check_time}s), продолжаем")
                 break
             
-            # Логируем прогресс каждые 3 попытки
-            if attempt > 0 and attempt % 3 == 0:
-                elapsed_ms = elapsed * 1000
-                print(f"[CLICK_ADD] Проверка модального окна: попытка {attempt+1}/{max_attempts} (прошло {elapsed_ms:.0f}ms)")
-            
-            # Небольшая пауза между проверками (только если не превышен таймаут)
-            if elapsed + 0.1 <= max_check_time:
+            # Короткая пауза между проверками
+            if attempt > 0:
                 time.sleep(0.1)
-            else:
-                # Если осталось меньше 0.1s до таймаута - пропускаем sleep
-                break
             
-            # Используем очень короткий таймаут (0.15s) для быстрой проверки
-            # И ограничиваем время выполнения проверки жестким таймаутом
-            check_start = t.time()
-            remaining_time = max_check_time - (check_start - dialog_check_start)
-            
-            if remaining_time <= 0:
-                break
-            
-            # Используем минимальный таймаут из оставшегося времени и 0.15s
-            check_timeout = min(0.15, remaining_time)
-            
+            # Очень короткий таймаут для проверки (0.1s)
             try:
-                if self.is_confirm_dialog_visible(timeout=check_timeout):
+                if self.is_confirm_dialog_visible(timeout=0.1):
                     dialog_visible = True
                     dialog_check_duration = (t.time() - dialog_check_start) * 1000
-                    print(f"[CLICK_ADD] ✓ Модальное окно обнаружено за {dialog_check_duration:.0f}ms (попытка {attempt+1})")
+                    print(f"[CLICK_ADD] ✓ Модальное окно обнаружено за {dialog_check_duration:.0f}ms")
                     break
-            except Exception as e:
-                check_duration = (t.time() - check_start) * 1000
-                # Логируем все исключения, если проверка заняла больше 200ms
-                if check_duration > 200:
-                    print(f"[CLICK_ADD] ⚠ Исключение при проверке модального окна (попытка {attempt+1}, {check_duration:.0f}ms): {e}")
-            
-            # Если прошло больше 0.5 секунды и диалог не появился - скорее всего его нет
-            if attempt >= 4:  # После 0.4s (4 * 0.1) делаем финальную проверку
-                elapsed = t.time() - dialog_check_start
-                if elapsed > max_check_time:
-                    break
-                
-                remaining_time = max_check_time - elapsed
-                if remaining_time > 0:
-                    final_check_start = t.time()
-                    try:
-                        if not self.is_confirm_dialog_visible(timeout=min(0.2, remaining_time)):
-                            dialog_check_duration = (t.time() - dialog_check_start) * 1000
-                            print(f"[CLICK_ADD] Модальное окно не появилось за {dialog_check_duration:.0f}ms, продолжаем")
-                            break  # Диалог точно не появится
-                    except Exception as e:
-                        final_check_duration = (t.time() - final_check_start) * 1000
-                        if final_check_duration > 200:
-                            print(f"[CLICK_ADD] ⚠ Исключение при финальной проверке ({final_check_duration:.0f}ms): {e}")
-                        break
+            except Exception:
+                # Игнорируем исключения при быстрой проверке
+                pass
         
         if not dialog_visible:
             dialog_check_duration = (t.time() - dialog_check_start) * 1000
-            print(f"[CLICK_ADD] Модальное окно не обнаружено (проверка заняла {dialog_check_duration:.0f}ms)")
+            # Логируем только если проверка заняла заметное время (>100ms)
+            if dialog_check_duration > 100:
+                print(f"[CLICK_ADD] Модальное окно не обнаружено (проверка заняла {dialog_check_duration:.0f}ms)")
         
         # Проверяем наличие модального окна подтверждения
         if handle_confirm_dialog and dialog_visible:

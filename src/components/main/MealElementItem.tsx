@@ -22,6 +22,8 @@ const MealElementItem: React.FC<MealElementItemProps> = observer(({
 
     return (
         <TouchableOpacity
+            testID={`meal_element_item_${element.id}`}
+            accessibilityLabel={`Продукт ${element.name}, ${formatCalories(element.calories)}`}
             style={[styles.container, {
                 backgroundColor: colors.background.paper,
                 borderColor: colors.border.light,

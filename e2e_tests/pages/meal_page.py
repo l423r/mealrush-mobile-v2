@@ -61,10 +61,15 @@ class MealPage(BasePage):
     # ==========================================================================
     
     # FAB кнопка для добавления продуктов (+)
+    # Оптимизировано: сначала пробуем рабочие локаторы, затем fallback
     ADD_PRODUCT_FAB = [
+        # По accessibilityLabel (работает стабильно)
         (AppiumBy.ACCESSIBILITY_ID, "Добавить продукт"),
-        (By.XPATH, "//*[@content-desc='Добавить' or @content-desc='add']"),
-        (By.XPATH, "//android.widget.Button[contains(@content-desc, '+')]"),
+        # По testID (если приложение пересобрано с testID)
+        (AppiumBy.ACCESSIBILITY_ID, "meal_add_product_fab"),
+        # По content-desc (fallback)
+        (By.XPATH, "//*[@content-desc='Добавить продукт']"),
+        (By.XPATH, "//*[@content-desc='meal_add_product_fab']"),
     ]
     
     # Кнопка редактирования (в header)
@@ -134,7 +139,12 @@ class MealPage(BasePage):
     # ==========================================================================
     
     # Карточка продукта в приеме пищи
+    # Приоритет: testID (быстрый и надежный) -> XPath (fallback)
     MEAL_ELEMENT_CARD = [
+        # Используем testID для надежного поиска (добавлен в MealElementItem.tsx)
+        (AppiumBy.ACCESSIBILITY_ID, "meal_element_item"),  # Частичное совпадение для всех элементов
+        (By.XPATH, "//*[starts-with(@content-desc, 'meal_element_item_')]"),  # По testID через content-desc
+        # Fallback: XPath по структуре (для обратной совместимости)
         (By.XPATH, "//*[contains(@text, 'ккал')]/ancestor::android.view.ViewGroup[1]"),
         (By.XPATH, "//android.view.ViewGroup[.//android.widget.TextView[contains(@text, 'ккал')]]"),
     ]
@@ -283,17 +293,146 @@ class MealPage(BasePage):
     # MEAL ELEMENTS METHODS
     # ==========================================================================
     
-    def get_elements_count(self):
+    def get_elements_count(self, debug=False):
         """
         Получает количество продуктов в приеме пищи
         
+        ВАЖНО: Этот метод работает ТОЛЬКО на MealScreen, не на главном экране!
+        На главном экране находятся карточки приемов пищи (MealCard), а не продукты.
+        
+        Использует testID для надежного поиска продуктов (meal_element_item_*)
+        Исключает Summary (сводку) с общими калориями
+        
+        Args:
+            debug: Если True, выводит отладочную информацию
+        
         Returns:
-            int: Количество продуктов
+            int: Количество продуктов (без учета Summary)
         """
+        # Проверяем, что мы на MealScreen, а не на главном экране
+        if not self.is_page_loaded(timeout=1):
+            if debug:
+                print("[get_elements_count] ⚠ MealScreen не загружен, возможно мы на другом экране")
+            return 0
         try:
+            # Сначала пытаемся найти по testID (надежный метод)
+            # В Android testID преобразуется в content-desc
+            try:
+                # Ищем все элементы с content-desc, начинающимся с "meal_element_item_"
+                testid_elements = self.driver.find_elements(
+                    By.XPATH, 
+                    "//*[starts-with(@content-desc, 'meal_element_item_')]"
+                )
+                if testid_elements:
+                    count = len(testid_elements)
+                    if debug:
+                        print(f"[get_elements_count] Найдено по testID: {count} продуктов")
+                    return count
+            except Exception as e:
+                if debug:
+                    print(f"[get_elements_count] Поиск по testID не удался: {e}, используем fallback")
+            
+            # Fallback: используем старый метод с фильтрацией
             elements = self.find_elements_multiple(self.MEAL_ELEMENT_CARD)
-            return len(elements) if elements else 0
-        except:
+            if not elements:
+                if debug:
+                    print(f"[get_elements_count] Элементы не найдены")
+                return 0
+            
+            # Фильтруем элементы: исключаем Summary (сводку)
+            product_elements = []
+            for idx, elem in enumerate(elements):
+                try:
+                    # Проверяем content-desc (testID) - если есть "meal_element_item_", это точно продукт
+                    content_desc = elem.get_attribute('content-desc') or ''
+                    if 'meal_element_item_' in content_desc:
+                        product_elements.append(elem)
+                        if debug:
+                            print(f"[get_elements_count] [{idx}] Найден продукт по testID: {content_desc}")
+                        continue
+                    
+                    # Получаем весь текст элемента (включая дочерние элементы)
+                    text = elem.text if hasattr(elem, 'text') else elem.get_attribute('text') or ''
+                    
+                    # Также получаем текст всех дочерних элементов для более полной проверки
+                    try:
+                        child_texts = []
+                        child_elements = elem.find_elements(By.XPATH, ".//android.widget.TextView")
+                        for child in child_elements:
+                            child_text = child.text or child.get_attribute('text') or ''
+                            if child_text:
+                                child_texts.append(child_text)
+                        full_text = ' '.join([text] + child_texts) if child_texts else text
+                    except:
+                        full_text = text
+                    
+                    if not full_text:
+                        if debug:
+                            print(f"[get_elements_count] [{idx}] Элемент без текста, пропускаем")
+                        continue
+                    
+                    # Получаем позицию элемента
+                    location = elem.location
+                    y_position = location.get('y', 0) if location else 0
+                    
+                    if debug:
+                        print(f"[get_elements_count] [{idx}] Анализ элемента (y={y_position}): {full_text[:80]}...")
+                    
+                    # КРИТЕРИЙ 1: Summary содержит разделитель "|" (Б: ... | Ж: ... | У: ...)
+                    # Это главный признак Summary - он ВСЕГДА содержит "|" между значениями
+                    if '|' in full_text:
+                        if debug:
+                            print(f"[get_elements_count] [{idx}] Пропущен Summary (содержит '|'): {full_text[:50]}...")
+                        continue
+                    
+                    # КРИТЕРИЙ 2: Проверяем наличие названия продукта
+                    # Название продукта - это слово из букв (латиница или кириллица), не только числа
+                    # Примеры: "Beef", "Говядина", "Банан" и т.д.
+                    # Убираем все служебные символы и проверяем наличие букв
+                    text_for_name_check = full_text.replace('Б:', '').replace('Ж:', '').replace('У:', '').replace('г', '').replace('ккал', '').replace('·', '').replace(' ', '')
+                    # Ищем слова из букв (не только цифры и БЖУ)
+                    words = text_for_name_check.split()
+                    has_product_name = False
+                    product_name = None
+                    
+                    for word in words:
+                        # Проверяем, есть ли в слове буквы (не только цифры и служебные символы)
+                        if word and any(char.isalpha() and char not in 'БЖУг' for char in word):
+                            # Проверяем, что это не только числа с точкой (например, "18.2")
+                            if not word.replace('.', '').replace(',', '').isdigit():
+                                has_product_name = True
+                                product_name = word
+                                break
+                    
+                    # КРИТЕРИЙ 3: Summary в верхней части БЕЗ названия продукта
+                    if y_position < 400:
+                        if 'Б:' in full_text and 'Ж:' in full_text and 'У:' in full_text:
+                            if not has_product_name:
+                                if debug:
+                                    print(f"[get_elements_count] [{idx}] Пропущен Summary (верхняя часть y={y_position}, нет названия продукта): {full_text[:50]}...")
+                                continue
+                            else:
+                                if debug:
+                                    print(f"[get_elements_count] [{idx}] Найден продукт в верхней части (y={y_position}, название: {product_name}): {full_text[:50]}...")
+                    
+                    # Если элемент прошел все фильтры - это продукт
+                    product_elements.append(elem)
+                    if debug:
+                        print(f"[get_elements_count] [{idx}] ✓ Найден продукт (y={y_position}, название: {product_name}): {full_text[:50]}...")
+                except Exception as e:
+                    if debug:
+                        print(f"[get_elements_count] [{idx}] Ошибка при обработке элемента: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    continue
+            
+            count = len(product_elements)
+            if debug:
+                print(f"[get_elements_count] Итого продуктов: {count} (всего элементов: {len(elements)})")
+            return count
+        except Exception as e:
+            if debug:
+                print(f"[get_elements_count] Ошибка: {e}")
             return 0
     
     def click_element(self, index=0):
@@ -329,13 +468,59 @@ class MealPage(BasePage):
     # ACTION METHODS
     # ==========================================================================
     
-    def click_add_product(self):
+    def click_add_product(self, debug=False):
         """
         Кликает на FAB для добавления продукта
         Открывает SearchScreen
+        
+        Args:
+            debug: Если True, выводит отладочную информацию
+        
+        Returns:
+            self
         """
-        self.click_multiple(self.ADD_PRODUCT_FAB)
-        time.sleep(2)
+        if debug:
+            print("[click_add_product] Поиск FAB кнопки для добавления продукта...")
+        
+        # Пробуем найти FAB кнопку (оптимизировано: без лишних попыток)
+        fab_found = False
+        for locator in self.ADD_PRODUCT_FAB:
+            try:
+                if isinstance(locator, tuple):
+                    by, value = locator
+                    if debug:
+                        print(f"[click_add_product] Пробуем локатор: {by} = {value}")
+                    
+                    # Используем короткий таймаут для быстрого поиска
+                    self.driver.implicitly_wait(1)
+                    try:
+                        if by == AppiumBy.ACCESSIBILITY_ID:
+                            element = self.driver.find_element(AppiumBy.ACCESSIBILITY_ID, value)
+                        else:
+                            element = self.driver.find_element(by, value)
+                        
+                        if element and element.is_displayed():
+                            if debug:
+                                location = element.location
+                                size = element.size
+                                print(f"[click_add_product] ✓ FAB найден: {by} = {value}, позиция: {location}, размер: {size}")
+                            element.click()
+                            fab_found = True
+                            break
+                    finally:
+                        self.driver.implicitly_wait(10)
+            except Exception:
+                # Не логируем каждую неудачную попытку (только в debug режиме)
+                if debug:
+                    print(f"[click_add_product] Локатор не сработал: {by} = {value}")
+                continue
+        
+        if not fab_found:
+            # Делаем скриншот для отладки
+            self.take_screenshot('error_fab_not_found')
+            raise Exception("FAB кнопка для добавления продукта не найдена")
+        
+        time.sleep(1)  # Даем время на навигацию
         return self
     
     def click_edit(self):
