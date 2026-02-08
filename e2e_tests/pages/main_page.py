@@ -1543,4 +1543,31 @@ class MainPage(BasePage):
             return False
         except Exception:
             return False
+    
+    # ==========================================================================
+    # Meal History Screen - экран истории приемов пищи (Story 3.10)
+    # ==========================================================================
+    
+    def open_meal_history(self):
+        """
+        Открывает экран истории приемов пищи (MealHistoryScreen)
+        
+        Returns:
+            MealHistoryPage или None
+        """
+        from pages.meal_history_page import MealHistoryPage
+        
+        # TODO: Реализовать навигацию к экрану истории
+        # Это может быть через:
+        # 1. Кнопку в Header
+        # 2. Пункт меню
+        # 3. Swipe gesture
+        # 4. Bottom navigation
+        
+        # Временная реализация - предполагаем, что экран уже открыт или открывается автоматически
+        meal_history_page = MealHistoryPage(self.driver)
+        if meal_history_page.is_page_loaded(timeout=5):
+            return meal_history_page
+        
+        return None
 

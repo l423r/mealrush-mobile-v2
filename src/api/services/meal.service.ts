@@ -25,6 +25,24 @@ export const mealService = {
       params: { date, ...(targetUserId && { targetUserId }) },
     }),
 
+  getMealsByDateRange: (startDate: string, endDate: string, targetUserId?: number) =>
+    apiClient.get<Meal[]>(ApiRoutes.Meal.FindByDateRange, {
+      params: { 
+        startDate, 
+        endDate, 
+        ...(targetUserId && { targetUserId }) 
+      },
+    }),
+
+  getDatesWithMeals: (startDate: string, endDate: string, targetUserId?: number) =>
+    apiClient.get<string[]>(ApiRoutes.Meal.DatesWithMeals, {
+      params: { 
+        startDate, 
+        endDate, 
+        ...(targetUserId && { targetUserId }) 
+      },
+    }),
+
   getMeal: (id: number, targetUserId?: number) =>
     apiClient.get<Meal>(`${ApiRoutes.Meal.Base}/${id}`, {
       params: { ...(targetUserId && { targetUserId }) },

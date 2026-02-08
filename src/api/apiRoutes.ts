@@ -50,6 +50,8 @@ export const ApiRoutes = {
     Meal: {
         Base: '/meal',
         FindByDate: '/meal/findByDate',
+        FindByDateRange: '/meal/findByDateRange',
+        DatesWithMeals: '/meal/datesWithMeals',
     },
 
     // Meal Elements

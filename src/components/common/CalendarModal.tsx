@@ -19,6 +19,7 @@ interface CalendarModalProps {
   onDateSelect: (date: Date) => void;
   maximumDate?: Date;
   closeOnSelect?: boolean;
+  datesWithMeals?: Set<string> | string[]; // Dates that have meals (YYYY-MM-DD format) for highlighting
 }
 
 interface CalendarDay {
@@ -54,6 +55,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   onDateSelect,
   maximumDate,
   closeOnSelect = true,
+  datesWithMeals,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(
     new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -319,6 +321,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                 {/* Header */}
                 <View style={styles.header}>
                   <TouchableOpacity
+                    testID="calendar_prev_month_button"
+                    accessibilityLabel="Предыдущий месяц"
                     onPress={handlePreviousMonth}
                     style={styles.navButton}
                   >
@@ -332,6 +336,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                   </View>
 
                   <TouchableOpacity
+                    testID="calendar_next_month_button"
+                    accessibilityLabel="Следующий месяц"
                     onPress={handleNextMonth}
                     style={[
                       styles.navButton,
@@ -374,6 +380,12 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                         !day.isDisabled &&
                         caloriesData[dateStr] !== undefined &&
                         caloriesData[dateStr] > 0;
+                      // Check if date has meals (for highlighting)
+                      const hasMeals = datesWithMeals 
+                        ? (Array.isArray(datesWithMeals) 
+                            ? datesWithMeals.includes(dateStr)
+                            : datesWithMeals.has(dateStr))
+                        : false;
 
                       // Calculate Sunday text color
                       let sundayTextStyle = null;
@@ -390,11 +402,15 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                       return (
                         <TouchableOpacity
                           key={dayKey}
+                          testID={`calendar_day_${dateStr}`}
+                          accessibilityLabel={`Дата ${day.dayOfMonth} ${hasMeals ? 'с приемами пищи' : ''}`}
                           style={[
                             styles.dayCell,
                             !day.isCurrentMonth && styles.dayCellOtherMonth,
                             day.isSelected && styles.dayCellSelected,
                             day.isToday && !day.isSelected && styles.dayCellToday,
+                            // Highlight dates with meals (if not selected or today)
+                            hasMeals && !day.isSelected && !day.isToday && styles.dayCellWithMeals,
                             // Only apply disabled opacity to days from other months
                             day.isDisabled && !day.isCurrentMonth && styles.dayCellDisabled,
                             // Ensure Sundays are always visible
@@ -426,6 +442,9 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                               {caloriesData[dateStr]} ккал
                             </Text>
                           )}
+                          {hasMeals && !hasCalories && (
+                            <View style={styles.mealIndicator} testID={`meal_indicator_${dateStr}`} />
+                          )}
                         </TouchableOpacity>
                       );
                     })}
@@ -435,6 +454,8 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                 {/* Footer buttons */}
                 <View style={styles.footer}>
                   <TouchableOpacity
+                    testID="calendar_cancel_button"
+                    accessibilityLabel="Отмена"
                     style={styles.cancelButton}
                     onPress={onClose}
                   >
@@ -554,6 +575,11 @@ const styles = StyleSheet.create({
   dayCellDisabled: {
     opacity: 0.3,
   },
+  dayCellWithMeals: {
+    borderWidth: 2,
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight + '15',
+  },
   dayCellDisabledCurrentMonth: {
     // Disabled days from current month should still be visible
     opacity: 1,
@@ -613,6 +639,13 @@ const styles = StyleSheet.create({
     ...typography.button,
     color: colors.text.primary,
     fontWeight: '600',
+  },
+  mealIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.primary,
+    marginTop: 2,
   },
 });
 

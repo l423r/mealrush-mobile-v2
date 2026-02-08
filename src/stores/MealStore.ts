@@ -22,6 +22,10 @@ class MealStore {
   selectedDate: Date = new Date();
   mealElements: { [mealId: number]: MealElement[] } = {};
   caloriesByDate: Record<string, number> = {};
+  // Meals grouped by date for date range queries (key: YYYY-MM-DD, value: Meal[])
+  mealsByDateRange: Record<string, Meal[]> = {};
+  // Dates with meals for calendar highlighting (Set of YYYY-MM-DD strings)
+  datesWithMeals: Set<string> = new Set();
   loading: boolean = false;
   error: string | null = null;
   analyzingPhoto: boolean = false;
@@ -34,6 +38,8 @@ class MealStore {
   // Deduplication maps for active requests
   private activeMealsRequests: Map<string, Promise<void>> = new Map();
   private activeCaloriesRequests: Map<string, Promise<void>> = new Map();
+  private activeDateRangeRequests: Map<string, Promise<void>> = new Map();
+  private activeDatesWithMealsRequests: Map<string, Promise<void>> = new Map();
 
   constructor(rootStore: RootStore) {
     this.rootStore = rootStore;
@@ -143,6 +149,107 @@ class MealStore {
 
     // Store the request
     this.activeMealsRequests.set(requestKey, requestPromise);
+    
+    return requestPromise;
+  }
+
+  async loadMealsForDateRange(startDate: Date, endDate: Date, targetUserId?: number) {
+    // Create unique key for request deduplication
+    const startDateStr = formatDateForAPI(startDate);
+    const endDateStr = formatDateForAPI(endDate);
+    const requestKey = `${startDateStr}_${endDateStr}_${targetUserId || 'self'}`;
+    
+    // Check if there's already an active request with the same parameters
+    const existingRequest = this.activeDateRangeRequests.get(requestKey);
+    if (existingRequest) {
+      return existingRequest;
+    }
+
+    // Create new request
+    const requestPromise = withAsync(
+      this,
+      async () => {
+        const response = await mealService.getMealsByDateRange(startDateStr, endDateStr, targetUserId);
+
+        runInAction(() => {
+          const meals = response.data || [];
+          
+          // Group meals by date (YYYY-MM-DD format)
+          const groupedByDate: Record<string, Meal[]> = {};
+          
+          meals.forEach((meal) => {
+            const mealDate = new Date(meal.dateTime);
+            const dateKey = formatDateForAPI(mealDate);
+            
+            if (!groupedByDate[dateKey]) {
+              groupedByDate[dateKey] = [];
+            }
+            groupedByDate[dateKey].push(meal);
+            
+            // Если элементы пришли вместе с приемами пищи, сохранить их
+            if (meal.elements) {
+              this.mealElements[meal.id] = meal.elements;
+            }
+          });
+          
+          // Sort meals within each date by dateTime (chronological order)
+          Object.keys(groupedByDate).forEach((dateKey) => {
+            groupedByDate[dateKey].sort((a, b) => 
+              new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+            );
+          });
+          
+          // Update mealsByDateRange (merge with existing data)
+          this.mealsByDateRange = { ...this.mealsByDateRange, ...groupedByDate };
+        });
+      },
+      'Ошибка загрузки истории приемов пищи'
+    ).finally(() => {
+      // Remove from active requests when done
+      this.activeDateRangeRequests.delete(requestKey);
+    });
+
+    // Store the request
+    this.activeDateRangeRequests.set(requestKey, requestPromise);
+    
+    return requestPromise;
+  }
+
+  async loadDatesWithMeals(startDate: Date, endDate: Date, targetUserId?: number) {
+    // Create unique key for request deduplication
+    const startDateStr = formatDateForAPI(startDate);
+    const endDateStr = formatDateForAPI(endDate);
+    const requestKey = `${startDateStr}_${endDateStr}_${targetUserId || 'self'}`;
+    
+    // Check if there's already an active request with the same parameters
+    const existingRequest = this.activeDatesWithMealsRequests.get(requestKey);
+    if (existingRequest) {
+      return existingRequest;
+    }
+
+    // Create new request
+    const requestPromise = withAsync(
+      this,
+      async () => {
+        const response = await mealService.getDatesWithMeals(startDateStr, endDateStr, targetUserId);
+
+        runInAction(() => {
+          // Update datesWithMeals set (merge with existing data)
+          const newDates = new Set(this.datesWithMeals);
+          response.data.forEach((dateStr) => {
+            newDates.add(dateStr);
+          });
+          this.datesWithMeals = newDates;
+        });
+      },
+      'Ошибка загрузки дат с приемами пищи'
+    ).finally(() => {
+      // Remove from active requests when done
+      this.activeDatesWithMealsRequests.delete(requestKey);
+    });
+
+    // Store the request
+    this.activeDatesWithMealsRequests.set(requestKey, requestPromise);
     
     return requestPromise;
   }
@@ -583,10 +690,38 @@ class MealStore {
     }
   }
 
+  // Get meals grouped by date for date range
+  getMealsGroupedByDate(): Record<string, Meal[]> {
+    return this.mealsByDateRange;
+  }
+
+  // Get meals for a specific date from date range cache
+  getMealsForDateFromRange(date: Date): Meal[] {
+    const dateKey = formatDateForAPI(date);
+    return this.mealsByDateRange[dateKey] || [];
+  }
+
+  // Clear date range cache
+  clearDateRangeCache() {
+    this.mealsByDateRange = {};
+  }
+
+  // Clear dates with meals cache
+  clearDatesWithMealsCache() {
+    this.datesWithMeals = new Set();
+  }
+
+  // Get dates with meals as Set (for calendar highlighting)
+  getDatesWithMealsSet(): Set<string> {
+    return this.datesWithMeals;
+  }
+
   reset() {
     this.meals = [];
     this.selectedDate = new Date();
     this.mealElements = {};
+    this.mealsByDateRange = {};
+    this.datesWithMeals = new Set();
     this.loading = false;
     this.error = null;
     this.analyzingPhoto = false;
