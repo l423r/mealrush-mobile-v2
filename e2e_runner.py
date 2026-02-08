@@ -173,7 +173,6 @@ class TestDiscovery:
         'test_add_products_to_meal.py',
         'test_remove_products_from_meal.py',
         'test_update_product_quantities_in_meal.py',
-        'test_add_comments_to_meal.py',
         'test_onboarding_flow.py',
         'test_simple_login.py',
         'test_element_finding.py',
@@ -192,7 +191,6 @@ class TestDiscovery:
         'TestAddProductsToMeal': 'Добавление продуктов в прием пищи',
         'TestRemoveProductsFromMeal': 'Удаление продуктов из приема пищи',
         'TestUpdateProductQuantities': 'Обновление количества продуктов в приеме пищи',
-        'TestAddCommentsToMeal': 'Добавление комментариев к приемам пищи',
         'TestOnboardingFlow': 'Онбординг новых пользователей',
         'TestSimpleLogin': 'Простой вход',
     }

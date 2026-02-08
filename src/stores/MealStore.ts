@@ -93,19 +93,11 @@ class MealStore {
     return this.dailyNutrients.carbohydrates;
   }
 
-  // Get meals by type for selected date, sorted by dateTime (latest first)
+  // Get meals by type for selected date, sorted by dateTime (chronological order - ascending)
   getMealsByTypeForDate(mealType: string): Meal[] {
-    console.log('🔍 [MealStore.getMealsByTypeForDate] Поиск приемов пищи');
-    console.log('  - mealType:', mealType);
-    console.log('  - selectedDate:', this.selectedDate.toISOString());
-    console.log('  - mealsForSelectedDate:', this.mealsForSelectedDate);
-
     const filtered = this.mealsForSelectedDate.filter((meal) => meal.mealType === mealType);
-    console.log('  - filtered by type:', filtered);
-
-    const sorted = filtered.sort((a, b) => new Date(b.dateTime).getTime() - new Date(a.dateTime).getTime());
-    console.log('  - sorted (latest first):', sorted);
-
+    // Sort by dateTime ascending (chronological order)
+    const sorted = filtered.sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
     return sorted;
   }
 

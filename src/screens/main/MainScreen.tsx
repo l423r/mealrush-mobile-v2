@@ -41,6 +41,7 @@ import DailyAnalysisBlock from '../../components/main/DailyAnalysisBlock';
 import { useTheme } from '../../hooks/useTheme';
 import { aiService } from '../../api/services/ai.service';
 import { buildDailyAnalysisPrompt } from '../../utils/promptBuilders';
+import { formatMealType } from '../../utils/formatting';
 
 type MainScreenNavigationProp = NativeStackNavigationProp<
   MainStackParamList,
@@ -211,6 +212,47 @@ const MainScreen: React.FC = observer(() => {
     [mealStore.selectedDate]
   );
 
+  // Group meals by type for display
+  const mealsByType = useMemo(() => {
+    const mealTypeOrder: Record<string, number> = {
+      BREAKFAST: 1,
+      LUNCH: 2,
+      DINNER: 3,
+      SUPPER: 4,
+      LATE_SUPPER: 5,
+      SNACK: 6,
+    };
+
+    const grouped: Record<string, typeof mealStore.mealsForSelectedDate> = {};
+    
+    mealStore.mealsForSelectedDate.forEach((meal) => {
+      const mealType = meal.mealType || 'SNACK';
+      if (!grouped[mealType]) {
+        grouped[mealType] = [];
+      }
+      grouped[mealType].push(meal);
+    });
+
+    // Sort meals within each group by dateTime ascending (chronological order)
+    Object.keys(grouped).forEach((mealType) => {
+      grouped[mealType].sort((a, b) => 
+        new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+      );
+    });
+
+    // Sort meal types in logical order
+    const sortedTypes = Object.keys(grouped).sort((a, b) => {
+      const orderA = mealTypeOrder[a] || 99;
+      const orderB = mealTypeOrder[b] || 99;
+      return orderA - orderB;
+    });
+
+    return sortedTypes.map((mealType) => ({
+      mealType,
+      meals: grouped[mealType],
+    })).filter((group) => group.meals.length > 0); // Hide empty groups
+  }, [mealStore.mealsForSelectedDate]);
+
   const mealsForPrompt = useMemo(() => {
     return mealStore.mealsForSelectedDate
       .map((meal) => {
@@ -329,15 +371,32 @@ const MainScreen: React.FC = observer(() => {
 
   const composedGestures = Gesture.Simultaneous(flingLeft, flingRight);
 
-  const renderEmptyState = () => (
-    <View style={[styles.emptyState, { backgroundColor: colors.background.paper, borderColor: colors.border.light }]}>
-      <Ionicons name="restaurant-outline" size={64} color={colors.text.secondary} />
-      <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Нет приемов пищи</Text>
-      <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
-        Добавьте свой первый прием пищи, чтобы начать отслеживание
-      </Text>
-    </View>
-  );
+  const renderEmptyState = () => {
+    const dateLabel = mealStore.selectedDate.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+
+    return (
+      <View style={[styles.emptyState, { backgroundColor: colors.background.paper, borderColor: colors.border.light }]}>
+        <Ionicons name="restaurant-outline" size={64} color={colors.text.secondary} />
+        <Text style={[styles.emptyTitle, { color: colors.text.primary }]}>Нет приемов пищи</Text>
+        <Text style={[styles.emptySubtitle, { color: colors.text.secondary }]}>
+          На {dateLabel} не зарегистрировано приемов пищи
+        </Text>
+        <TouchableOpacity
+          style={[styles.emptyStateButton, { backgroundColor: colors.primary }]}
+          onPress={handleAddMeal}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.emptyStateButtonText, { color: colors.text.inverse }]}>
+            Добавить прием пищи
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   if (mealStore.loading && !refreshing) {
     return <Loading message="Загрузка приемов пищи..." />;
@@ -434,26 +493,38 @@ const MainScreen: React.FC = observer(() => {
             {mealStore.mealsForSelectedDate.length === 0 ? (
               renderEmptyState()
             ) : (
-              mealStore.mealsForSelectedDate.map((meal) => {
-                const elements = mealStore.mealElements[meal.id] || [];
-                const totalCalories = elements.reduce((sum, el) => sum + el.calories, 0);
-                const totalProteins = elements.reduce((sum, el) => sum + el.proteins, 0);
-                const totalFats = elements.reduce((sum, el) => sum + el.fats, 0);
-                const totalCarbohydrates = elements.reduce((sum, el) => sum + el.carbohydrates, 0);
+              mealsByType.map((group) => (
+                <View key={group.mealType} style={styles.mealTypeSection}>
+                  <View style={styles.mealTypeHeader}>
+                    <Text style={[styles.mealTypeTitle, { color: colors.text.primary }]}>
+                      {formatMealType(group.mealType)}
+                    </Text>
+                    <Text style={[styles.mealTypeCount, { color: colors.text.secondary }]}>
+                      {group.meals.length}
+                    </Text>
+                  </View>
+                  {group.meals.map((meal) => {
+                    const elements = mealStore.mealElements[meal.id] || [];
+                    const totalCalories = elements.reduce((sum, el) => sum + el.calories, 0);
+                    const totalProteins = elements.reduce((sum, el) => sum + el.proteins, 0);
+                    const totalFats = elements.reduce((sum, el) => sum + el.fats, 0);
+                    const totalCarbohydrates = elements.reduce((sum, el) => sum + el.carbohydrates, 0);
 
-                return (
-                  <MealCard
-                    key={meal.id}
-                    meal={meal}
-                    onPress={handleMealPress}
-                    userTimezone={userTimezone}
-                    totalCalories={totalCalories}
-                    totalProteins={totalProteins}
-                    totalFats={totalFats}
-                    totalCarbohydrates={totalCarbohydrates}
-                  />
-                );
-              })
+                    return (
+                      <MealCard
+                        key={meal.id}
+                        meal={meal}
+                        onPress={handleMealPress}
+                        userTimezone={userTimezone}
+                        totalCalories={totalCalories}
+                        totalProteins={totalProteins}
+                        totalFats={totalFats}
+                        totalCarbohydrates={totalCarbohydrates}
+                      />
+                    );
+                  })}
+                </View>
+              ))
             )}
           </View>
 
@@ -546,6 +617,7 @@ const styles = StyleSheet.create({
   emptyState: {
     alignItems: 'center',
     paddingVertical: spacing.xxxl,
+    paddingHorizontal: spacing.lg,
     borderRadius: borderRadius.lg,
     borderWidth: 1,
     borderStyle: 'dashed',
@@ -559,6 +631,35 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: spacing.xl,
     lineHeight: 20,
+  },
+  mealTypeSection: {
+    marginBottom: spacing.lg,
+  },
+  mealTypeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.xs,
+  },
+  mealTypeTitle: {
+    ...typography.h6,
+    fontWeight: '600',
+  },
+  mealTypeCount: {
+    ...typography.caption,
+    fontSize: 12,
+  },
+  emptyStateButton: {
+    marginTop: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    ...shadows.sm,
+  },
+  emptyStateButtonText: {
+    ...typography.button,
+    fontWeight: '600',
   },
   analysisBox: {
     padding: spacing.md,

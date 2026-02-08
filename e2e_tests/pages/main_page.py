@@ -1170,6 +1170,21 @@ class MainPage(BasePage):
         
         return count
     
+    def has_empty_state(self, timeout=3):
+        """
+        Проверяет наличие empty state (состояния "Нет приемов пищи")
+        
+        Args:
+            timeout: Таймаут для поиска элемента
+            
+        Returns:
+            bool: True если empty state отображается, False если нет
+        """
+        try:
+            return self.is_displayed_silent(self.NO_MEALS_TEXT, timeout=timeout)
+        except Exception:
+            return False
+    
     def get_meals_count_from_badge(self, debug=False):
         """
         Получает количество приемов пищи из бейджа рядом с заголовком "Приемы пищи"
