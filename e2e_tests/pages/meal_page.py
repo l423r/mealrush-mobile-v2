@@ -102,6 +102,9 @@ class MealPage(BasePage):
     # Выделена красным цветом в модальном окне
     # Порядок оптимизирован: более специфичные локаторы первыми для быстрого поиска
     DELETE_MENU_ITEM = [
+        # По testID (если приложение пересобрано с testID) - самый надежный метод
+        (AppiumBy.ACCESSIBILITY_ID, "meal_actions_menu_delete_button"),  # testID из MealActionsMenu.tsx
+        (By.XPATH, "//*[@content-desc='meal_actions_menu_delete_button']"),
         # Самый специфичный - точный текст в модальном окне
         (By.XPATH, "//android.widget.Modal//android.widget.TextView[@text='Удалить']"),
         # TouchableOpacity с текстом "Удалить" (кликабельный контейнер)
@@ -202,15 +205,25 @@ class MealPage(BasePage):
         (By.XPATH, "//*[@text='Подтвердить' or contains(@text, 'Подтвердить')]"),  # Рабочий (найден в логах)
         (By.XPATH, "//android.widget.TextView[@text='Подтвердить']"),  # Быстрый fallback
         (By.XPATH, "//android.view.ViewGroup[.//android.widget.TextView[@text='Подтвердить']]"),
+        # По testID (если приложение пересобрано с testID)
+        (AppiumBy.ACCESSIBILITY_ID, "alert_confirm_button"),  # testID из AlertDialog.tsx
+        (By.XPATH, "//*[@content-desc='alert_confirm_button']"),
         # Медленные локаторы в конце (редко используются)
         (By.XPATH, "//android.widget.Modal//android.widget.TextView[@text='Подтвердить']"),
         (By.XPATH, "//android.widget.Button[contains(@text, 'Да') or contains(@text, 'Подтвердить')]"),
         # Старые варианты для обратной совместимости (в самом конце)
         (By.XPATH, "//*[@text='Да' or @text='Удалить' or @text='OK' or @text='ОК']"),
-        # alert_confirm_button не работает в Android - убран
     ]
     DELETE_CONFIRM_NO = [
-        (By.XPATH, "//*[@text='Нет' or @text='Отмена' or @text='Cancel']"),
+        # Кнопка "Отмена" в диалоге удаления (AlertDialog)
+        # Оптимизированный порядок: рабочие локаторы первыми
+        (By.XPATH, "//*[@text='Отмена' or contains(@text, 'Отмена')]"),  # Рабочий
+        (By.XPATH, "//android.widget.TextView[@text='Отмена']"),  # Быстрый fallback
+        # По testID (если приложение пересобрано с testID)
+        (AppiumBy.ACCESSIBILITY_ID, "alert_cancel_button"),  # testID из AlertDialog.tsx
+        (By.XPATH, "//*[@content-desc='alert_cancel_button']"),
+        # Fallback локаторы
+        (By.XPATH, "//*[@text='Нет' or @text='Cancel']"),
         (By.XPATH, "//android.widget.Button[contains(@text, 'Нет')]"),
     ]
     

@@ -114,6 +114,8 @@ const AlertDialog: React.FC<AlertDialogProps> = ({
                 <View style={styles.buttonsContainer}>
                   {showCancel && (
                     <TouchableOpacity
+                      testID="alert_cancel_button"
+                      accessibilityLabel={cancelText}
                       style={[styles.button, styles.cancelButton]}
                       onPress={handleCancel}
                       activeOpacity={0.7}

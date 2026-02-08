@@ -1462,6 +1462,32 @@ class MainPage(BasePage):
         finally:
             self.driver.implicitly_wait(10)
     
+    def click_first_meal_card(self):
+        """
+        Кликает на первую карточку приема пищи (удобный метод для тестов)
+        
+        Returns:
+            bool: True если meal card найден и кликнут
+        """
+        return self.click_meal_card(meal_type=None, index=0)
+    
+    def get_daily_nutrition(self):
+        """
+        Получает полную сводку БЖУ за день
+        
+        Returns:
+            dict: {'calories': float, 'proteins': float, 'fats': float, 'carbs': float}
+        """
+        calories = self.get_daily_calories()
+        # БЖУ обычно отображаются рядом с калориями, но для упрощения
+        # возвращаем только калории (БЖУ можно добавить позже если нужно)
+        return {
+            'calories': calories or 0,
+            'proteins': 0,  # TODO: Добавить извлечение белков
+            'fats': 0,      # TODO: Добавить извлечение жиров
+            'carbs': 0,     # TODO: Добавить извлечение углеводов
+        }
+    
     def navigate_to_profile(self):
         """Переходит на вкладку профиля"""
         try:

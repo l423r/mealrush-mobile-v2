@@ -338,6 +338,9 @@ class MealStore {
       async () => {
         // Сохраняем дату meal перед удалением для обновления калорий
         const mealToDelete = this.meals.find(m => m.id === mealId);
+        if (!mealToDelete) {
+          console.warn(`Meal ${mealId} not found in local store before deletion - proceeding with API call`);
+        }
         const mealDate = mealToDelete ? new Date(mealToDelete.dateTime) : null;
         
         await mealService.deleteMeal(mealId);

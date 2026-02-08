@@ -97,6 +97,8 @@ const MealActionsMenu: React.FC<MealActionsMenuProps> = ({
                 </TouchableOpacity>
 
                 <TouchableOpacity
+                  testID="meal_actions_menu_delete_button"
+                  accessibilityLabel="Удалить прием пищи"
                   style={[styles.actionItem, styles.deleteAction]}
                   onPress={handleDelete}
                   activeOpacity={0.7}
