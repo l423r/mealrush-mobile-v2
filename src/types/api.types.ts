@@ -242,6 +242,7 @@ export interface Meal {
   mealType: MealType;
   name?: string;
   dateTime: string;
+  comment?: string;
   createdAt: string;
   updatedAt?: string;
   elements?: MealElement[]; // Опциональное поле для элементов
@@ -257,6 +258,7 @@ export interface MealUpdate {
   mealType?: MealType;
   dateTime?: string;
   name?: string;
+  comment?: string;
 }
 
 // Meal Element types

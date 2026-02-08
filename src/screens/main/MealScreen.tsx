@@ -4,6 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  TextInput,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { observer } from 'mobx-react-lite';
@@ -22,6 +23,7 @@ import {
 import Header from '../../components/common/Header';
 import Loading from '../../components/common/Loading';
 import CompactSummary from '../../components/common/CompactSummary';
+import Input from '../../components/common/Input';
 import MealElementItem from '../../components/main/MealElementItem';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 import MealSelectorDialog from '../../components/common/MealSelectorDialog';
@@ -58,6 +60,9 @@ const MealScreen: React.FC = observer(() => {
   const [isCopying, setIsCopying] = useState(false);
   const [showActionsMenu, setShowActionsMenu] = useState(false);
   const [showTemplateNameDialog, setShowTemplateNameDialog] = useState(false);
+  const [comment, setComment] = useState(meal.comment || '');
+  const [isEditingComment, setIsEditingComment] = useState(false);
+  const [isSavingComment, setIsSavingComment] = useState(false);
 
   useEffect(() => {
     // Проверяем, что meal все еще существует
@@ -80,6 +85,14 @@ const MealScreen: React.FC = observer(() => {
       loadMealsForSelectedDate();
     }
   }, [showCopyDialog]);
+
+  useEffect(() => {
+    // Update comment when meal changes
+    const currentMeal = mealStore.meals.find(m => m.id === meal.id);
+    if (currentMeal) {
+      setComment(currentMeal.comment || '');
+    }
+  }, [mealStore.meals, meal.id]);
 
   const loadMealsForSelectedDate = async () => {
     try {
@@ -301,6 +314,29 @@ const MealScreen: React.FC = observer(() => {
     }
   };
 
+  const handleCommentSave = async () => {
+    if (isSavingComment) return;
+    
+    setIsSavingComment(true);
+    try {
+      await mealStore.updateMeal(meal.id, { comment: comment.trim() || null });
+      setIsEditingComment(false);
+      haptics.success();
+      uiStore.showSnackbar('Комментарий сохранен', 'success');
+    } catch (error) {
+      haptics.error();
+      uiStore.showSnackbar('Не удалось сохранить комментарий', 'error');
+    } finally {
+      setIsSavingComment(false);
+    }
+  };
+
+  const handleCommentCancel = () => {
+    const currentMeal = mealStore.meals.find(m => m.id === meal.id);
+    setComment(currentMeal?.comment || '');
+    setIsEditingComment(false);
+  };
+
   const handleMealTypeSelect = async (newType: string, newDateTime?: Date) => {
     setShowEditDialog(false);
 
@@ -458,6 +494,76 @@ const MealScreen: React.FC = observer(() => {
                   carbohydrates={totalCarbohydrates}
                   variant="large"
                 />
+              </View>
+
+              {/* Comment Section */}
+              <View style={[styles.commentSection, {
+                backgroundColor: colors.background.paper,
+                borderColor: colors.border.light
+              }]}>
+                {isEditingComment ? (
+                  <View>
+                    <TextInput
+                      style={[styles.commentInput, {
+                        color: colors.text.primary,
+                        borderColor: colors.border.light,
+                        backgroundColor: colors.background.default
+                      }]}
+                      placeholder="Добавьте комментарий..."
+                      placeholderTextColor={colors.text.hint}
+                      value={comment}
+                      onChangeText={setComment}
+                      multiline
+                      maxLength={1000}
+                      textAlignVertical="top"
+                      editable={!isSavingComment}
+                    />
+                    <View style={styles.commentFooter}>
+                      <Text style={[styles.commentCharCount, { color: colors.text.secondary }]}>
+                        {comment.length}/1000
+                      </Text>
+                      <View style={styles.commentActions}>
+                        <TouchableOpacity
+                          onPress={handleCommentCancel}
+                          disabled={isSavingComment}
+                          style={styles.commentButton}
+                        >
+                          <Text style={[styles.commentButtonText, { color: colors.text.secondary }]}>
+                            Отмена
+                          </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={handleCommentSave}
+                          disabled={isSavingComment || comment.length > 1000}
+                          style={[styles.commentButton, styles.commentButtonSave]}
+                        >
+                          <Text style={[styles.commentButtonText, {
+                            color: isSavingComment || comment.length > 1000
+                              ? colors.text.disabled
+                              : colors.primary
+                          }]}>
+                            {isSavingComment ? 'Сохранение...' : 'Сохранить'}
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={() => setIsEditingComment(true)}
+                    activeOpacity={0.7}
+                  >
+                    {comment && comment.trim() ? (
+                      <Text style={[styles.commentText, { color: colors.text.primary }]}>
+                        {comment}
+                      </Text>
+                    ) : (
+                      <Text style={[styles.commentPlaceholder, { color: colors.text.hint }]}>
+                        Нажмите, чтобы добавить комментарий
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </View>
 
               <View style={styles.elementsTitleContainer}>
@@ -636,6 +742,57 @@ const styles = StyleSheet.create({
     height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  commentSection: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+  },
+  commentInput: {
+    minHeight: 80,
+    maxHeight: 120,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    ...typography.body1,
+    fontSize: 14,
+  },
+  commentFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.sm,
+  },
+  commentCharCount: {
+    ...typography.caption,
+    fontSize: 12,
+  },
+  commentActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  commentButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+  },
+  commentButtonSave: {
+    // Additional styles if needed
+  },
+  commentButtonText: {
+    ...typography.body2,
+    fontSize: 14,
+  },
+  commentText: {
+    ...typography.body1,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  commentPlaceholder: {
+    ...typography.body1,
+    fontSize: 14,
+    fontStyle: 'italic',
   },
 });
 

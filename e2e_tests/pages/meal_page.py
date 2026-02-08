@@ -118,9 +118,14 @@ class MealPage(BasePage):
     
     # Кнопка удаления элемента приема пищи (красная корзина на карточке элемента)
     DELETE_ELEMENT_BUTTON = [
-        # Ищем иконку корзины (trash) на карточке элемента
+        # По testID (надежный метод) - формат: meal_element_delete_{elementId}
+        (AppiumBy.ACCESSIBILITY_ID, "meal_element_delete_"),  # Частичное совпадение для поиска
+        (By.XPATH, "//*[starts-with(@content-desc, 'meal_element_delete_')]"),  # По testID через content-desc
+        # По accessibilityLabel - формат: "Удалить {productName}"
+        (By.XPATH, "//*[starts-with(@content-desc, 'Удалить ')]"),  # По accessibilityLabel через content-desc
+        # Fallback: ищем иконку корзины (trash) на карточке элемента
         (By.XPATH, "//android.view.ViewGroup[.//android.widget.TextView[contains(@text, 'ккал')]]//*[contains(@content-desc, 'trash') or contains(@content-desc, 'delete')]"),
-        # Ищем кнопку удаления в карточке элемента (обычно справа)
+        # Fallback: ищем кнопку удаления в карточке элемента (обычно справа)
         (By.XPATH, "//android.view.ViewGroup[.//android.widget.TextView[contains(@text, 'ккал')]]//android.view.ViewGroup[last()]//android.view.ViewGroup[last()]"),
         # Fallback: ищем любую кнопку с иконкой корзины
         (By.XPATH, "//*[contains(@content-desc, 'trash') or contains(@content-desc, 'delete')]"),
@@ -182,7 +187,13 @@ class MealPage(BasePage):
     # ==========================================================================
     
     DELETE_CONFIRM_DIALOG = [
+        # Диалог удаления элемента (блюда)
+        (By.XPATH, "//*[contains(@text, 'Удаление блюда')]"),
+        # Диалог удаления приема пищи (legacy)
         (By.XPATH, "//*[contains(@text, 'Удаление приема пищи')]"),
+        # Общий поиск по слову "Удаление"
+        (By.XPATH, "//*[contains(@text, 'Удаление')]"),
+        # Fallback: любой диалог с текстом "Удалить"
         (By.XPATH, "//*[contains(@text, 'Удалить')]"),
     ]
     DELETE_CONFIRM_YES = [
@@ -651,7 +662,7 @@ class MealPage(BasePage):
         
         return self
     
-    def delete_element(self, index=0, confirm=True):
+    def delete_element(self, index=0, confirm=True, debug=False):
         """
         Удаляет элемент приема пищи (блюдо) по индексу
         Кликает на красную иконку корзины на карточке элемента
@@ -659,6 +670,7 @@ class MealPage(BasePage):
         Args:
             index: Индекс элемента (0-based)
             confirm: Подтвердить ли удаление в диалоге (по умолчанию True)
+            debug: Если True, выводит детальную диагностическую информацию
         
         Returns:
             bool: True если элемент удален успешно
@@ -671,42 +683,161 @@ class MealPage(BasePage):
                 print(f"[delete_element] ✗ Элемент с индексом {index} не найден (всего элементов: {len(elements) if elements else 0})")
                 return False
             
-            # Ищем кнопку удаления в карточке элемента
             element_card = elements[index]
+            card_location = element_card.location
+            card_size = element_card.size
+            
+            if debug:
+                print(f"[delete_element] Границы карточки: x=[{card_location['x']}, {card_location['x'] + card_size['width']}], y=[{card_location['y']}, {card_location['y'] + card_size['height']}]")
+            
+            delete_button = None
+            
+            # Стратегия 1: Поиск по testID (meal_element_delete_{elementId})
+            # Это самый надежный метод, так как testID уникален для каждого элемента
             try:
-                # Ищем кнопку удаления внутри карточки (TouchableOpacity с иконкой trash)
-                # Кнопка находится справа в карточке
-                delete_button = element_card.find_element(By.XPATH, ".//android.view.ViewGroup[last()]")
-                delete_button.click()
-                print(f"[delete_element] ✓ Кнопка удаления найдена и кликнута")
-                time.sleep(1)  # Ждем появления диалога подтверждения
+                if debug:
+                    print(f"[delete_element] Стратегия 1: Поиск по testID...")
                 
-                # Подтверждаем удаление, если нужно
-                if confirm:
-                    self.confirm_delete()
-                    print(f"[delete_element] ✓ Удаление подтверждено")
-                    time.sleep(1)
+                # Ищем все кнопки удаления с testID
+                all_delete_buttons = self.driver.find_elements(
+                    By.XPATH, 
+                    "//*[starts-with(@content-desc, 'meal_element_delete_')]"
+                )
                 
-                return True
+                if debug:
+                    print(f"[delete_element] Найдено кнопок удаления по testID: {len(all_delete_buttons)}")
+                
+                # Фильтруем по позиции относительно карточки
+                for btn in all_delete_buttons:
+                    try:
+                        btn_location = btn.location
+                        btn_size = btn.size
+                        btn_x = btn_location['x']
+                        btn_y = btn_location['y']
+                        
+                        # Проверяем, что кнопка находится в пределах карточки
+                        is_inside_y = card_location['y'] <= btn_y <= card_location['y'] + card_size['height']
+                        is_right = btn_x > card_location['x'] + card_size['width'] * 0.7
+                        is_small = btn_size['width'] < 150 and btn_size['height'] < 150
+                        
+                        if self._is_displayed(btn) and is_small and is_inside_y and is_right:
+                            delete_button = btn
+                            if debug:
+                                print(f"[delete_element] ✓ Найдена кнопка по testID: позиция=({btn_x}, {btn_y}), размер={btn_size['width']}x{btn_size['height']}")
+                            break
+                    except Exception as e:
+                        if debug:
+                            print(f"[delete_element] ⚠ Ошибка при проверке кнопки: {e}")
+                        continue
             except Exception as e:
-                print(f"[delete_element] ⚠ Не удалось найти кнопку удаления в карточке: {e}")
-                # Fallback: ищем по иконке корзины
+                if debug:
+                    print(f"[delete_element] ⚠ Стратегия 1 не сработала: {e}")
+            
+            # Стратегия 2: Поиск по accessibilityLabel (Удалить {productName})
+            if not delete_button:
                 try:
-                    # Ищем все TouchableOpacity в карточке и кликаем на последний (обычно там кнопка удаления)
-                    buttons = element_card.find_elements(By.XPATH, ".//android.view.ViewGroup[@clickable='true']")
-                    if buttons:
-                        buttons[-1].click()  # Кликаем на последнюю кнопку
-                        print(f"[delete_element] ✓ Кликнули на последнюю кнопку в карточке")
+                    if debug:
+                        print(f"[delete_element] Стратегия 2: Поиск по accessibilityLabel...")
+                    
+                    all_delete_buttons = self.driver.find_elements(
+                        By.XPATH, 
+                        "//*[starts-with(@content-desc, 'Удалить ')]"
+                    )
+                    
+                    if debug:
+                        print(f"[delete_element] Найдено элементов по accessibilityLabel: {len(all_delete_buttons)}")
+                    
+                    # Фильтруем по позиции
+                    for btn in all_delete_buttons:
+                        try:
+                            btn_location = btn.location
+                            btn_size = btn.size
+                            btn_x = btn_location['x']
+                            btn_y = btn_location['y']
+                            
+                            is_inside_y = (card_location['y'] <= btn_y <= card_location['y'] + card_size['height'] + 100)
+                            is_right = btn_x > card_location['x'] + card_size['width'] * 0.7
+                            is_small = btn_size['width'] < 150 and btn_size['height'] < 150
+                            
+                            if self._is_displayed(btn) and is_small and is_inside_y and is_right:
+                                delete_button = btn
+                                if debug:
+                                    print(f"[delete_element] ✓ Найдена кнопка по accessibilityLabel: позиция=({btn_x}, {btn_y})")
+                                break
+                        except Exception as e:
+                            if debug:
+                                print(f"[delete_element] ⚠ Ошибка при проверке элемента: {e}")
+                            continue
+                except Exception as e:
+                    if debug:
+                        print(f"[delete_element] ⚠ Стратегия 2 не сработала: {e}")
+            
+            # Стратегия 3: Fallback - клик по координатам (правый верхний угол карточки)
+            if not delete_button:
+                try:
+                    if debug:
+                        print(f"[delete_element] Стратегия 3: Fallback - клик по координатам...")
+                    
+                    click_x = card_location['x'] + card_size['width'] - 40
+                    click_y = card_location['y'] + 40
+                    print(f"[delete_element] Кликаем по координатам: ({click_x}, {click_y})")
+                    self.driver.tap([(click_x, click_y)])
+                    time.sleep(1)
+                    
+                    if confirm:
+                        self.confirm_delete()
+                    return True
+                except Exception as e:
+                    print(f"[delete_element] ⚠ Стратегия 3 не сработала: {e}")
+            
+            # Если нашли кнопку, кликаем по ней
+            if delete_button:
+                try:
+                    location = delete_button.location
+                    size = delete_button.size
+                    center_x = location['x'] + size['width'] // 2
+                    center_y = location['y'] + size['height'] // 2
+                    
+                    print(f"[delete_element] Кликаем по центру кнопки: ({center_x}, {center_y})")
+                    self.driver.tap([(center_x, center_y)])
+                    time.sleep(1)
+                    
+                    if confirm:
+                        self.confirm_delete()
+                    
+                    return True
+                except Exception as e:
+                    print(f"[delete_element] ⚠ Ошибка при клике на кнопку: {e}")
+                    # Fallback на координаты
+                    try:
+                        click_x = card_location['x'] + card_size['width'] - 40
+                        click_y = card_location['y'] + 40
+                        self.driver.tap([(click_x, click_y)])
                         time.sleep(1)
                         if confirm:
                             self.confirm_delete()
                         return True
-                except Exception as e2:
-                    print(f"[delete_element] ✗ Не удалось удалить элемент: {e2}")
-                    return False
+                    except Exception as e2:
+                        print(f"[delete_element] ✗ Не удалось кликнуть по координатам: {e2}")
+            
+            print(f"[delete_element] ✗ Не удалось найти кнопку удаления")
+            return False
+            
         except Exception as e:
             print(f"[delete_element] ✗ Ошибка при удалении элемента: {e}")
+            import traceback
+            traceback.print_exc()
             return False
+    
+    def _is_displayed(self, element):
+        """Проверяет, видим ли элемент (обрабатывает разные типы is_displayed)"""
+        try:
+            is_displayed = element.is_displayed
+            if callable(is_displayed):
+                return is_displayed()
+            return bool(is_displayed)
+        except:
+            return True  # Предполагаем видимым, если не можем проверить
     
     def confirm_delete(self):
         """
@@ -715,20 +846,39 @@ class MealPage(BasePage):
         """
         print("[confirm_delete] Ищем кнопку подтверждения в диалоге...")
         try:
-            # Сначала проверяем, что диалог виден (быстрая проверка)
+            # Сначала проверяем, что диалог виден (увеличиваем таймаут для надежности)
             dialog_visible = False
+            dialog_text = None
             for locator in self.DELETE_CONFIRM_DIALOG:
                 try:
-                    # Быстрая проверка диалога (0.5s вместо 2s)
-                    if self.is_displayed(locator, timeout=0.5):
+                    # Увеличиваем таймаут до 3 секунд для поиска диалога
+                    element = self.find_element_silent(locator, timeout=3)
+                    if element:
                         dialog_visible = True
-                        print("[confirm_delete] ✓ Диалог подтверждения найден")
+                        try:
+                            dialog_text = element.text or element.get_attribute('text') or ''
+                        except:
+                            pass
+                        print(f"[confirm_delete] ✓ Диалог подтверждения найден: '{dialog_text}'")
                         break
                 except:
                     continue
             
             if not dialog_visible:
-                print("[confirm_delete] ⚠ Диалог подтверждения не найден, но продолжаем поиск кнопки...")
+                print("[confirm_delete] ⚠ Диалог подтверждения не найден, делаем скриншот и пробуем найти кнопку...")
+                self.take_screenshot('dialog_not_found')
+                # Пробуем найти любые модальные окна или диалоги
+                try:
+                    modals = self.driver.find_elements(By.XPATH, "//android.widget.Modal")
+                    print(f"[confirm_delete] Найдено модальных окон: {len(modals)}")
+                    for i, modal in enumerate(modals):
+                        try:
+                            modal_text = modal.text or modal.get_attribute('text') or ''
+                            print(f"[confirm_delete] Модальное окно {i+1}: '{modal_text[:100]}'")
+                        except:
+                            pass
+                except:
+                    pass
             
             # Детальный поиск кнопки "Подтвердить"
             print("[confirm_delete] Ищем все элементы с текстом 'Подтвердить'...")
@@ -958,3 +1108,266 @@ class MealPage(BasePage):
             return float(numbers[0]) if numbers else 0
         except:
             return 0
+    
+    # ==========================================================================
+    # COMMENT LOCATORS - для работы с комментариями (Story 3.5)
+    # ==========================================================================
+    
+    # Секция комментария
+    COMMENT_SECTION = [
+        (By.XPATH, "//*[contains(@text, 'комментарий') or contains(@text, 'Нажмите, чтобы добавить')]"),
+        (By.XPATH, "//android.view.ViewGroup[.//*[contains(@text, 'комментарий')]]"),
+    ]
+    
+    # Текст комментария (когда он уже добавлен)
+    COMMENT_TEXT = [
+        (By.XPATH, "//*[contains(@text, 'комментарий')]/following-sibling::*[1]"),
+        (By.XPATH, "//android.widget.TextView[contains(@text, '')]"),  # Fallback - любой текст в секции комментария
+    ]
+    
+    # Плейсхолдер "Нажмите, чтобы добавить комментарий"
+    COMMENT_PLACEHOLDER = [
+        (By.XPATH, "//*[@text='Нажмите, чтобы добавить комментарий']"),
+        (By.XPATH, "//*[contains(@text, 'добавить комментарий')]"),
+    ]
+    
+    # Поле ввода комментария (TextInput)
+    COMMENT_INPUT = [
+        (By.XPATH, "//android.widget.EditText[contains(@hint, 'комментарий') or contains(@hint, 'Добавьте')]"),
+        (By.XPATH, "//android.widget.EditText[@multiline='true']"),
+        (By.XPATH, "//android.widget.EditText"),
+    ]
+    
+    # Счетчик символов (например, "500/1000")
+    COMMENT_CHAR_COUNT = [
+        (By.XPATH, "//*[contains(@text, '/1000')]"),
+        (By.XPATH, "//*[re:match(@text, '\\d+/1000')]"),
+    ]
+    
+    # Кнопка "Сохранить" комментарий
+    COMMENT_SAVE_BUTTON = [
+        (By.XPATH, "//*[@text='Сохранить']"),
+        (By.XPATH, "//*[contains(@text, 'Сохранить')]"),
+    ]
+    
+    # Кнопка "Отмена" комментария
+    COMMENT_CANCEL_BUTTON = [
+        (By.XPATH, "//*[@text='Отмена']"),
+        (By.XPATH, "//*[contains(@text, 'Отмена')]"),
+    ]
+    
+    # ==========================================================================
+    # COMMENT METHODS
+    # ==========================================================================
+    
+    def click_comment_section(self, timeout: int = 5) -> bool:
+        """
+        Кликает по секции комментария для начала редактирования
+        
+        Returns:
+            bool: True если клик выполнен успешно
+        """
+        print("[click_comment_section] Ищем секцию комментария...")
+        try:
+            # Сначала пробуем найти плейсхолдер или существующий комментарий
+            for locator in self.COMMENT_PLACEHOLDER + self.COMMENT_TEXT + self.COMMENT_SECTION:
+                try:
+                    element = self.find_element(locator, timeout=2)
+                    if element:
+                        print(f"[click_comment_section] Найден элемент: {locator}")
+                        self.tap_element(element)
+                        time.sleep(1)
+                        return True
+                except:
+                    continue
+            
+            print("[click_comment_section] ⚠ Секция комментария не найдена, пробуем найти по координатам...")
+            # Fallback: ищем любую кликабельную область внизу summary
+            return False
+        except Exception as e:
+            print(f"[click_comment_section] ✗ Ошибка: {e}")
+            return False
+    
+    def enter_comment(self, comment_text: str, timeout: int = 10) -> bool:
+        """
+        Вводит текст комментария в поле ввода
+        
+        Args:
+            comment_text: Текст комментария для ввода
+            timeout: Таймаут поиска поля ввода
+            
+        Returns:
+            bool: True если комментарий введен успешно
+        """
+        print(f"[enter_comment] Вводим комментарий: '{comment_text[:50]}...'")
+        try:
+            # Ищем поле ввода
+            input_element = None
+            for locator in self.COMMENT_INPUT:
+                try:
+                    input_element = self.find_element(locator, timeout=2)
+                    if input_element:
+                        print(f"[enter_comment] Найдено поле ввода: {locator}")
+                        break
+                except:
+                    continue
+            
+            if not input_element:
+                print("[enter_comment] ✗ Поле ввода комментария не найдено")
+                return False
+            
+            # Очищаем поле и вводим текст
+            input_element.clear()
+            time.sleep(0.5)
+            input_element.send_keys(comment_text)
+            time.sleep(1)
+            
+            # Проверяем что текст введен
+            entered_text = input_element.text
+            if comment_text in entered_text or entered_text == comment_text:
+                print(f"[enter_comment] ✓ Комментарий введен: '{entered_text[:50]}...'")
+                return True
+            else:
+                print(f"[enter_comment] ⚠ Текст не совпадает. Ожидалось: '{comment_text[:50]}', получено: '{entered_text[:50]}'")
+                return False
+                
+        except Exception as e:
+            print(f"[enter_comment] ✗ Ошибка: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def get_comment_char_count(self) -> tuple:
+        """
+        Получает текущий счетчик символов комментария
+        
+        Returns:
+            tuple: (current, max) например (150, 1000) или (None, None) если не найдено
+        """
+        try:
+            for locator in self.COMMENT_CHAR_COUNT:
+                try:
+                    element = self.find_element(locator, timeout=2)
+                    if element:
+                        text = element.text
+                        # Парсим формат "150/1000"
+                        match = re.match(r'(\d+)/(\d+)', text)
+                        if match:
+                            current = int(match.group(1))
+                            max_count = int(match.group(2))
+                            return (current, max_count)
+                except:
+                    continue
+            return (None, None)
+        except:
+            return (None, None)
+    
+    def save_comment(self, timeout: int = 5) -> bool:
+        """
+        Сохраняет комментарий (кликает кнопку "Сохранить")
+        
+        Returns:
+            bool: True если комментарий сохранен успешно
+        """
+        print("[save_comment] Ищем кнопку 'Сохранить'...")
+        try:
+            for locator in self.COMMENT_SAVE_BUTTON:
+                try:
+                    element = self.find_element(locator, timeout=2)
+                    if element:
+                        print(f"[save_comment] Найдена кнопка: {locator}")
+                        self.tap_element(element)
+                        time.sleep(2)  # Ждем сохранения
+                        print("[save_comment] ✓ Комментарий сохранен")
+                        return True
+                except:
+                    continue
+            
+            print("[save_comment] ✗ Кнопка 'Сохранить' не найдена")
+            return False
+        except Exception as e:
+            print(f"[save_comment] ✗ Ошибка: {e}")
+            return False
+    
+    def cancel_comment_edit(self, timeout: int = 5) -> bool:
+        """
+        Отменяет редактирование комментария (кликает кнопку "Отмена")
+        
+        Returns:
+            bool: True если редактирование отменено
+        """
+        print("[cancel_comment_edit] Ищем кнопку 'Отмена'...")
+        try:
+            for locator in self.COMMENT_CANCEL_BUTTON:
+                try:
+                    element = self.find_element(locator, timeout=2)
+                    if element:
+                        self.tap_element(element)
+                        time.sleep(1)
+                        print("[cancel_comment_edit] ✓ Редактирование отменено")
+                        return True
+                except:
+                    continue
+            return False
+        except:
+            return False
+    
+    def get_comment_text(self) -> str:
+        """
+        Получает текст текущего комментария (если он есть)
+        
+        Returns:
+            str: Текст комментария или пустая строка
+        """
+        try:
+            # Ищем текст комментария (не плейсхолдер)
+            for locator in self.COMMENT_TEXT:
+                try:
+                    element = self.find_element(locator, timeout=2)
+                    if element:
+                        text = element.text
+                        # Проверяем что это не плейсхолдер
+                        if 'добавить комментарий' not in text.lower():
+                            return text
+                except:
+                    continue
+            return ""
+        except:
+            return ""
+    
+    def is_comment_editing(self) -> bool:
+        """
+        Проверяет, находится ли комментарий в режиме редактирования
+        
+        Returns:
+            bool: True если комментарий в режиме редактирования
+        """
+        try:
+            # Если есть поле ввода и кнопки Сохранить/Отмена - значит редактирование активно
+            input_found = False
+            for locator in self.COMMENT_INPUT:
+                try:
+                    element = self.find_element(locator, timeout=1)
+                    if element:
+                        input_found = True
+                        break
+                except:
+                    continue
+            
+            if not input_found:
+                return False
+            
+            # Проверяем наличие кнопок
+            save_found = False
+            for locator in self.COMMENT_SAVE_BUTTON:
+                try:
+                    element = self.find_element(locator, timeout=1)
+                    if element:
+                        save_found = True
+                        break
+                except:
+                    continue
+            
+            return save_found
+        except:
+            return False

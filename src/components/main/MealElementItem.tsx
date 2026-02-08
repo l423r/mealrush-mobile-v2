@@ -68,6 +68,8 @@ const MealElementItem: React.FC<MealElementItemProps> = observer(({
             </View>
 
             <TouchableOpacity
+                testID={`meal_element_delete_${element.id}`}
+                accessibilityLabel={`Удалить ${element.name}`}
                 style={styles.deleteButton}
                 onPress={() => onDelete(element.id)}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}

@@ -344,6 +344,15 @@ class MealStore {
     );
   }
 
+  /**
+   * Deletes a meal element from the meal.
+   * 
+   * @param elementId - The ID of the meal element to delete
+   * @throws Error if the API call fails - element will not be removed from store
+   * 
+   * Note: Element is only removed from store after successful API deletion.
+   * Calories are reloaded asynchronously after deletion (errors are logged but don't block).
+   */
   async deleteMealElement(elementId: number) {
     return withAsync(
       this,
@@ -364,7 +373,11 @@ class MealStore {
           }
         }
         
+        // API call must succeed before removing from store
+        // If API fails, withAsync will catch and re-throw, preventing store update
         await mealService.deleteMealElement(elementId);
+        
+        // Only remove from store after successful API deletion
         runInAction(() => {
           Object.keys(this.mealElements).forEach((id) => {
             this.mealElements[parseInt(id)] = this.mealElements[
@@ -374,6 +387,7 @@ class MealStore {
         });
         
         // Перезагружаем калории с сервера (кэш на бекенде инвалидируется автоматически)
+        // This is async and non-blocking - errors are logged but don't affect deletion
         if (mealDate) {
           // Перезагружаем калории для диапазона (7 дней назад, 7 дней вперед от даты meal)
           const startDate = new Date(mealDate);
@@ -385,6 +399,7 @@ class MealStore {
           const targetUserId = this.rootStore.friendsStore.selectedFriend?.friendId;
           this.loadCaloriesForRange(startDate, endDate, targetUserId)
             .catch(error => {
+              // Log error but don't throw - calorie reload failure shouldn't block deletion
               console.error('Error reloading calories after meal element deletion:', error);
             });
         }
