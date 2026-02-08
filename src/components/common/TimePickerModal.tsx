@@ -59,6 +59,8 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
         const isSelected = isHour ? item === selectedHour : item === selectedMinute;
         return (
             <TouchableOpacity
+                testID={isHour ? `time_picker_hour_${item}` : `time_picker_minute_${item}`}
+                accessibilityLabel={isHour ? `Выбрать час ${item}` : `Выбрать минуту ${item}`}
                 style={[styles.timeItem, isSelected && styles.selectedTimeItem]}
                 onPress={() => {
                     if (isHour) {
@@ -99,7 +101,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                                     {/* Hours */}
                                     <View style={styles.columnContainer}>
                                         <Text style={styles.columnLabel}>Часы</Text>
-                                        <View style={styles.listWrapper}>
+                                        <View style={styles.listWrapper} testID="time_picker_hours_list">
                                             <FlatList
                                                 ref={hourListRef}
                                                 data={HOURS}
@@ -122,7 +124,7 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                                     {/* Minutes */}
                                     <View style={styles.columnContainer}>
                                         <Text style={styles.columnLabel}>Минуты</Text>
-                                        <View style={styles.listWrapper}>
+                                        <View style={styles.listWrapper} testID="time_picker_minutes_list">
                                             <FlatList
                                                 ref={minuteListRef}
                                                 data={MINUTES}
@@ -142,10 +144,20 @@ const TimePickerModal: React.FC<TimePickerModalProps> = ({
                                 </View>
 
                                 <View style={styles.footer}>
-                                    <TouchableOpacity style={styles.button} onPress={onClose}>
+                                    <TouchableOpacity 
+                                        testID="time_picker_cancel_button"
+                                        accessibilityLabel="Отмена выбора времени"
+                                        style={styles.button} 
+                                        onPress={onClose}
+                                    >
                                         <Text style={styles.cancelButtonText}>Отмена</Text>
                                     </TouchableOpacity>
-                                    <TouchableOpacity style={styles.button} onPress={handleConfirm}>
+                                    <TouchableOpacity 
+                                        testID="time_picker_confirm_button"
+                                        accessibilityLabel="Подтвердить выбор времени"
+                                        style={styles.button} 
+                                        onPress={handleConfirm}
+                                    >
                                         <Text style={styles.confirmButtonText}>Готово</Text>
                                     </TouchableOpacity>
                                 </View>

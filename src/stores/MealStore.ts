@@ -5,6 +5,7 @@ import type RootStore from './RootStore';
 import type {
   Meal,
   MealCreate,
+  MealUpdate,
   MealElement,
   MealElementCreate,
   MealElementUpdate,
@@ -244,18 +245,47 @@ class MealStore {
     );
   }
 
-  async updateMeal(mealId: number, mealData: Partial<Meal>) {
+  async updateMeal(mealId: number, mealData: MealUpdate) {
     return withAsync(
       this,
       async () => {
-        const response = await mealService.updateMeal(mealId, mealData as Meal);
+        // Find existing meal to check if date changed
+        const existingMeal = this.meals.find((m) => m.id === mealId);
+        const oldDate = existingMeal ? new Date(existingMeal.dateTime) : null;
+        
+        const response = await mealService.updateMeal(mealId, mealData);
+        
+        // Validate response contains updated meal
+        if (!response?.data) {
+          throw new Error('Failed to update meal: invalid response from server');
+        }
+        
+        const updatedMeal = response.data;
+        const newDate = updatedMeal.dateTime ? new Date(updatedMeal.dateTime) : null;
+        
         runInAction(() => {
           const index = this.meals.findIndex((m) => m.id === mealId);
           if (index !== -1) {
-            this.meals[index] = response.data;
+            this.meals[index] = updatedMeal;
+          }
+          
+          // If date changed, clean up mealElements cache for old meal
+          // This prevents memory leaks and data inconsistencies
+          if (oldDate && newDate) {
+            const oldDateStr = oldDate.toDateString();
+            const newDateStr = newDate.toDateString();
+            if (oldDateStr !== newDateStr) {
+              // Clean up mealElements cache for the meal (will be reloaded when needed)
+              // Note: mealElements are tied to meal.id, so we keep them but they'll be
+              // reloaded when the new date's meals are loaded
+              // However, if meal moved to different date, we should clear the cache
+              // to prevent stale data if user navigates back to old date
+              delete this.mealElements[mealId];
+            }
           }
         });
-        return response.data;
+        
+        return updatedMeal;
       },
       'Ошибка обновления приема пищи'
     );

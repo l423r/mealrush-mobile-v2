@@ -117,6 +117,8 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
                         {mealTypes.map((type) => (
                           <TouchableOpacity
                             key={type.value}
+                            testID={`meal_type_option_${type.value.toLowerCase()}`}
+                            accessibilityLabel={`Выбрать тип приема пищи: ${type.label}`}
                             style={[
                               styles.mealOption,
                               selectedType === type.value &&
@@ -148,6 +150,8 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
                         <View style={styles.section}>
                           <Text style={styles.sectionLabel}>Время</Text>
                           <TouchableOpacity
+                            testID="meal_type_edit_time_picker_button"
+                            accessibilityLabel="Выбрать время приема пищи"
                             style={styles.timePickerButton}
                             onPress={() => setShowTimePicker(true)}
                             activeOpacity={0.7}
@@ -164,12 +168,14 @@ const MealTypeEditDialog: React.FC<MealTypeEditDialogProps> = ({
                     {/* Buttons */}
                     <View style={styles.buttonsContainer}>
                       <Button
+                        testID="meal_type_edit_cancel_button"
                         title="Отмена"
                         onPress={onCancel}
                         variant="outline"
                         style={styles.cancelButton}
                       />
                       <Button
+                        testID="meal_type_edit_confirm_button"
                         title="Сохранить"
                         onPress={handleConfirm}
                         style={styles.confirmButton}

@@ -1371,3 +1371,392 @@ class MealPage(BasePage):
             return save_found
         except:
             return False
+    
+    # ==========================================================================
+    # MEAL TYPE EDIT DIALOG LOCATORS - для работы с MealTypeEditDialog (Story 3.8)
+    # ==========================================================================
+    
+    # Диалог редактирования типа приема пищи (MealTypeEditDialog)
+    MEAL_TYPE_EDIT_DIALOG = [
+        (By.XPATH, "//*[contains(@text, 'Редактировать прием пищи') or contains(@text, 'Изменить тип приема пищи')]"),
+        (By.XPATH, "//*[contains(@text, 'Завтрак') or contains(@text, 'Обед') or contains(@text, 'Ужин')]"),
+        (By.XPATH, "//android.widget.Modal"),
+    ]
+    
+    # Кнопки выбора типа приема пищи в диалоге
+    # Приоритет: testID -> accessibilityLabel -> XPath по тексту
+    MEAL_TYPE_BUTTONS = {
+        'BREAKFAST': [
+            (AppiumBy.ACCESSIBILITY_ID, "meal_type_option_breakfast"),  # testID из MealTypeEditDialog.tsx
+            (By.XPATH, "//*[@content-desc='meal_type_option_breakfast']"),
+            (By.XPATH, "//*[@text='Завтрак' or contains(@text, 'Завтрак')]"),
+        ],
+        'LUNCH': [
+            (AppiumBy.ACCESSIBILITY_ID, "meal_type_option_lunch"),  # testID из MealTypeEditDialog.tsx
+            (By.XPATH, "//*[@content-desc='meal_type_option_lunch']"),
+            (By.XPATH, "//*[@text='Обед' or contains(@text, 'Обед')]"),
+        ],
+        'DINNER': [
+            (AppiumBy.ACCESSIBILITY_ID, "meal_type_option_dinner"),  # testID из MealTypeEditDialog.tsx
+            (By.XPATH, "//*[@content-desc='meal_type_option_dinner']"),
+            (By.XPATH, "//*[@text='Ужин' or contains(@text, 'Ужин')]"),
+        ],
+        'SUPPER': [
+            (AppiumBy.ACCESSIBILITY_ID, "meal_type_option_supper"),  # testID из MealTypeEditDialog.tsx
+            (By.XPATH, "//*[@content-desc='meal_type_option_supper']"),
+            (By.XPATH, "//*[@text='Перекус' or contains(@text, 'Перекус')]"),
+        ],
+        'LATE_SUPPER': [
+            (AppiumBy.ACCESSIBILITY_ID, "meal_type_option_late_supper"),  # testID из MealTypeEditDialog.tsx
+            (By.XPATH, "//*[@content-desc='meal_type_option_late_supper']"),
+            (By.XPATH, "//*[@text='Поздний перекус' or contains(@text, 'Поздний перекус')]"),
+        ],
+    }
+    
+    # Кнопка выбора времени в диалоге
+    # Приоритет: testID -> accessibilityLabel -> XPath по тексту
+    TIME_PICKER_BUTTON = [
+        (AppiumBy.ACCESSIBILITY_ID, "meal_type_edit_time_picker_button"),  # testID из MealTypeEditDialog.tsx
+        (By.XPATH, "//*[@content-desc='meal_type_edit_time_picker_button']"),
+        (By.XPATH, "//*[contains(@text, ':') and string-length(@text) = 5]"),
+        (By.XPATH, "//*[contains(@text, 'Время')]"),
+    ]
+    
+    # Кнопка подтверждения в диалоге
+    # Приоритет: testID -> accessibilityLabel -> XPath по тексту
+    MEAL_TYPE_EDIT_CONFIRM = [
+        (AppiumBy.ACCESSIBILITY_ID, "meal_type_edit_confirm_button"),  # testID из MealTypeEditDialog.tsx
+        (By.XPATH, "//*[@content-desc='meal_type_edit_confirm_button']"),
+        (By.XPATH, "//*[@text='Сохранить' or contains(@text, 'Сохранить')]"),
+        (By.XPATH, "//*[@text='Подтвердить' or contains(@text, 'Подтвердить')]"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'Подтвердить')]"),
+    ]
+    
+    # Кнопка отмены в диалоге
+    # Приоритет: testID -> accessibilityLabel -> XPath по тексту
+    MEAL_TYPE_EDIT_CANCEL = [
+        (AppiumBy.ACCESSIBILITY_ID, "meal_type_edit_cancel_button"),  # testID из MealTypeEditDialog.tsx
+        (By.XPATH, "//*[@content-desc='meal_type_edit_cancel_button']"),
+        (By.XPATH, "//*[@text='Отмена' or contains(@text, 'Отмена')]"),
+        (By.XPATH, "//android.widget.Button[contains(@text, 'Отмена')]"),
+    ]
+    
+    # ==========================================================================
+    # MEAL TYPE EDIT METHODS
+    # ==========================================================================
+    
+    def open_meal_type_edit_dialog(self, timeout: int = 5) -> bool:
+        """
+        Открывает диалог редактирования типа приема пищи
+        Кликает на кнопку редактирования (иконка карандаша) в header
+        
+        Returns:
+            bool: True если диалог открыт успешно
+        """
+        print("[open_meal_type_edit_dialog] Открываем диалог редактирования типа приема пищи...")
+        try:
+            # Кликаем на кнопку редактирования (иконка карандаша)
+            self.click_edit()
+            time.sleep(1)
+            
+            # Проверяем что диалог открылся
+            for locator in self.MEAL_TYPE_EDIT_DIALOG:
+                try:
+                    if self.is_displayed(locator, timeout=2):
+                        print("[open_meal_type_edit_dialog] ✓ Диалог открыт")
+                        return True
+                except:
+                    continue
+            
+            print("[open_meal_type_edit_dialog] ⚠ Диалог не найден после клика")
+            return False
+        except Exception as e:
+            print(f"[open_meal_type_edit_dialog] ✗ Ошибка: {e}")
+            return False
+    
+    def select_meal_type_in_dialog(self, meal_type: str, timeout: int = 5) -> bool:
+        """
+        Выбирает тип приема пищи в диалоге редактирования
+        
+        Args:
+            meal_type: Тип приема пищи ('BREAKFAST', 'LUNCH', 'DINNER', 'SUPPER', 'LATE_SUPPER')
+            timeout: Таймаут поиска кнопки
+            
+        Returns:
+            bool: True если тип выбран успешно
+        """
+        print(f"[select_meal_type_in_dialog] Выбираем тип приема пищи: {meal_type}")
+        try:
+            # Маппинг русских названий
+            ru_to_enum = {
+                'Завтрак': 'BREAKFAST',
+                'Обед': 'LUNCH',
+                'Ужин': 'DINNER',
+                'Перекус': 'SUPPER',
+                'Поздний перекус': 'LATE_SUPPER',
+            }
+            
+            if meal_type in ru_to_enum:
+                meal_type = ru_to_enum[meal_type]
+            
+            meal_type = meal_type.upper()
+            
+            if meal_type not in self.MEAL_TYPE_BUTTONS:
+                print(f"[select_meal_type_in_dialog] ✗ Неизвестный тип приема пищи: {meal_type}")
+                return False
+            
+            # Кликаем на кнопку выбора типа
+            self.click_multiple(self.MEAL_TYPE_BUTTONS[meal_type], timeout=timeout)
+            time.sleep(0.5)
+            print(f"[select_meal_type_in_dialog] ✓ Тип приема пищи выбран: {meal_type}")
+            return True
+        except Exception as e:
+            print(f"[select_meal_type_in_dialog] ✗ Ошибка: {e}")
+            return False
+    
+    def confirm_meal_type_edit(self, timeout: int = 5) -> bool:
+        """
+        Подтверждает изменения в диалоге редактирования типа приема пищи
+        
+        Returns:
+            bool: True если изменения подтверждены успешно
+        """
+        print("[confirm_meal_type_edit] Подтверждаем изменения...")
+        try:
+            self.click_multiple(self.MEAL_TYPE_EDIT_CONFIRM, timeout=timeout)
+            time.sleep(2)  # Ждем закрытия диалога и обновления
+            print("[confirm_meal_type_edit] ✓ Изменения подтверждены")
+            return True
+        except Exception as e:
+            print(f"[confirm_meal_type_edit] ✗ Ошибка: {e}")
+            return False
+    
+    def cancel_meal_type_edit(self, timeout: int = 5) -> bool:
+        """
+        Отменяет изменения в диалоге редактирования типа приема пищи
+        
+        Returns:
+            bool: True если изменения отменены успешно
+        """
+        print("[cancel_meal_type_edit] Отменяем изменения...")
+        try:
+            self.click_multiple(self.MEAL_TYPE_EDIT_CANCEL, timeout=timeout)
+            time.sleep(1)
+            print("[cancel_meal_type_edit] ✓ Изменения отменены")
+            return True
+        except Exception as e:
+            print(f"[cancel_meal_type_edit] ✗ Ошибка: {e}")
+            return False
+    
+    # ==========================================================================
+    # TIME PICKER MODAL LOCATORS - для работы с TimePickerModal (Story 3.8)
+    # ==========================================================================
+    
+    # TimePickerModal заголовок
+    TIME_PICKER_MODAL_TITLE = [
+        (By.XPATH, "//*[@text='Выберите время' or contains(@text, 'Выберите время')]"),
+        (By.XPATH, "//android.widget.Modal//*[contains(@text, 'время')]"),
+    ]
+    
+    # Список часов (FlatList)
+    TIME_PICKER_HOURS_LIST = [
+        (AppiumBy.ACCESSIBILITY_ID, "time_picker_hours_list"),  # testID из TimePickerModal.tsx
+        (By.XPATH, "//*[@content-desc='time_picker_hours_list']"),
+        (By.XPATH, "//android.widget.FlatList[.//*[contains(@text, 'Часы')]]"),
+    ]
+    
+    # Список минут (FlatList)
+    TIME_PICKER_MINUTES_LIST = [
+        (AppiumBy.ACCESSIBILITY_ID, "time_picker_minutes_list"),  # testID из TimePickerModal.tsx
+        (By.XPATH, "//*[@content-desc='time_picker_minutes_list']"),
+        (By.XPATH, "//android.widget.FlatList[.//*[contains(@text, 'Минуты')]]"),
+    ]
+    
+    # Элементы часов (TouchableOpacity с testID)
+    TIME_PICKER_HOUR_ITEM = [
+        (AppiumBy.ACCESSIBILITY_ID, "time_picker_hour_"),  # Частичное совпадение
+        (By.XPATH, "//*[starts-with(@content-desc, 'time_picker_hour_')]"),
+    ]
+    
+    # Элементы минут (TouchableOpacity с testID)
+    TIME_PICKER_MINUTE_ITEM = [
+        (AppiumBy.ACCESSIBILITY_ID, "time_picker_minute_"),  # Частичное совпадение
+        (By.XPATH, "//*[starts-with(@content-desc, 'time_picker_minute_')]"),
+    ]
+    
+    # Кнопка "Готово" в TimePickerModal
+    TIME_PICKER_CONFIRM = [
+        (AppiumBy.ACCESSIBILITY_ID, "time_picker_confirm_button"),  # testID из TimePickerModal.tsx
+        (By.XPATH, "//*[@content-desc='time_picker_confirm_button']"),
+        (By.XPATH, "//*[@text='Готово' or contains(@text, 'Готово')]"),
+    ]
+    
+    # Кнопка "Отмена" в TimePickerModal
+    TIME_PICKER_CANCEL = [
+        (AppiumBy.ACCESSIBILITY_ID, "time_picker_cancel_button"),  # testID из TimePickerModal.tsx
+        (By.XPATH, "//*[@content-desc='time_picker_cancel_button']"),
+        (By.XPATH, "//*[@text='Отмена' or contains(@text, 'Отмена')]"),
+    ]
+    
+    # ==========================================================================
+    # TIME PICKER MODAL METHODS
+    # ==========================================================================
+    
+    def is_time_picker_modal_visible(self, timeout: int = 3) -> bool:
+        """
+        Проверяет, виден ли TimePickerModal
+        
+        Returns:
+            bool: True если модальное окно выбора времени видно
+        """
+        try:
+            for locator in self.TIME_PICKER_MODAL_TITLE:
+                if self.is_displayed(locator, timeout=timeout):
+                    return True
+            return False
+        except:
+            return False
+    
+    def select_time_in_picker(self, hour: int, minute: int, timeout: int = 10) -> bool:
+        """
+        Выбирает время в TimePickerModal
+        
+        Args:
+            hour: Час (0-23)
+            minute: Минута (0-59)
+            timeout: Таймаут поиска элементов
+            
+        Returns:
+            bool: True если время выбрано успешно
+        """
+        print(f"[select_time_in_picker] Выбираем время: {hour:02d}:{minute:02d}")
+        try:
+            # Проверяем что TimePickerModal виден
+            if not self.is_time_picker_modal_visible(timeout=2):
+                print("[select_time_in_picker] ✗ TimePickerModal не виден")
+                return False
+            
+            # Ищем элементы часов и минут
+            # В Android FlatList элементы могут быть не все видимы, нужно прокрутить
+            # Используем поиск по testID для конкретного часа/минуты
+            
+            # Выбираем час
+            hour_found = False
+            try:
+                # Пробуем найти элемент часа по testID
+                hour_locator = (AppiumBy.ACCESSIBILITY_ID, f"time_picker_hour_{hour}")
+                hour_element = self.find_element(hour_locator, timeout=3)
+                if hour_element:
+                    # Прокручиваем к элементу если нужно
+                    try:
+                        hour_element.click()
+                        hour_found = True
+                        print(f"[select_time_in_picker] ✓ Час {hour} выбран")
+                        time.sleep(0.5)
+                    except:
+                        # Пробуем через координаты
+                        location = hour_element.location
+                        size = hour_element.size
+                        center_x = location['x'] + size['width'] // 2
+                        center_y = location['y'] + size['height'] // 2
+                        self.driver.tap([(center_x, center_y)])
+                        hour_found = True
+                        print(f"[select_time_in_picker] ✓ Час {hour} выбран (через координаты)")
+                        time.sleep(0.5)
+            except Exception as e:
+                print(f"[select_time_in_picker] ⚠ Не удалось найти час по testID: {e}")
+                # Fallback: ищем по тексту
+                try:
+                    hour_text = f"{hour:02d}"
+                    hour_elements = self.driver.find_elements(By.XPATH, f"//*[@text='{hour_text}']")
+                    for el in hour_elements:
+                        try:
+                            if el.is_displayed():
+                                el.click()
+                                hour_found = True
+                                print(f"[select_time_in_picker] ✓ Час {hour} выбран (по тексту)")
+                                time.sleep(0.5)
+                                break
+                        except:
+                            continue
+                except Exception as e2:
+                    print(f"[select_time_in_picker] ⚠ Fallback для часа не сработал: {e2}")
+            
+            if not hour_found:
+                print(f"[select_time_in_picker] ✗ Не удалось выбрать час {hour}")
+                return False
+            
+            # Выбираем минуту
+            minute_found = False
+            try:
+                # Пробуем найти элемент минуты по testID
+                minute_locator = (AppiumBy.ACCESSIBILITY_ID, f"time_picker_minute_{minute}")
+                minute_element = self.find_element(minute_locator, timeout=3)
+                if minute_element:
+                    try:
+                        minute_element.click()
+                        minute_found = True
+                        print(f"[select_time_in_picker] ✓ Минута {minute} выбрана")
+                        time.sleep(0.5)
+                    except:
+                        # Пробуем через координаты
+                        location = minute_element.location
+                        size = minute_element.size
+                        center_x = location['x'] + size['width'] // 2
+                        center_y = location['y'] + size['height'] // 2
+                        self.driver.tap([(center_x, center_y)])
+                        minute_found = True
+                        print(f"[select_time_in_picker] ✓ Минута {minute} выбрана (через координаты)")
+                        time.sleep(0.5)
+            except Exception as e:
+                print(f"[select_time_in_picker] ⚠ Не удалось найти минуту по testID: {e}")
+                # Fallback: ищем по тексту
+                try:
+                    minute_text = f"{minute:02d}"
+                    minute_elements = self.driver.find_elements(By.XPATH, f"//*[@text='{minute_text}']")
+                    for el in minute_elements:
+                        try:
+                            if el.is_displayed():
+                                el.click()
+                                minute_found = True
+                                print(f"[select_time_in_picker] ✓ Минута {minute} выбрана (по тексту)")
+                                time.sleep(0.5)
+                                break
+                        except:
+                            continue
+                except Exception as e2:
+                    print(f"[select_time_in_picker] ⚠ Fallback для минуты не сработал: {e2}")
+            
+            if not minute_found:
+                print(f"[select_time_in_picker] ✗ Не удалось выбрать минуту {minute}")
+                return False
+            
+            # Подтверждаем выбор
+            print("[select_time_in_picker] Подтверждаем выбор времени...")
+            self.click_multiple(self.TIME_PICKER_CONFIRM, timeout=timeout)
+            time.sleep(1)
+            print(f"[select_time_in_picker] ✓ Время {hour:02d}:{minute:02d} выбрано и подтверждено")
+            return True
+            
+        except Exception as e:
+            print(f"[select_time_in_picker] ✗ Ошибка: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+    
+    def cancel_time_picker(self, timeout: int = 5) -> bool:
+        """
+        Отменяет выбор времени в TimePickerModal
+        
+        Returns:
+            bool: True если отмена выполнена успешно
+        """
+        print("[cancel_time_picker] Отменяем выбор времени...")
+        try:
+            self.click_multiple(self.TIME_PICKER_CANCEL, timeout=timeout)
+            time.sleep(1)
+            print("[cancel_time_picker] ✓ Выбор времени отменен")
+            return True
+        except Exception as e:
+            print(f"[cancel_time_picker] ✗ Ошибка: {e}")
+            return False

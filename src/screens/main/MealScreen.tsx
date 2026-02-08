@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import type { RouteProp } from '@react-navigation/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { MainStackParamList } from '../../types/navigation.types';
-import type { Meal } from '../../types/api.types';
+import type { Meal, MealUpdate } from '../../types/api.types';
 import { useStores } from '../../stores';
 import { typography, spacing, borderRadius, shadows } from '../../theme';
 import {
@@ -23,7 +23,6 @@ import {
 import Header from '../../components/common/Header';
 import Loading from '../../components/common/Loading';
 import CompactSummary from '../../components/common/CompactSummary';
-import Input from '../../components/common/Input';
 import MealElementItem from '../../components/main/MealElementItem';
 import MealTypeEditDialog from '../../components/common/MealTypeEditDialog';
 import MealSelectorDialog from '../../components/common/MealSelectorDialog';
@@ -32,7 +31,7 @@ import TemplateNameDialog from '../../components/common/TemplateNameDialog';
 import DateTimePickerDialog from '../../components/common/DateTimePickerDialog';
 import AlertDialog from '../../components/common/AlertDialog';
 import { useAlert } from '../../hooks/useAlert';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { haptics } from '../../utils/haptics';
 import { useTheme } from '../../hooks/useTheme';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -49,8 +48,15 @@ const MealScreen: React.FC = observer(() => {
   const { mealStore, uiStore, profileStore, mealTemplateStore, friendsStore } = useStores();
   const { alertState, showConfirm, hideAlert } = useAlert();
   const { colors, isDark } = useTheme();
+  const isMountedRef = useRef(true);
 
-  const meal = route.params.meal;
+  const meal = route.params?.meal;
+  
+  // Null safety check
+  if (!meal || !meal.dateTime) {
+    return <Loading message="Загрузка приема пищи..." />;
+  }
+
   const elements = mealStore.mealElements[meal.id] || [];
   const userTimezone = profileStore.profile?.timezone || 'UTC';
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -63,6 +69,13 @@ const MealScreen: React.FC = observer(() => {
   const [comment, setComment] = useState(meal.comment || '');
   const [isEditingComment, setIsEditingComment] = useState(false);
   const [isSavingComment, setIsSavingComment] = useState(false);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     // Проверяем, что meal все еще существует
@@ -87,12 +100,15 @@ const MealScreen: React.FC = observer(() => {
   }, [showCopyDialog]);
 
   useEffect(() => {
-    // Update comment when meal changes
-    const currentMeal = mealStore.meals.find(m => m.id === meal.id);
-    if (currentMeal) {
-      setComment(currentMeal.comment || '');
+    // Update comment when meal changes, but only if not currently editing
+    // This prevents race condition where user edits comment while meal updates
+    if (!isEditingComment) {
+      const currentMeal = mealStore.meals.find(m => m.id === meal.id);
+      if (currentMeal) {
+        setComment(currentMeal.comment || '');
+      }
     }
-  }, [mealStore.meals, meal.id]);
+  }, [mealStore.meals, meal.id, isEditingComment]);
 
   const loadMealsForSelectedDate = async () => {
     try {
@@ -319,7 +335,7 @@ const MealScreen: React.FC = observer(() => {
     
     setIsSavingComment(true);
     try {
-      await mealStore.updateMeal(meal.id, { comment: comment.trim() || null });
+      await mealStore.updateMeal(meal.id, { comment: comment.trim() || undefined });
       setIsEditingComment(false);
       haptics.success();
       uiStore.showSnackbar('Комментарий сохранен', 'success');
@@ -342,45 +358,91 @@ const MealScreen: React.FC = observer(() => {
 
     const mealDate = new Date(meal.dateTime);
     const hasTypeChanged = newType !== meal.mealType;
+    
+    // Extract old date before update (for date change detection)
+    const oldDate = new Date(meal.dateTime);
+    oldDate.setHours(0, 0, 0, 0);
+    
+    // Determine if date/time changed
+    let hasDateChanged = false;
+    let hasTimeChanged = false;
+    let newDate: Date | null = null;
+    
+    if (newDateTime) {
+      newDate = new Date(newDateTime);
+      newDate.setHours(0, 0, 0, 0);
+      hasDateChanged = oldDate.toDateString() !== newDate.toDateString();
+      hasTimeChanged =
+        newDateTime.getHours() !== mealDate.getHours() ||
+        newDateTime.getMinutes() !== mealDate.getMinutes();
+    }
 
-    if (!newDateTime) {
-      if (!hasTypeChanged) {
+    // Early return if nothing changed
+    if (!hasTypeChanged && !hasTimeChanged && !hasDateChanged) {
+      return;
+    }
+
+    // Prepare update data
+    const updateData: MealUpdate = {
+      mealType: newType as Meal['mealType'],
+      dateTime: newDateTime ? newDateTime.toISOString() : meal.dateTime,
+      name: meal.name,
+    };
+
+    try {
+      await mealStore.updateMeal(meal.id, updateData);
+
+      // Early return if component unmounted
+      if (!isMountedRef.current) {
         return;
       }
 
-      try {
-        await mealStore.updateMeal(meal.id, {
-          mealType: newType,
-          dateTime: meal.dateTime,
-          name: meal.name,
-        } as any);
-        haptics.success();
-        uiStore.showSnackbar('Тип приема пищи изменен', 'success');
+      // Handle date change: refresh both old and new date meal lists
+      if (hasDateChanged && newDate) {
+        const currentSelectedDate = new Date(mealStore.selectedDate);
+        const oldDateForRefresh = new Date(oldDate);
+        oldDateForRefresh.setHours(0, 0, 0, 0);
+        
+        const newDateForRefresh = new Date(newDate);
+        newDateForRefresh.setHours(0, 0, 0, 0);
+        
+        // Refresh old date meal list (removes meal from old date)
+        // This also clears mealElements cache for the meal (handled in MealStore.updateMeal)
+        await mealStore.loadMealsForDate(oldDateForRefresh);
+        
+        // Refresh new date meal list (adds meal to new date)
+        // mealElements will be loaded when meal is accessed on new date
+        await mealStore.loadMealsForDate(newDateForRefresh);
+        
+        // Restore original selected date if it was different from both dates
+        const currentViewDate = new Date(currentSelectedDate);
+        currentViewDate.setHours(0, 0, 0, 0);
+        if (currentViewDate.toDateString() !== oldDateForRefresh.toDateString() && 
+            currentViewDate.toDateString() !== newDateForRefresh.toDateString()) {
+          await mealStore.loadMealsForDate(currentSelectedDate);
+        }
+        
+        // If user is viewing old date, show notification
+        if (currentViewDate.toDateString() === oldDateForRefresh.toDateString()) {
+          const newDateStr = newDateForRefresh.toISOString().split('T')[0];
+          uiStore.showSnackbar(`Прием пищи перемещен на ${formatDate(newDateStr)}`, 'info');
+        }
+      } else {
+        // Date unchanged, refresh current date meal list
         await mealStore.loadMealsForDate(mealStore.selectedDate);
-      } catch (error) {
-        haptics.error();
-        uiStore.showSnackbar('Не удалось изменить прием пищи', 'error');
       }
-      return;
-    }
 
-    const hasTimeChanged =
-      newDateTime.getHours() !== mealDate.getHours() ||
-      newDateTime.getMinutes() !== mealDate.getMinutes();
-
-    if (!hasTypeChanged && !hasTimeChanged) {
-      return;
-    }
-
-    try {
-      await mealStore.updateMeal(meal.id, {
-        mealType: newType,
-        dateTime: newDateTime.toISOString(),
-        name: meal.name,
-      } as any);
-
+      // Generate success message
       let message = '';
-      if (hasTypeChanged && hasTimeChanged) {
+      if (hasTypeChanged && hasTimeChanged && hasDateChanged) {
+        message = 'Тип, дата и время приема пищи изменены';
+      } else if (hasTypeChanged && hasDateChanged) {
+        message = 'Тип и дата приема пищи изменены';
+      } else if (hasTimeChanged && hasDateChanged) {
+        message = 'Дата и время приема пищи изменены';
+      } else if (hasDateChanged) {
+        message = 'Дата приема пищи изменена';
+      } else if (hasTypeChanged && hasTimeChanged) {
         message = 'Тип и время приема пищи изменены';
       } else if (hasTypeChanged) {
         message = 'Тип приема пищи изменен';
@@ -390,10 +452,11 @@ const MealScreen: React.FC = observer(() => {
 
       haptics.success();
       uiStore.showSnackbar(message, 'success');
-      await mealStore.loadMealsForDate(mealStore.selectedDate);
     } catch (error) {
       haptics.error();
-      uiStore.showSnackbar('Не удалось изменить прием пищи', 'error');
+      const errorMessage = error instanceof Error ? error.message : 'Не удалось изменить прием пищи';
+      uiStore.showSnackbar(errorMessage, 'error');
+      console.error('Error updating meal:', error);
     }
   };
 
@@ -456,12 +519,16 @@ const MealScreen: React.FC = observer(() => {
         rightComponent={
           <View style={styles.headerActions}>
             <TouchableOpacity
+              testID="meal_edit_button"
+              accessibilityLabel="Редактировать прием пищи"
               onPress={handleEditMealType}
               style={styles.editButton}
             >
               <Ionicons name="create-outline" size={20} color={colors.text.primary} />
             </TouchableOpacity>
             <TouchableOpacity
+              testID="meal_actions_menu_button"
+              accessibilityLabel="Меню действий"
               onPress={() => setShowActionsMenu(true)}
               style={styles.menuButton}
             >
@@ -479,6 +546,7 @@ const MealScreen: React.FC = observer(() => {
         <FlashList
           data={elements}
           renderItem={renderElement}
+          // @ts-expect-error - estimatedItemSize is valid prop in FlashList 2.0.2, but types may be outdated
           estimatedItemSize={80}
           keyExtractor={(item) => item.id.toString()}
           ListHeaderComponent={
@@ -524,6 +592,8 @@ const MealScreen: React.FC = observer(() => {
                       </Text>
                       <View style={styles.commentActions}>
                         <TouchableOpacity
+                          testID="meal_comment_cancel_button"
+                          accessibilityLabel="Отменить редактирование комментария"
                           onPress={handleCommentCancel}
                           disabled={isSavingComment}
                           style={styles.commentButton}
@@ -533,6 +603,8 @@ const MealScreen: React.FC = observer(() => {
                           </Text>
                         </TouchableOpacity>
                         <TouchableOpacity
+                          testID="meal_comment_save_button"
+                          accessibilityLabel="Сохранить комментарий"
                           onPress={handleCommentSave}
                           disabled={isSavingComment || comment.length > 1000}
                           style={[styles.commentButton, styles.commentButtonSave]}
@@ -550,6 +622,8 @@ const MealScreen: React.FC = observer(() => {
                   </View>
                 ) : (
                   <TouchableOpacity
+                    testID="meal_comment_section"
+                    accessibilityLabel={comment && comment.trim() ? `Комментарий: ${comment}` : "Нажмите, чтобы добавить комментарий"}
                     onPress={() => setIsEditingComment(true)}
                     activeOpacity={0.7}
                   >

@@ -3,6 +3,7 @@ import { ApiRoutes } from '../apiRoutes';
 import type {
   Meal,
   MealCreate,
+  MealUpdate,
   MealElement,
   MealElementCreate,
   MealElementUpdate,
@@ -29,7 +30,7 @@ export const mealService = {
       params: { ...(targetUserId && { targetUserId }) },
     }),
 
-  updateMeal: (id: number, mealData: Meal) =>
+  updateMeal: (id: number, mealData: MealUpdate) =>
     apiClient.put<Meal>(`${ApiRoutes.Meal.Base}/${id}`, mealData),
 
   deleteMeal: (id: number) =>
