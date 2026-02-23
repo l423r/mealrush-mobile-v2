@@ -460,85 +460,11 @@ class TestMealCreation:
         Returns:
             bool: True если meal создан успешно
         """
-        from pages.meal_element_page import MealElementPage
-        from utilities.timing import timer
-        
-        start_time = time.perf_counter()
-        
-        # Запоминаем текущую дату на главном экране
-        expected_date = None
-        if verify_date:
-            with timer.measure("get_selected_date", category="helper"):
-                expected_date = main_page.get_selected_date_text()
-            print(f"[CREATE_MEAL] Ожидаемая дата для meal: {expected_date}")
-        
-        # Открываем поиск
-        print(f"[CREATE_MEAL] Открываем поиск для '{product_query}'...")
-        with timer.measure("click_add_meal_button", category="helper"):
-            main_page.click_add_meal_button()
-        
-        if not search_page.is_page_loaded(timeout=3):
-            print("[CREATE_MEAL] ⚠ SearchScreen не загрузился")
-            return False
-        
-        # Ищем продукт
-        print(f"[CREATE_MEAL] Ищем продукт '{product_query}'...")
-        with timer.measure("search_product", category="helper"):
-            search_page.search_product(product_query, take_screenshot=False)
-        
-        products_count = search_page.get_products_count()
-        if products_count == 0:
-            print("[CREATE_MEAL] ⚠ Продукты не найдены")
-            driver.back()
-            return False
-        print(f"[CREATE_MEAL] Найдено продуктов: {products_count}")
-        
-        # Кликаем на первый продукт
-        print("[CREATE_MEAL] Кликаем на первый продукт...")
-        with timer.measure("click_product", category="helper"):
-            search_page.click_product(0)
-        
-        # Добавляем продукт
-        meal_element_page = MealElementPage(driver)
-        if meal_element_page.is_page_loaded(timeout=3):
-            # Проверяем дату на экране (если отображается)
-            if verify_date and expected_date:
-                displayed_date = meal_element_page.get_displayed_date()
-                if displayed_date:
-                    print(f"[CREATE_MEAL] Дата на MealElementScreen: {displayed_date}")
-                else:
-                    print("[CREATE_MEAL] ⚠ Дата не отображается на MealElementScreen (может быть нормально)")
-            
-            print(f"[CREATE_MEAL] Выбираем тип приема пищи: {meal_type}")
-            with timer.measure("select_meal_type", category="helper"):
-                meal_element_page.select_meal_type(meal_type)
-            
-            print("[CREATE_MEAL] Нажимаем кнопку добавления...")
-            with timer.measure("click_add_button", category="helper"):
-                meal_element_page.click_add_button(handle_confirm_dialog=handle_confirm_dialog)
-            
-            # Ждем возврата на главный экран (оптимизировано)
-            print("[CREATE_MEAL] Ожидание возврата на главный экран...")
-            with timer.measure("wait_main_page_load", category="helper"):
-                # Используем быструю проверку - главный экран должен уже быть загружен
-                # после click_add_button, но проверяем на всякий случай
-                if not main_page.is_page_loaded(timeout=2):
-                    print("[CREATE_MEAL] ⚠ Главный экран не загрузился быстро, ждем еще...")
-                    main_page.is_page_loaded(timeout=3)  # Дополнительное ожидание
-            
-            # Проверяем что дата не изменилась
-            if verify_date and expected_date:
-                current_date = main_page.get_selected_date_text()
-                if current_date and current_date != expected_date:
-                    print(f"[CREATE_MEAL] ⚠ Внимание: дата изменилась после создания meal: {expected_date} -> {current_date}")
-            
-            duration = (time.perf_counter() - start_time) * 1000
-            print(f"[CREATE_MEAL] ✓ Meal создан за {duration:.0f}ms")
-            return True
-        
-        print("[CREATE_MEAL] ⚠ MealElementScreen не загрузился")
-        driver.back()
-        return False
+        from utilities.meal_creation_helper import create_meal_via_ui
+        return create_meal_via_ui(
+            driver, main_page, search_page, product_query, meal_type,
+            verify_date=verify_date, handle_confirm_dialog=handle_confirm_dialog
+        )
     
     def test_12_create_meals_on_multiple_dates(self, driver, setup_test_environment, authenticated_session):
         """

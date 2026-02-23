@@ -78,6 +78,7 @@ from pages.calendar_modal_page import CalendarModalPage
 from utilities.user_cleanup import UserCleanup
 from utilities.user_management import UserManagement
 from utilities.timing import timer
+from utilities.meal_creation_helper import create_meal_via_ui
 
 
 # =============================================================================
@@ -190,9 +191,25 @@ class TestMealHistorySetup:
             return None
     
     @staticmethod
+    def _navigate_to_date(main_page, current_date, target_date):
+        """
+        Переводит главный экран на целевую дату через DateStrip (prev/next).
+        current_date и target_date — datetime.date.
+        """
+        delta_days = (target_date - current_date).days
+        if delta_days == 0:
+            return
+        direction = 'next' if delta_days > 0 else 'prev'
+        steps = abs(delta_days)
+        for _ in range(steps):
+            main_page.change_date(direction)
+            time.sleep(0.4)
+    
+    @staticmethod
     def create_meals_for_date_range(driver, main_page, start_date, end_date):
         """
         Создает тестовые приемы пищи на разных датах в указанном диапазоне
+        через UI (навигация DateStrip + create_meal_via_ui).
         
         Args:
             driver: Appium WebDriver
@@ -201,37 +218,46 @@ class TestMealHistorySetup:
             end_date: datetime.date - конечная дата
         
         Returns:
-            list: Список созданных meals (meal IDs или объекты)
+            list: Список созданных meals (dict с date, type, created)
         """
         created_meals = []
-        current_date = start_date
+        current_date = datetime.now().date()
+        search_page = SearchPage(driver)
+        product_queries = ["яб", "хлеб", "молоко"]
+        meal_types = ["BREAKFAST", "LUNCH", "DINNER"]
         
         try:
-            while current_date <= end_date:
-                # Создаем по одному приему пищи на каждую дату
-                meal_type = random.choice(["BREAKFAST", "LUNCH", "DINNER"])
-                # Преобразуем date в datetime для meal_time
-                meal_time = datetime.combine(current_date, datetime.min.time().replace(
-                    hour=random.randint(8, 20), 
-                    minute=random.randint(0, 59)
-                ))
+            date_list = []
+            d = start_date
+            while d <= end_date:
+                date_list.append(d)
+                d += timedelta(days=1)
+            
+            for i, d in enumerate(date_list):
+                meal_type = meal_types[i % 3]
+                TestMealHistorySetup._navigate_to_date(main_page, current_date, d)
+                current_date = d
                 
-                # Навигация на нужную дату (если нужно)
-                # TODO: Реализовать навигацию на конкретную дату через DateStrip или Calendar
-                
-                # Создание приема пищи
-                # TODO: Реализовать создание приема пищи через UI
-                # main_page.click_add_meal_button()
-                # search_page = SearchPage(driver)
-                # ... создание meal
-                
+                success = create_meal_via_ui(
+                    driver, main_page, search_page,
+                    product_queries[i % len(product_queries)],
+                    meal_type,
+                    verify_date=False,
+                    handle_confirm_dialog='create_new'
+                )
                 created_meals.append({
-                    'date': current_date,
+                    'date': d,
                     'type': meal_type,
-                    'time': meal_time
+                    'created': success
                 })
-                
-                current_date += timedelta(days=1)
+                if not success:
+                    print(f"[SETUP] ⚠ Не удалось создать meal на дату {d}")
+                time.sleep(0.5)
+            
+            # Вернуть экран на сегодня для последующих тестов
+            today = datetime.now().date()
+            if current_date != today:
+                TestMealHistorySetup._navigate_to_date(main_page, current_date, today)
                 
         except Exception as e:
             print(f"[SETUP] Ошибка при создании meals: {e}")

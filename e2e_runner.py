@@ -176,6 +176,7 @@ class TestDiscovery:
         'test_onboarding_flow.py',
         'test_simple_login.py',
         'test_element_finding.py',
+        'test_view_meal_history.py',
     ]
     
     # Описания групп тестов
@@ -193,6 +194,8 @@ class TestDiscovery:
         'TestUpdateProductQuantities': 'Обновление количества продуктов в приеме пищи',
         'TestOnboardingFlow': 'Онбординг новых пользователей',
         'TestSimpleLogin': 'Простой вход',
+        'TestMealHistorySetup': 'Подготовка тестов истории приемов пищи',
+        'TestViewMealHistory': 'Просмотр истории приемов пищи за диапазон дат',
     }
     
     def __init__(self):
